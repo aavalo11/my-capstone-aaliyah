@@ -1,19 +1,22 @@
 # Concept Brief
 
 ## Working Name
-SyllabusSync (might change later)
+Crossfade (might change later)
 
 ## The Pitch
-A tool that turns my syllabi into a finished calendar automatically, so I stop manually typing in the same classes, assignments, and due dates every single semester.
+A playlist bridge between Apple Music and Spotify, so I can send a playlist to a friend on the other service and have it actually open and play for them instead of being a screenshot they have to retype.
 
 ## Who It's For
-Me, honestly. At the start of each semester I have four to six syllabi, and I sit down and manually enter every class time, assignment deadline, and repeating event into Apple Calendar by hand. It usually happens after classes have already started, when I'm already behind and stressed.
+Me and my friends, honestly. I'm on Apple Music and a lot of the people I want to swap music with are on Spotify. It comes up when someone says "send me that playlist" — I'm usually on my phone, mid-conversation, and I want it to take five seconds. Right now it doesn't, so most of the time the playlist just never gets sent.
 
 ## The Job It Does
-When a new semester starts and I have a stack of syllabi to go through, I want to turn all my classes and assignments into a working calendar quickly, so I don't waste hours doing the same repetitive data entry every few months.
+When a friend and I are on different music services and I want to share a playlist with them, I want to send one link that rebuilds the playlist in whatever app they already use, so we can trade music without either of us switching services or adding songs one at a time.
 
 ## What I Do Instead Today
-Right now I just manually enter everything into Apple Calendar. I go through each syllabus, type in the class times, set the repeat settings by hand, and go back through the assignment list to add every due date one at a time.
+I screenshot the track list and send the picture, or I paste a few individual song links into the group chat and let them look up the rest. Sometimes I just name a couple of artists and give up on sending the actual playlist. The paid converter apps exist, but I'm not paying a subscription to send a friend a playlist.
 
 ## My Biggest Unknown
-I'm not sure yet if I can actually pull structured info like dates and times out of syllabi, since every professor formats them differently. I also don't know if I'll be able to connect directly to Apple Calendar to add events automatically, or if I'll need to build something separate that exports a file into it. And some things, like extracurriculars, won't come from a syllabus at all, so I need to figure out how those fit in too.
+Whether the song matching is good enough to be worth using. Even if I can read a playlist from one service and write it to the other, the two catalogs don't line up — remixes, live versions, features, explicit vs. clean, and songs that just aren't available on one of them. If a 40-song playlist arrives with 12 songs wrong or missing, nobody uses this twice. The other unknown is access: I don't know yet what Spotify's Web API and Apple's MusicKit will actually let me do with playlists on a free or student developer account, especially writing to someone else's library.
+
+## Stack Guess
+Spotify Web API and Apple MusicKit for reading and writing playlists, OAuth for both so each person connects their own account, and a small web app so there's nothing to install — probably a React front end with a Node or Python backend. This will almost certainly change by Week 7.
