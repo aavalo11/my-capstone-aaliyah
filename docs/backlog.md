@@ -13,7 +13,7 @@ kept in a holding pen and are not eligible for MUST until evidence exists.
 | ID | Job story | Evidence strength |
 |---|---|---|
 | **J1** | When I'm somewhere with bad signal, help me already have the music on my phone, so I'm not stuck in silence. | Strong — raised 4x unprompted in W01 |
-| **J2** | When I'm DJing an event, help me get from a pile of song ideas to a set list I can actually run. | Strong — W01 |
+| **J2** | When I'm DJing an event, help the songs play in the intended order and transition cleanly, so the set doesn't stall between tracks. | Moderate — W01 (DJs at KTP events; transition need from interviewer recall, not notes) |
 | **J3** | When I love an artist, help my money reach them instead of renting them. | Moderate — W01 |
 | **J4** | When my friends and I listen together, help everyone contribute without first negotiating platforms. | Weak — W01 says "nice to," then declines it |
 | **J5** | When I've made a playlist I'm proud of, help my friend actually hear it. | **None yet — founder-sourced** |
@@ -27,7 +27,7 @@ finding, and the rest of this document is organized around fixing it.
 
 | Code | Source | Location | Status |
 |---|---|---|---|
-| **W01** | Interview 1 — undergrad, Spotify via family plan, DJs KTP events | `docs/research/interview-01.md` | Conducted; **notes not yet written to file (file is empty)**. Date not recorded. |
+| **W01** | Interview 1 — undergrad, Spotify via family plan, DJs at KTP events | `docs/research/interview-01.md` | Conducted 2026-09-10, in person. Notes transcribed verbatim. |
 | **SELF-01** | Own observed behaviour — receiving a playlist screenshot | not yet created | **Not logged.** Claimed in `01-concept-brief.md` but never recorded as an observation. |
 | **CB-01** | Own logged unknown — catalog match quality | `docs/01-concept-brief.md` line 19 | Written 2026-09-17 |
 | **W02** | Person who has had a playlist stranded on the wrong service | `docs/research/interview-02.md` | **Not run** (file is empty scaffolding) |
@@ -35,14 +35,15 @@ finding, and the rest of this document is organized around fixing it.
 
 ### Evidence hygiene — fix before this is presented
 
-- W01 notes exist only in chat scratch. Until they are written to
-  `interview-01.md`, every W01 pointer in this document dangles.
-- W01 has no recorded date. Recover it or mark it unrecoverable.
 - `41000` in the raw notes is garbled. Do not cite a number that cannot be reconstructed.
+  The usable figure from that exchange is 2 hours/day.
 - `Titles` in the raw notes is almost certainly **Tidal**. Confirm before quoting.
 - `Storage` is a bare word with no claim attached. Recover what was said, or drop S2.
-- W01 was conducted with a named person ("DJ Charles"). Decide whether consent to be
-  named was given; default to the code `W01`.
+- `Easy to sync with projects` was originally over-read as "export tracklists to DJ
+  software." The participant did not say that. Evidence for S3 is withdrawn; ask what
+  "projects" meant before citing that line again.
+- "DJ Charles" in the raw notes is an in-joke from the conversation, **not the
+  participant's name.** No naming-consent question arises; cite as W01.
 
 ---
 
@@ -114,8 +115,11 @@ software reads, so that I'm not retyping 40 songs at the booth.
   **then** those cells are empty and the file header states `28/40 with BPM` — no
   invented values.
 
-**Evidence.** W01 — "DJ Charles / for KTP events"; "Easy to sync with projects"; "Gets
-the job done."
+**Evidence.** **WITHDRAWN 2026-09-17.** Originally cited W01's "Easy to sync with
+projects," read as meaning DJ-software export. The participant never said that, and the
+meaning of "projects" was not recovered — see `interview-01.md` §5. The real DJ-adjacent
+need was about **transitions between songs** (S11), not tracklist export. This story is
+now founder-sourced and demoted to COULD. Re-evidence it or cut it.
 
 ---
 
@@ -130,7 +134,33 @@ no connection, so that dead internet doesn't end the event.
   open the set list offline, **then** those three are visibly flagged as unplayable, so
   I find out at load-in and not mid-set.
 
-**Evidence.** W01 — event DJing plus repeated download friction (J1 and J2 intersect).
+**Evidence.** W01 — DJs at KTP events (raw notes), plus repeated download friction, four
+mentions (J1 and J2 intersect here). Note the venue-Wi-Fi scenario is inferred, not
+stated: he said downloading is hard, not that it has failed him at an event. Confirm.
+
+---
+
+---
+
+**S11.** As someone who DJs at events, I want a rebuilt playlist to keep the order and
+segues the original had, so that the set doesn't stall or jump between tracks the way the
+original never did.
+
+**Acceptance criteria**
+
+- [ ] **Given** a source playlist in a deliberate order, **when** it is rebuilt in the
+  target service, **then** track order is preserved exactly, including duplicates.
+- [ ] **Given** two tracks that segue in the source (continuous mix, no gap), **when**
+  the playlist is rebuilt, **then** they remain adjacent and in order.
+- [ ] **Negative — Given** a segued pair where the second track is unavailable in the
+  target service, **when** the playlist is rebuilt, **then** the break is flagged on the
+  surviving track ("next track missing — segue broken"), so the DJ finds out before the
+  set, not during it.
+
+**Evidence.** W01 §1a — participant wants to "DJ songs and have them transition better."
+**Moderate/weak: this is interviewer recall, not in the written notes.** Confirm in
+follow-up, and specifically ask whether he means live mixing or in-app crossfade — the
+answer changes whether this story is buildable at all (see WON'T).
 
 ---
 
@@ -260,9 +290,10 @@ services." Treat as unevidenced.
 | MUST | SHOULD | COULD | WON'T (+ why not) |
 |---|---|---|---|
 | S7 — send to playable link *(provisional)* | S9 — fix a bad match | S1 — bulk offline download | Cross-service live "jam" |
-| S8 — preview before writing *(provisional)* | S3 — DJ CSV export | S2 — size before download | Moving/uploading downloaded audio |
-| S6 — own-account connect, narrow scopes | S10 — collaborative playlist | S5 — buy links | BPM/key on export |
-| Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | DJ request intake | Android / web parity |
+| S8 — preview before writing *(provisional)* | S11 — preserve order and segues | S2 — size before download | Moving/uploading downloaded audio |
+| S6 — own-account connect, narrow scopes | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
+| Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
+| | | DJ request intake | Android / web parity |
 
 **MUST — "would you delay launch for this?"** Yes to all four. Without S7 there is no
 product. Without S8's preview, the first person who opens a link and finds junk in their
@@ -271,8 +302,10 @@ all. Without the honest match report the product silently lies about what your f
 hearing, which is worse than the screenshot it replaces.
 
 **SHOULD — "could v1 ship without it and still do the job?"** Yes, painfully. A wrong
-match is survivable if S7 AC 4 at least *tells* you. S3 and S4 serve J2, which is better
-evidenced than anything in MUST, but it is a different job and belongs in v1.1.
+match is survivable if S7 AC 4 at least *tells* you. S4 and S11 serve J2, which is
+better evidenced than anything in MUST, but it is a different job and belongs in v1.1.
+Note that plain order preservation is table stakes and is assumed inside S7; what S11
+adds beyond that is the broken-segue warning.
 
 **COULD — "would anyone notice if it never arrived?"** S1 and S2 are the best-evidenced
 stories in this backlog and they sit in COULD. That is not an error: they serve J1, which
@@ -285,6 +318,11 @@ the board.
   service. Not a scope cut; not buildable this semester.
 - **Moving downloaded audio** — DRM-encrypted and license-bound to the account. This was
   W01's own suggestion and it is the one request that has to be refused.
+- **Controlling crossfade / transition timing in the recipient's app** — crossfade is a
+  client playback setting the listener toggles in their own app. Neither the Spotify Web
+  API nor MusicKit exposes it to a third party. If W01's transition comment turns out to
+  mean in-app crossfade rather than live mixing, **S11 is not buildable** and only its
+  segue-warning half survives.
 - **BPM/key on export** — neither Spotify nor Apple exposes it reliably; S3 ships
   without it rather than not shipping.
 - **Android / web parity** — one platform demoed well beats two half-built.
@@ -320,8 +358,9 @@ collaboration, downloads, DJ export, buy links, remembered corrections.
 
 ## 6. Open work before this board is trustworthy
 
-1. **Write W01's notes into `docs/research/interview-01.md`.** Until then every W01
-   pointer here dangles.
+1. **Close W01's open questions** (`interview-01.md` §7): was "Titles" Tidal, what did
+   "Storage" mean, what were the "projects," and does "transition better" mean live
+   mixing or in-app crossfade. The last one decides whether S11 is buildable.
 2. **Log SELF-01.** It is legitimate evidence only if it actually happened. Record:
    date, what was received, what you did, how many tracks you typed before stopping,
    what you lost by giving up.
