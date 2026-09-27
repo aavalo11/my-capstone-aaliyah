@@ -1,7 +1,8 @@
 # Lab 3 Backlog — Crossfade
 
 **Status:** draft, provisional pending W02/W03
-**Last updated:** 2026-09-17
+**Last updated:** 2026-09-27. S6, S7, S8, the MoSCoW board, and the MVP slice were brought
+in line with `02-prd.md` (§11) and ADR 0006.
 
 Every story below carries a pointer back to evidence. Stories with no evidence are
 kept in a holding pen and are not eligible for MUST until evidence exists.
@@ -205,6 +206,10 @@ conversation with my parents.
 
 **Evidence.** W01 — "Parents pay for Spotify."
 
+**Status (2026-09-27): out of v1.** Under PRD D1 / ADR 0006 nobody connects an account, so
+there's nothing for a plan owner to see. The need behind this story is met by design. The
+ACs above apply again only if spike K3 fails and v1 falls back to recipient OAuth.
+
 ---
 
 ### J5 — The bridge itself (HOLDING PEN — no evidence yet)
@@ -220,16 +225,24 @@ retyping it from a screenshot.
 
 **Acceptance criteria**
 
-- [ ] **Given** a connected Apple Music account, **when** I pick a playlist and share,
-  **then** I get a link in under 10 seconds.
-- [ ] **Given** that link, **when** my friend opens it and connects Spotify, **then**
-  at least 90% of tracks are playable and playback starts within 3 taps of opening.
+- [ ] **Given** a shared US Apple Music playlist link with 25 tracks and the sender
+  passcode, **when** I tap **Create link**, **then** I get a Crossfade link within 15
+  seconds, with progress visible while it builds. (PRD R1)
+- [ ] **Given** that link, **when** my friend opens it and taps **Play in Spotify**,
+  **then** playback starts within 3 taps of opening the text, and they're never asked to
+  log in. (PRD R5)
 - [ ] **Given** a 50-track playlist, **when** matching completes, **then** I see
-  `matched 47 of 50` and can read the 3 failures by name before I send.
-- [ ] **Negative — Given** a track has no equivalent in the target service, **when** the
-  recipient views the playlist, **then** it appears greyed with a reason ("not on
-  Spotify in US") — never silently dropped, and never substituted with a different
-  recording.
+  `Matched 47 of 50` and can read the 3 failures by name before I send. (PRD R3)
+- [ ] **Negative — Given** a track has no equivalent in Spotify, **when** the recipient
+  views the playlist, **then** it appears greyed with `Not found on Spotify (US)`. It's
+  never silently dropped, and never substituted with a different recording as defined by
+  PRD R2's matching rules.
+
+*Changed 2026-09-27:* "connected Apple Music account" became a pasted link, and "connects
+Spotify" was removed (ADR 0006). "At least 90% playable" moved to the PRD §8 match
+benchmark, because it's a property of the catalog, not a pass/fail on one playlist. The
+reason text became `Not found on Spotify (US)`, because v1 can't tell "not on Spotify"
+from "not found."
 
 **Evidence.** **NONE.** Founder assumption; the intent is stated in
 `01-concept-brief.md` but no observation backs it. Test in W02 Q1.
@@ -243,12 +256,15 @@ library, so that a shared link can't clutter my account.
 **Acceptance criteria**
 
 - [ ] **Given** an opened link, **when** it loads, **then** nothing has been created in
-  my library, and "Play now" and "Save to library" are separate, equally available
-  actions.
-- [ ] **Negative — Given** I play without saving and close the app, **when** I reopen my
-  library, **then** no new playlist exists.
+  my library, and I'm offered **Play in Spotify** without being asked to log in.
+- [ ] **Negative — Given** I play and close the app, **when** I reopen my library,
+  **then** no new playlist exists.
 
 **Evidence.** **NONE.** Test in W02 Q3.
+
+*Changed 2026-09-27:* this is now satisfied by design, because Crossfade never has access
+to the recipient's account (ADR 0006). "Save to library" left v1. A recipient who wants
+to keep the playlist can Follow it in Spotify.
 
 ---
 
@@ -290,16 +306,18 @@ services." Treat as unevidenced.
 | MUST | SHOULD | COULD | WON'T (+ why not) |
 |---|---|---|---|
 | S7 — send to playable link *(provisional)* | S9 — fix a bad match | S1 — bulk offline download | Cross-service live "jam" |
-| S8 — preview before writing *(provisional)* | S11 — preserve order and segues | S2 — size before download | Moving/uploading downloaded audio |
-| S6 — own-account connect, narrow scopes | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
+| S8 — nothing written to recipient *(provisional; met by design, ADR 0006)* | S11 — preserve order and segues | S2 — size before download | Moving/uploading downloaded audio |
+| ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
 
-**MUST — "would you delay launch for this?"** Yes to all four. Without S7 there is no
-product. Without S8's preview, the first person who opens a link and finds junk in their
-library never opens a second. Without S6 the one real interviewed user cannot connect at
-all. Without the honest match report the product silently lies about what your friend is
-hearing, which is worse than the screenshot it replaces.
+**MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
+product. Without S8, the first person who opens a link and finds junk in their library
+never opens a second. Without the honest match report the product silently lies about
+what your friend is hearing, which is worse than the screenshot it replaces.
+
+S6 left MUST on 2026-09-27. W01's family-plan constraint still matters, but under ADR 0006
+there's no login for the plan owner to see, so the need is met without building S6.
 
 **SHOULD — "could v1 ship without it and still do the job?"** Yes, painfully. A wrong
 match is survivable if S7 AC 4 at least *tells* you. S4 and S11 serve J2, which is
@@ -331,27 +349,29 @@ the board.
 
 ## 5. MVP slice
 
-Smaller than MUST. Drop S6 (demo on a personal account and note the constraint) and drop
-the correction flow entirely.
+Equal to MUST now that S6 is out, minus the correction flow. The full spec is
+`02-prd.md` §4 and §6.
 
-> **Apple Music → Spotify, one direction, one playlist, read-only preview, honest match
-> report, play.**
+> **Apple Music → Spotify, one direction, one playlist, no logins, honest match report,
+> play.**
 >
-> S7 (one direction only) + S8 (play-now path only) + the match report.
+> S7 (one direction only) + S8 (by design) + the match report.
 
 ### The screen-record test, shot by shot
 
-1. Founder connects Apple Music, picks a real 25-track playlist. A link appears.
+1. Founder pastes a shared link to a real 25-track Apple Music playlist into Crossfade.
+   A link appears.
 2. Link goes to a friend by text — on camera, unstaged.
-3. Friend opens it on their phone and connects Spotify.
+3. Friend opens it on their phone. No login.
 4. Screen reads `Matched 23 of 25`, with the 2 failures named on screen.
-5. Friend taps play. **Audio comes out of the phone.**
+5. Friend taps **Play in Spotify**, then play. **Audio comes out of the phone.**
 6. Friend closes the app, opens their Spotify library — nothing was added.
 
 Six shots, no narration, no "and then imagine it saves." Step 5 is the whole capstone,
 step 4 is what makes it trustworthy, step 6 is what makes it shareable twice.
 
-**Explicitly out of the slice:** reverse direction, save-to-library, match correction,
+**Explicitly out of the slice:** reverse direction, any account connection (sender or
+recipient), save-to-library, match correction,
 collaboration, downloads, DJ export, buy links, remembered corrections.
 
 ---
