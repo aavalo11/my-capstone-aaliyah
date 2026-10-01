@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offline · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>late train home</h1>
+<p class="lede">About 180 MB offline. You have 2.1 GB free.</p>
+<a class="btn btn-primary" href="#">Make available offline</a>
+<h2>Downloading</h2>
+<p class="progress-line">31 of 50 downloaded</p>
+<div class="meter"><b style="width:62%"></b></div>
+<h2>Offline playlists</h2>
+<ol class="tracks">
+  <li><span class="title">Road trip 2026</span><span class="side">412 MB</span><span class="artist">96 tracks</span></li>
+  <li><span class="title">late train home</span><span class="side">180 MB</span><span class="artist">25 tracks</span></li>
+  <li><span class="title">Study, no words</span><span class="side">96 MB</span><span class="artist">40 tracks</span></li>
+</ol>
+<a class="btn btn-quiet" href="#">Remove all three (688 MB)</a>
+
+</main>
+
+<p class="state-label">State: Not enough space</p>
+<main class="screen"><div class="banner">You need 400 MB and have 200 MB free. Free up 200 MB first. Nothing was downloaded.</div></main>
+<p class="state-label">State: Bitrate unknown</p>
+<main class="screen"><p class="lede">About 180 MB offline (approximate, assuming 160 kbps). You have 2.1 GB free.</p></main>
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S1 AC1–2 + negative, S2 AC1–2 + negative<br>
+  
+  <ul><li>S1 and S2 need a connected account and the native app's downloads. ADR 0006 says no accounts; a web page can't drive Spotify's download manager. Not buildable as written.</li><li>Received playlists are web pages, not files — "downloaded to my phone" has nothing to download.</li><li>This screen has no entry point from any MVP screen.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a></p>
+</aside>
+</body>
+</html>

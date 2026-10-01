@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create a link · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>Send a playlist to someone on Spotify</h1>
+<p class="lede">In Apple Music, open the playlist, tap Share, then Copy Link. Paste it here.</p>
+
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="" placeholder="https://music.apple.com/us/playlist/…" class="">
+
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+
+
+</main>
+
+<p class="state-label">State: Wrong passcode</p>
+<main class="screen">
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ" placeholder="https://music.apple.com/us/playlist/…" class="">
+
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="is-error">
+<p class="field-error">Wrong passcode.</p>
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+<p class="state-label">State: Not a playlist link</p>
+<main class="screen">
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://open.spotify.com/playlist/37i9dQZF1D" placeholder="https://music.apple.com/us/playlist/…" class="is-error">
+<p class="field-error">That isn't an Apple Music playlist link.</p>
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+<p class="state-label">State: Not US</p>
+<main class="screen">
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://music.apple.com/gb/playlist/late-train-home/pl.u-8aAVZ" placeholder="https://music.apple.com/us/playlist/…" class="is-error">
+<p class="field-error">Crossfade only handles US Apple Music links.</p>
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+<p class="state-label">State: Private playlist</p>
+<main class="screen">
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ" placeholder="https://music.apple.com/us/playlist/…" class="is-error">
+<p class="field-error">Apple Music wouldn't share this playlist. Check that it's shared by link.</p>
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+<p class="state-label">State: Too long</p>
+<main class="screen">
+
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://music.apple.com/us/playlist/everything/pl.u-2kQ9" placeholder="https://music.apple.com/us/playlist/…" class="is-error">
+<p class="field-error">This playlist has more than 100 tracks. Crossfade handles up to 100.</p>
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+<p class="state-label">State: Rate-limited</p>
+<main class="screen">
+<div class="banner">Crossfade is rate-limited. Try again in 12 minutes.</div>
+<label for="link">Apple Music link</label>
+<input id="link" type="text" value="https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ" placeholder="https://music.apple.com/us/playlist/…" class="">
+
+<label for="pc">Passcode</label>
+<input id="pc" type="password" value="••••••" class="">
+
+<a class="btn btn-primary" href="building.html">Create link</a>
+</main>
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S7 AC1 (PRD R1 empty state and errors)<br>
+  
+  <ul><li>Nothing says where the sender finds this page — bookmark? home screen? No story.</li><li>"Sender passcode" is in the AC but no story is about the sender being one person (it's D7).</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a> &nbsp; <a href="building.html">Next on the MVP path</a></p>
+</aside>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DJ set · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>KTP fall formal</h1>
+<p class="lede">40 tracks, ready offline. 3 failed to download.</p>
+<ol class="tracks">
+  <li><span class="title">Pink + White</span><span class="artist">Frank Ocean</span></li>
+  <li class="flag"><span class="title">Good Days</span><span class="artist">SZA</span><div class="meta">Next track missing — segue broken</div></li>
+  <li class="miss"><span class="title">Bad Habit</span><span class="artist">Steve Lacy</span><div class="meta">Didn't download. Won't play offline.</div></li>
+  <li><span class="title">Get You</span><span class="artist">Daniel Caesar</span></li>
+  <li class="miss"><span class="title">Cranes in the Sky</span><span class="artist">Solange</span><div class="meta">Didn't download. Won't play offline.</div></li>
+  <li><span class="title">After the Storm</span><span class="artist">Kali Uchis</span></li>
+</ol>
+<a class="btn btn-primary" href="#">Export for Rekordbox</a>
+<p class="small">28 of 40 tracks have BPM. The rest are left blank.</p>
+
+</main>
+
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S4 AC1 + negative, S11 AC2–3, S3 AC1 + negative<br>
+  
+  <ul><li>Nothing says how a playlist becomes "a set list marked for an event". No story creates this screen.</li><li>S11 needs segue data. Neither Apple nor Spotify exposes "these two tracks segue" — where does it come from?</li><li>S3's evidence was withdrawn but it's still in COULD, so it's drawn. Decide: re-evidence or move to Won't.</li><li>Three different jobs (offline, order, export) on one screen because no story says which screen they belong to.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a></p>
+</aside>
+</body>
+</html>

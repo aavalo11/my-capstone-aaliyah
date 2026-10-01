@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link ready · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>late train home</h1>
+<p class="count">23<span> of 25 matched</span></p>
+<div class="strip" role="img" aria-label="23 of 25 tracks matched, in playlist order"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="close"></i><i class="miss"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="miss"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+<ul class="legend"><li>Matched</li><li class="close">Close match</li><li class="miss">Not found</li></ul>
+<p>Your friend won't hear “Easy” by Mac Ayres and “Honey” by Raveena.</p>
+<h2>Your link</h2>
+<p class="linkbox">https://crossfade.app/p/x7Kq2mVb9R</p>
+<a class="btn btn-primary" href="playlist.html">Copy link</a>
+<h2>Every track</h2>
+<ol class="tracks" style="counter-reset:t 0"><li class=""><span class="title">Pink + White</span><span class="artist">Frank Ocean</span></li><li class=""><span class="title">Good Days</span><span class="artist">SZA</span></li><li class=""><span class="title">Bad Habit</span><span class="artist">Steve Lacy</span></li><li class=""><span class="title">Get You</span><span class="artist">Daniel Caesar</span></li><li class=""><span class="title">Cranes in the Sky</span><span class="artist">Solange</span></li><li class=""><span class="title">After the Storm</span><span class="artist">Kali Uchis</span></li><li class=""><span class="title">Focus</span><span class="artist">H.E.R.</span></li><li class=""><span class="title">Blue Lights</span><span class="artist">Jorja Smith</span></li><li class=""><span class="title">Dead Man Walking</span><span class="artist">Brent Faiyaz</span></li><li class=""><span class="title">I Want You Around</span><span class="artist">Snoh Aalegra</span></li><li class=""><span class="title">Heartbreak Anniversary</span><span class="artist">Giveon</span></li><li class="close"><span class="title">See You Again</span><span class="artist">Tyler, The Creator</span><div class="meta"><span class="tag">Close match.</span> Spotify has “See You Again (feat. Kali Uchis)” by Tyler, The Creator, Kali Uchis</div></li><li class="miss"><span class="title">Easy</span><span class="artist">Mac Ayres</span><div class="meta">Not found on Spotify (US)</div></li><li class=""><span class="title">Roll Some Mo</span><span class="artist">Lucky Daye</span></li><li class=""><span class="title">Love Me Not</span><span class="artist">Ravyn Lenae</span></li><li class=""><span class="title">Next Lifetime</span><span class="artist">Erykah Badu</span></li><li class=""><span class="title">Redbone</span><span class="artist">Childish Gambino</span></li><li class=""><span class="title">Girls Need Love</span><span class="artist">Summer Walker</span></li><li class=""><span class="title">Tadow</span><span class="artist">Masego</span></li><li class=""><span class="title">Them Changes</span><span class="artist">Thundercat</span></li><li class="miss"><span class="title">Honey</span><span class="artist">Raveena</span><div class="meta">Not found on Spotify (US)</div></li><li class=""><span class="title">Slow Dancing in the Dark</span><span class="artist">Joji</span></li><li class=""><span class="title">Why Don&#x27;t You</span><span class="artist">Cleo Sol</span></li><li class=""><span class="title">Evergreen</span><span class="artist">Omar Apollo</span></li><li class=""><span class="title">River</span><span class="artist">Leon Bridges</span></li></ol>
+
+</main>
+
+<p class="state-label">State: Copied</p>
+<main class="screen"><p class="linkbox">https://crossfade.app/p/x7Kq2mVb9R</p><a class="btn btn-primary">Copied</a></main>
+<p class="state-label">State: Nothing matched — no link issued</p>
+<main class="screen">
+<h1>Untitled playlist</h1>
+<p class="count">0<span> of 8 matched</span></p>
+<div class="strip"><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i></div>
+<p>None of these tracks are on Spotify (US), so no link was made.</p>
+<a class="btn btn-quiet" href="create.html">Try another playlist</a></main>
+<p class="state-label">State: Failed partway</p>
+<main class="screen">
+<div class="banner">Something failed on Spotify's side. Nothing was sent. Try again.</div>
+<a class="btn btn-primary" href="create.html">Try again</a></main>
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S7 AC3, honest match report (PRD R3)<br>
+  
+  <ul><li>After Copy link, the sender's job ends here — nothing says what this page becomes, or if they can find the link again tomorrow.</li><li>S7 AC3 says "before I send" — but there's no step to <em>not</em> send if the misses are bad. No story for discarding a link.</li><li>Can the sender fix the close match before sending? S9 is written for the recipient only.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a> &nbsp; <a href="playlist.html">Next on the MVP path</a></p>
+</aside>
+</body>
+</html>

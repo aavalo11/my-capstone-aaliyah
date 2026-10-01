@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crossfade prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css"></head>
+<body><div class="index">
+<a class="brand" href="index.html">Crossfade</a>
+<h1>Full-coverage prototype</h1>
+<p class="lede" style="max-width:60ch">Every non-Won't story in <code>docs/backlog.md</code>, drawn as static screens. Nothing works: no data, no saving, no logins. Each screen ends with a note naming the stories it serves and the gaps found drawing it.</p>
+<h2>MVP slice — the six-shot test</h2>
+<ol class="path">
+  <li><span><a href="create.html">Create a link</a>: sender pastes a 25-track Apple Music link and the passcode.</span></li>
+  <li><span><a href="building.html">Building</a> → <a href="sent.html">Link ready</a>: <em>Matched 23 of 25</em>, two misses named, Copy link.</span></li>
+  <li class="hole"><span>Link goes to a friend by text. <strong>Happens in Messages — no Crossfade screen.</strong></span></li>
+  <li><span><a href="playlist.html">Recipient view</a>: opens with no login, sees the same report.</span></li>
+  <li class="hole"><span>Taps <em>Play in Spotify</em>, audio plays. <strong>Happens in Spotify — can't be prototyped here.</strong></span></li>
+  <li class="hole"><span>Library unchanged. <strong>Happens in Spotify.</strong></span></li>
+</ol>
+<p class="small">Shots 3, 5 and 6 leave Crossfade. The slice is end-to-end only if the Spotify playlist really exists on Crossfade's account (PRD K3).</p>
+<h2>Screen inventory</h2>
+<table><thead><tr><th>Screen</th><th>Stories</th><th>Band</th></tr></thead><tbody><tr><td><a href="connect.html">Connect Spotify</a></td><td>S6</td><td>K3 fallback only</td></tr><tr><td><a href="create.html">Create a link</a></td><td>S7 AC1</td><td>MVP</td></tr><tr><td><a href="building.html">Building</a></td><td>S7 AC1</td><td>MVP</td></tr><tr><td><a href="sent.html">Link ready</a></td><td>S7 AC3, match report</td><td>MVP</td></tr><tr><td><a href="playlist.html">Recipient view</a></td><td>S7 AC2/AC4, S8, match report, S11 AC1</td><td>MVP</td></tr><tr><td><a href="missing.html">Link doesn&#x27;t exist</a></td><td>none (PRD R5)</td><td></td></tr><tr><td><a href="fix-match.html">Fix a match</a></td><td>S9</td><td>SHOULD</td></tr><tr><td><a href="track.html">Track / buy</a></td><td>S5</td><td>COULD</td></tr><tr><td><a href="offline.html">Offline</a></td><td>S1, S2</td><td>COULD</td></tr><tr><td><a href="dj-set.html">DJ set</a></td><td>S4, S11 AC2–3, S3</td><td>SHOULD / COULD</td></tr><tr><td><a href="group.html">Group playlist</a></td><td>S10</td><td>SHOULD</td></tr></tbody></table>
+<p class="small" style="margin-top:16px">Not drawn: DJ request intake (on the COULD board with no story). Won't-band items excluded.</p>
+</div></body></html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect Spotify · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>Connect your Spotify</h1>
+<p class="lede">Only needed if you want playlists saved to your own account.</p>
+<h2>Crossfade will be able to</h2>
+<ul class="choice">
+  <li><span><strong>See your playlists</strong><span class="d">To read what you want to send.</span></span></li>
+  <li><span><strong>Make new playlists</strong><span class="d">Only ones you ask for. It never edits or deletes yours.</span></span></li>
+</ul>
+<p class="small" style="margin-top:20px">On a family plan? This connects your profile only. The person who pays gets no email, notification or setting change.</p>
+<a class="btn btn-primary" href="#">Continue to Spotify</a>
+<a class="btn btn-quiet" href="create.html">Not now</a>
+
+</main>
+
+<p class="state-label">State: Connected</p>
+<main class="screen">
+<h1>Spotify connected</h1>
+<p class="lede">Signed in as aaliyah.a. Nothing changed on your family plan.</p>
+<a class="btn btn-primary" href="create.html">Send a playlist</a>
+<a class="btn btn-text" href="#">Disconnect Spotify</a>
+<p class="small">Disconnecting deletes Crossfade's access within a minute. Playlists it made stay in your library.</p>
+</main>
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S6 (all three ACs, drawn as the K3 fallback)<br>
+  PRD D1 / ADR 0006 say nobody connects in v1. This screen only exists if spike K3 fails.
+  <ul><li>Where does this sit in the flow? Before Create link, or only for the recipient? S6 doesn't say.</li><li>S6 AC3 (disconnect, tokens gone in 60 s) needs a settings screen no story asks for. Not drawn.</li><li>Sender-side Apple Music connect has no screen: S1 assumes "a connected account" too.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a></p>
+</aside>
+</body>
+</html>

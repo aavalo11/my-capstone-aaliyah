@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix a match · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<div class="dim">
+<h1>late train home</h1>
+<ol class="tracks" style="counter-reset:t 10"><li class=""><span class="title">Heartbreak Anniversary</span><span class="artist">Giveon</span></li><li class="close"><span class="title">See You Again</span><span class="artist">Tyler, The Creator</span><div class="meta"><span class="tag">Close match.</span> Spotify has “See You Again (feat. Kali Uchis)” by Tyler, The Creator, Kali Uchis</div></li><li class="miss"><span class="title">Easy</span><span class="artist">Mac Ayres</span><div class="meta">Not found on Spotify (US)</div></li></ol>
+</div>
+<div class="sheet" role="dialog" aria-label="Pick the right recording">
+<h2 style="margin-top:0">Pick the right “See You Again”</h2>
+<p class="small">Original is 3:00 on Flower Boy.</p>
+<ul class="choice"><li><input type="radio" name="a"  aria-label="See You Again"><span><strong>See You Again</strong><span class="d">3:00, from Flower Boy (2017)</span></span></li><li><input type="radio" name="a" checked aria-label="See You Again (feat. Kali Uchis)"><span><strong>See You Again (feat. Kali Uchis)</strong><span class="d">3:00, from Flower Boy (2017)</span></span></li><li><input type="radio" name="a"  aria-label="See You Again (Sped Up)"><span><strong>See You Again (Sped Up)</strong><span class="d">2:31, from Sped Up Hits Vol. 4 (2023)</span></span></li><li><input type="radio" name="a"  aria-label="See You Again (Live)"><span><strong>See You Again (Live)</strong><span class="d">3:24, from Camp Flog Gnaw (2019)</span></span></li></ul>
+<a class="btn btn-primary" href="playlist.html">Use this version</a>
+</div>
+
+</main>
+
+<p class="state-label">State: Nothing above threshold</p>
+<main class="screen">
+<h2 style="margin-top:0">No close versions of “Easy”</h2>
+<label for="q">Search Spotify</label>
+<input id="q" type="search" value="Easy Mac Ayres">
+<a class="btn btn-primary" href="#">Search</a></main>
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S9 AC1 (up to 5 alternates, duration + album)<br>
+  
+  <ul><li>Swapping changes the Spotify playlist for <em>everyone</em> with the link — PRD R4 says v1 never edits a playlist. S9 and R4 contradict.</li><li>S9 AC2 (correction reused next time) needs to know who the recipient is. R6 stores nothing about them.</li><li>I invented "Original is 3:00 on Flower Boy" so the choice is possible. S9 doesn't say what's shown about the source.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a></p>
+</aside>
+</body>
+</html>

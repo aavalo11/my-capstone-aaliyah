@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Group playlist · Crossfade prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="screen">
+<a class="brand" href="index.html">Crossfade</a>
+
+<h1>Friday pregame</h1>
+<div class="people" aria-label="4 people"><span>A</span><span class="am">J</span><span>M</span><span class="am">T</span></div>
+<p class="small">2 on Spotify, 2 on Apple Music</p>
+<a class="btn btn-primary" href="#">Add a song</a>
+<h2>Songs</h2>
+<ol class="tracks">
+  <li><span class="title">Redbone</span><span class="side">Jordan</span><span class="artist">Childish Gambino</span></li>
+  <li><span class="title">Tadow</span><span class="side">Aaliyah</span><span class="artist">Masego</span></li>
+  <li><span class="title">Them Changes</span><span class="side">Maya</span><span class="artist">Thundercat</span></li>
+  <li><span class="title">Next Lifetime</span><span class="side">Tara</span><span class="artist">Erykah Badu</span><div class="meta small">Added by Tara and Jordan, shown once</div></li>
+</ol>
+<h2>Invite</h2>
+<div class="qr" role="img" aria-label="QR code placeholder"></div>
+<p class="small">Placeholder, not a real code.</p>
+<a class="btn btn-quiet" href="#">Copy invite link</a>
+
+</main>
+
+
+<aside class="review" aria-label="Prototype review note">
+  <strong>Serves:</strong> S10 AC1 + negative<br>
+  
+  <ul><li>S10 needs every member connected to their service — contradicts ADR 0006 (no accounts).</li><li>How do people join? I added a QR code and invite link; S10 doesn't say. (Your expectations do.)</li><li>Who can remove a song? Who owns the group? No story.</li><li>"Play together" in your expectations means live listening — that's in Won't. This screen only shares a list.</li></ul>
+  <p style="margin:10px 0 0"><a href="index.html">All screens</a></p>
+</aside>
+</body>
+</html>
