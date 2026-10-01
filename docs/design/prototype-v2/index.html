@@ -1,0 +1,485 @@
+<title>Crossfade Prototype</title>
+<meta name="description" content="Two clickable ideas for sending music across Apple Music and Spotify.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone-width column, app screens swap in place; a fixed bottom bar holds each screen's one primary action. */
+:root {
+  --paper: #FAFAFD;
+  --surface: #FFFFFF;
+  --ink: #1F1D3A;
+  --on-ink: #FFFFFF;
+  --ink-soft: #5B5878;
+  --signal: #2B45D8;
+  --amber: #A86400;
+  --mist: #B9B6CC;
+  --line: #E4E2EE;
+  --danger: #B3261E;
+  --note: #EEEDF7;
+  --font: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14131F; --surface: #1C1B2B; --ink: #ECEBF5; --on-ink: #14131F;
+    --ink-soft: #A6A3BD; --signal: #8C9BFF; --amber: #E3A23B; --mist: #4E4C66;
+    --line: #2C2A42; --danger: #FF8A80; --note: #22213A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14131F; --surface: #1C1B2B; --ink: #ECEBF5; --on-ink: #14131F;
+  --ink-soft: #A6A3BD; --signal: #8C9BFF; --amber: #E3A23B; --mist: #4E4C66;
+  --line: #2C2A42; --danger: #FF8A80; --note: #22213A; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  padding-inline: 20px;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; border-radius: 6px; }
+
+.proto {
+  max-width: 420px; margin: 0 auto; padding-block: 10px;
+  font-size: 13px; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 12px;
+}
+.proto button { background: none; border: 0; color: var(--signal); padding: 0; cursor: pointer; font-size: 13px; }
+
+#app { max-width: 420px; margin: 0 auto; padding-block: 12px 180px; }
+.screen { display: flex; flex-direction: column; gap: 0; }
+
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 28px; }
+.brand::before { content: ""; width: 22px; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ink) 0 45%, var(--signal) 55% 100%); }
+
+h1 { font-size: 40px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 700; font-stretch: 75%; margin: 0 0 12px; text-wrap: balance; }
+h2 { font-size: 20px; letter-spacing: -0.01em; margin: 32px 0 10px; text-wrap: balance; }
+.lede { color: var(--ink-soft); margin: 0 0 24px; max-width: 34ch; }
+.small { font-size: 14px; color: var(--ink-soft); margin: 0; }
+p { margin: 0 0 12px; }
+
+/* buttons */
+.btn { display: block; width: 100%; text-align: center; font-weight: 650; padding: 16px; border-radius: 14px; border: 0; cursor: pointer; text-decoration: none; }
+.btn-primary { background: var(--ink); color: var(--on-ink); font-size: 18px; }
+.btn-primary:disabled { background: var(--mist); color: var(--paper); cursor: default; }
+.btn-quiet { background: transparent; border: 1.5px solid var(--line); color: var(--ink); }
+.btn-text { background: none; border: 0; color: var(--signal); padding: 10px 0; cursor: pointer; font-weight: 600; text-align: left; }
+.back { background: none; border: 0; color: var(--ink-soft); padding: 0; margin: -6px 0 18px; cursor: pointer; font-size: 15px; align-self: flex-start; }
+
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+  padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+.bar-inner { max-width: 380px; margin: 0 auto; display: grid; gap: 8px; }
+.bar .small { text-align: center; }
+
+/* start screen: two ideas */
+.ideas { display: grid; gap: 14px; margin-top: 8px; }
+.idea {
+  text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px;
+  padding: 18px; cursor: pointer; display: grid; gap: 6px;
+}
+.idea:hover { border-color: var(--signal); }
+.idea b { font-size: 22px; letter-spacing: -0.01em; font-stretch: 85%; }
+.idea span { color: var(--ink-soft); font-size: 15px; }
+.idea .which { font-size: 13px; color: var(--signal); font-weight: 600; }
+
+/* fields */
+label { display: block; font-weight: 600; font-size: 15px; margin: 14px 0 6px; }
+input[type=text] {
+  width: 100%; font: inherit; padding: 14px; border: 1.5px solid var(--line); border-radius: 14px;
+  background: var(--surface); color: var(--ink); min-width: 0;
+}
+
+/* track strip */
+.strip { display: flex; gap: 4px; height: 64px; margin: 0 0 14px; }
+.strip i { flex: 1; border-radius: 4px; background: var(--ink); transform-origin: bottom; }
+.strip i.close { background: var(--amber); }
+.strip i.miss { background: transparent; box-shadow: inset 0 0 0 2px var(--mist); }
+.strip i.pending { background: var(--line); }
+.strip.rise i { animation: rise .5s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i) * 22ms); }
+@keyframes rise { from { transform: scaleY(.08); opacity: .2; } }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--ink-soft); margin: 0 0 14px; padding: 0; list-style: none; }
+.legend li::before { content: ""; display: inline-block; width: 10px; height: 14px; border-radius: 2px; margin-right: 6px; vertical-align: -2px; background: var(--ink); }
+.legend .close::before { background: var(--amber); }
+.legend .miss::before { background: transparent; box-shadow: inset 0 0 0 2px var(--mist); }
+.summary { font-size: 21px; line-height: 1.3; font-weight: 600; margin: 0 0 6px; }
+.progress { font-size: 20px; font-weight: 600; margin: 0 0 14px; }
+
+/* rows */
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { display: grid; grid-template-columns: 28px 1fr auto; gap: 0 10px; padding: 12px 0; border-top: 1px solid var(--line); align-items: start; }
+.rows .n { color: var(--ink-soft); font-size: 14px; padding-top: 2px; }
+.rows .t { font-weight: 600; min-width: 0; }
+.rows .a { grid-column: 2; color: var(--ink-soft); font-size: 15px; }
+.rows .m { grid-column: 2; font-size: 14px; margin-top: 4px; }
+.rows .r { grid-column: 3; grid-row: 1 / span 2; font-size: 15px; color: var(--ink-soft); }
+.rows li.close .m { color: var(--amber); }
+.rows li.miss .t, .rows li.miss .a, .rows li.miss .r { color: var(--mist); }
+.rows li.miss .m { color: var(--ink-soft); }
+.rows li.new { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: color-mix(in srgb, var(--signal) 18%, transparent); } }
+
+.linkbox { font-size: 18px; font-weight: 600; padding: 14px 16px; border: 1.5px dashed var(--signal); border-radius: 14px; word-break: break-all; user-select: all; margin: 0 0 4px; }
+.from { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff; background: #3B3866; flex: none; }
+.avatar.am { background: #C2365B; }
+.avatar.sp { background: #1F7A4D; }
+.people { display: grid; gap: 10px; list-style: none; padding: 0; margin: 0 0 8px; }
+.people li { display: flex; align-items: center; gap: 12px; }
+.people .svc { color: var(--ink-soft); font-size: 14px; display: block; }
+
+/* service choice and picker */
+.options { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.opt { width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px; text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; cursor: pointer; }
+.opt[aria-pressed="true"] { border-color: var(--signal); box-shadow: inset 0 0 0 1.5px var(--signal); }
+.opt .d { color: var(--ink-soft); font-size: 14px; display: block; }
+.cover { width: 52px; height: 52px; border-radius: 6px; flex: none; display: grid; place-items: end start; padding: 6px; font-size: 11px; font-weight: 700; color: #fff; line-height: 1; }
+
+.tabs { display: flex; gap: 6px; margin: 0 0 14px; padding: 4px; background: var(--note); border-radius: 12px; }
+.tabs button { flex: 1; border: 0; padding: 10px; border-radius: 9px; background: transparent; cursor: pointer; font-weight: 600; color: var(--ink-soft); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+
+.qrwrap { display: grid; justify-items: start; gap: 8px; margin: 4px 0 18px; }
+canvas.qr { width: 196px; height: 196px; background: #fff; border-radius: 10px; padding: 12px; border: 1.5px solid var(--line); }
+
+.notice { background: var(--note); border-radius: 14px; padding: 14px 16px; font-size: 15px; color: var(--ink-soft); margin: 8px 0 16px; }
+.notice b { color: var(--ink); }
+
+.sheet { background: var(--surface); border-radius: 22px 22px 0 0; border: 1.5px solid var(--line); border-bottom: 0; padding: 14px 18px 8px; margin-top: 18px; }
+.sheet::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
+.addrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.addrow button { flex: none; border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+.addrow button:disabled { color: var(--ink-soft); cursor: default; }
+
+.done-mark { font-size: 64px; line-height: 1; font-weight: 700; font-stretch: 75%; color: var(--signal); margin-bottom: 10px; }
+.choice-row { display: grid; gap: 10px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="proto"><span>Prototype. No real accounts or music.</span><button type="button" id="restart">Start over</button></div>
+<main id="app" aria-live="polite"></main>
+<div class="bar" id="bar" hidden><div class="bar-inner" id="barInner"></div></div>
+
+<script>
+(function () {
+  var TRACKS = [
+    ["Pink + White","Frank Ocean","exact","3:04"],["Good Days","SZA","exact","4:39"],["Bad Habit","Steve Lacy","exact","3:51"],
+    ["Get You","Daniel Caesar","exact","4:38"],["Cranes in the Sky","Solange","exact","4:11"],["After the Storm","Kali Uchis","exact","3:27"],
+    ["Focus","H.E.R.","exact","3:16"],["Blue Lights","Jorja Smith","exact","3:15"],["Dead Man Walking","Brent Faiyaz","exact","4:16"],
+    ["I Want You Around","Snoh Aalegra","exact","3:57"],["Heartbreak Anniversary","Giveon","exact","3:16"],
+    ["See You Again","Tyler, The Creator","close","3:00","See You Again (feat. Kali Uchis)","Tyler, The Creator, Kali Uchis"],
+    ["Easy","Mac Ayres","miss","3:28"],["Roll Some Mo","Lucky Daye","exact","3:17"],["Love Me Not","Ravyn Lenae","exact","3:33"],
+    ["Next Lifetime","Erykah Badu","exact","3:48"],["Redbone","Childish Gambino","exact","5:26"],["Girls Need Love","Summer Walker","exact","2:42"],
+    ["Tadow","Masego","exact","3:22"],["Them Changes","Thundercat","exact","3:08"],["Honey","Raveena","miss","3:35"],
+    ["Slow Dancing in the Dark","Joji","exact","3:29"],["Why Don't You","Cleo Sol","exact","3:11"],["Evergreen","Omar Apollo","exact","2:44"],
+    ["River","Leon Bridges","exact","4:04"]
+  ];
+  var N = TRACKS.length;
+  var MATCHED = TRACKS.filter(function (t) { return t[2] !== "miss"; }).length;
+  var MISSES = TRACKS.filter(function (t) { return t[2] === "miss"; });
+  var secs = function (d) { var p = d.split(":"); return +p[0] * 60 + +p[1]; };
+  var heard = TRACKS.reduce(function (s, t) { return t[2] === "miss" ? s : s + secs(t[3]); }, 0);
+  var LENGTH = Math.floor(heard / 3600) + " hr " + Math.round((heard % 3600) / 60) + " min";
+
+  var SHAREABLE = {
+    playlists: [
+      { name: "late train home", by: "25 songs", color: "#3B3866", n: 25 },
+      { name: "Friday pregame", by: "18 songs", color: "#7A2E4F", n: 18 },
+      { name: "study, no words", by: "40 songs", color: "#2F5D62", n: 40 }
+    ],
+    albums: [
+      { name: "SOS", by: "SZA", color: "#24507A", n: 23 },
+      { name: "Blonde", by: "Frank Ocean", color: "#6B6A5E", n: 17 },
+      { name: "Flower Boy", by: "Tyler, The Creator", color: "#B5781B", n: 14 }
+    ]
+  };
+  var SUGGEST = [
+    ["Best Part", "Daniel Caesar, H.E.R."], ["Location", "Khalid"], ["Pyramids", "Frank Ocean"], ["Kill Bill", "SZA"]
+  ];
+
+  var S = {}; // per-run state
+  function reset() {
+    S = { service: null, tab: "playlists", pick: SHAREABLE.playlists[0], queue: [], members: [], added: {}, tried: S.tried || {} };
+  }
+  reset();
+
+  var app = document.getElementById("app");
+  var bar = document.getElementById("bar");
+  var barInner = document.getElementById("barInner");
+  var timer = null;
+  var history = [];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function brand() { return '<div class="brand">Crossfade</div>'; }
+  function backBtn() { return history.length ? '<button type="button" class="back" data-back>Back</button>' : ""; }
+  function setBar(html) { if (html) { barInner.innerHTML = html; bar.hidden = false; } else { bar.hidden = true; barInner.innerHTML = ""; } }
+
+  function strip(upto, rise) {
+    var out = "";
+    TRACKS.forEach(function (t, i) {
+      var c = { exact: "", close: "close", miss: "miss" }[t[2]];
+      if (upto !== undefined && i >= upto) c = "pending";
+      out += '<i class="' + c + '" style="--i:' + i + '"></i>';
+    });
+    return '<div class="strip' + (rise ? " rise" : "") + '" role="img" aria-label="' + MATCHED + " of " + N + ' songs found on Spotify, in playlist order">' + out + "</div>";
+  }
+  var LEGEND = '<ul class="legend"><li>Found</li><li class="close">Close match</li><li class="miss">Not found</li></ul>';
+  function trackRows() {
+    return '<ol class="rows">' + TRACKS.map(function (t, i) {
+      var m = "";
+      if (t[2] === "close") m = '<span class="m">Close match. Spotify has “' + esc(t[4]) + "” by " + esc(t[5]) + ".</span>";
+      if (t[2] === "miss") m = '<span class="m">Not found on Spotify (US)</span>';
+      return '<li class="' + (t[2] === "exact" ? "" : t[2]) + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(t[0]) + '</span><span class="r">' + t[3] + '</span><span class="a">' + esc(t[1]) + "</span>" + m + "</li>";
+    }).join("") + "</ol>";
+  }
+  var missText = MISSES.map(function (t) { return esc(t[0]) + " by " + esc(t[1]); }).join(", ");
+
+  // ---------- screens ----------
+  var screens = {
+    start: function () {
+      setBar("");
+      return brand() +
+        "<h1>Send music to a friend on another app</h1>" +
+        '<p class="lede">Two ideas for the same problem: you’re on Apple Music, your friend is on Spotify. Try both, then say which you’d use.</p>' +
+        '<div class="ideas">' +
+        '<button type="button" class="idea" data-go="aCreate"><span class="which">Idea 1' + (S.tried.a ? ", tried" : "") + '</span><b>Send a link</b><span>Paste a playlist link, text it to a friend, they press play in Spotify. Nobody signs in.</span></button>' +
+        '<button type="button" class="idea" data-go="bConnect"><span class="which">Idea 2' + (S.tried.b ? ", tried" : "") + '</span><b>Listen together</b><span>Connect your account, share a playlist or album by QR code, and build one list everyone adds to.</span></button>' +
+        "</div>" +
+        (S.tried.a && S.tried.b ? '<button type="button" class="btn btn-quiet" style="margin-top:18px" data-go="vote">I’ve tried both</button>' : "");
+    },
+
+    // ----- Idea 1: send a link (the PRD's v1) -----
+    aCreate: function () {
+      setBar('<button type="button" class="btn btn-primary" data-go="aBuild">Create link</button>');
+      return backBtn() + brand() +
+        "<h1>Send a playlist to someone on Spotify</h1>" +
+        '<p class="lede">In Apple Music, open a playlist, tap Share, then Copy Link. Paste it here.</p>' +
+        '<label for="amlink">Apple Music link</label>' +
+        '<input id="amlink" type="text" value="https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ" autocomplete="off">' +
+        '<p class="small" style="margin-top:8px">Filled in with a sample playlist so you can try it.</p>';
+    },
+    aBuild: function () {
+      setBar('<button type="button" class="btn btn-primary" disabled>Create link</button>');
+      var k = 0;
+      clearInterval(timer);
+      timer = setInterval(function () {
+        k++;
+        var p = document.getElementById("prog"), st = document.getElementById("stripHold");
+        if (!p) { clearInterval(timer); return; }
+        p.textContent = k < 3 ? "Reading playlist…" : "Matching " + Math.min(k - 2, N) + " of " + N + "…";
+        st.innerHTML = strip(Math.max(0, k - 2));
+        if (k - 2 >= N) { clearInterval(timer); setTimeout(function () { go("aReady", true); }, 350); }
+      }, 110);
+      return brand() + "<h1>late train home</h1>" +
+        '<p class="progress" id="prog">Reading playlist…</p><div id="stripHold">' + strip(0) + "</div>" +
+        '<p class="small">Finding each song on Spotify.</p>';
+    },
+    aReady: function () {
+      setBar('<button type="button" class="btn btn-primary" data-copy="https://crossfade.app/p/x7Kq2mVb9R">Copy link</button>' +
+        '<button type="button" class="btn btn-text" style="text-align:center" data-go="aFriend">See what your friend sees</button>');
+      return brand() + "<h1>late train home</h1>" + strip() + LEGEND +
+        '<p class="summary">' + MATCHED + " of " + N + " songs found on Spotify.</p>" +
+        '<p class="small" style="margin-bottom:22px">Your friend won’t hear ' + missText + ".</p>" +
+        "<h2>Your link</h2>" + '<p class="linkbox" id="thelink">https://crossfade.app/p/x7Kq2mVb9R</p>' +
+        '<p class="small">Text it to a friend. They don’t need to sign in.</p>';
+    },
+    aFriend: function () {
+      setBar('<button type="button" class="btn btn-primary" data-go="aPlaying">Play in Spotify</button><p class="small">Opens Spotify. No sign-in, nothing added to your library.</p>');
+      return '<p class="small" style="margin-bottom:14px">Now you’re the friend who got the text.</p>' + brand() +
+        '<div class="from"><span class="avatar" style="background:var(--signal)">A</span><span>Aaliyah sent you this from Apple Music</span></div>' +
+        "<h1>late train home</h1>" + strip(undefined, true) + LEGEND +
+        '<p class="summary">' + MATCHED + " of " + N + ' songs are on Spotify, <span style="white-space:nowrap">' + LENGTH + ".</span></p>" +
+        '<p class="small">Missing: ' + missText + ".</p>" +
+        "<h2>What’s in it</h2>" + trackRows();
+    },
+    aPlaying: function () {
+      S.tried.a = true;
+      setBar('<button type="button" class="btn btn-primary" data-go="start">Back to both ideas</button>');
+      return brand() + '<div class="done-mark">Playing</div>' +
+        "<h1>Spotify would open here and start the playlist</h1>" +
+        '<div class="notice"><b>What just happened:</b> one link, one tap, music. ' + MATCHED + " of " + N + " songs play in order. Nothing was saved to the friend’s library and nobody signed in.</div>" +
+        '<p class="small">In the real app this hands off to Spotify. The prototype stops here.</p>';
+    },
+
+    // ----- Idea 2: listen together (the founder's picture) -----
+    bConnect: function () {
+      var on = function (s) { return S.service === s ? "true" : "false"; };
+      setBar('<button type="button" class="btn btn-primary" data-go="bPick"' + (S.service ? "" : " disabled") + ">Connect " + (S.service || "your account") + "</button>");
+      return backBtn() + brand() +
+        "<h1>Which app do you listen on?</h1>" +
+        '<p class="lede">Crossfade reads your playlists and albums so you can share them.</p>' +
+        '<ul class="options">' +
+        '<li><button type="button" class="opt" data-service="Apple Music" aria-pressed="' + on("Apple Music") + '"><span class="avatar am">AM</span><span><b>Apple Music</b><span class="d">Share from your library</span></span></button></li>' +
+        '<li><button type="button" class="opt" data-service="Spotify" aria-pressed="' + on("Spotify") + '"><span class="avatar sp">S</span><span><b>Spotify</b><span class="d">Share from your library</span></span></button></li>' +
+        "</ul>" +
+        '<p class="small" style="margin-top:16px">On a family plan? Connecting uses your own profile. The person who pays isn’t notified.</p>';
+    },
+    bPick: function () {
+      var list = SHAREABLE[S.tab];
+      setBar('<button type="button" class="btn btn-primary" data-go="bShare">Share “' + esc(S.pick.name) + "”</button>");
+      return backBtn() + brand() +
+        "<h1>Pick something to share</h1>" +
+        '<p class="lede">Signed in to ' + esc(S.service) + " (sample library).</p>" +
+        '<div class="tabs" role="tablist">' +
+        '<button type="button" role="tab" data-tab="playlists" aria-selected="' + (S.tab === "playlists") + '">Playlists</button>' +
+        '<button type="button" role="tab" data-tab="albums" aria-selected="' + (S.tab === "albums") + '">Albums</button></div>' +
+        '<ul class="options">' + list.map(function (x, i) {
+          return '<li><button type="button" class="opt" data-pick="' + i + '" aria-pressed="' + (S.pick === x) + '"><span class="cover" style="background:' + x.color + '">' + esc(x.name.split(" ")[0]) + "</span><span><b>" + esc(x.name) + '</b><span class="d">' + esc(x.by) + "</span></span></button></li>";
+        }).join("") + "</ul>";
+    },
+    bShare: function () {
+      setBar('<button type="button" class="btn btn-primary" data-go="bJoined">Pretend a friend scanned it</button>' +
+        '<button type="button" class="btn btn-quiet" data-copy="https://crossfade.app/j/MV4R">Copy invite link</button>');
+      setTimeout(drawQR, 0);
+      return backBtn() + brand() +
+        "<h1>Show this to your friends</h1>" +
+        '<p class="lede">They scan it with their camera and join from whatever app they use.</p>' +
+        '<div class="qrwrap"><canvas class="qr" id="qr" width="196" height="196" role="img" aria-label="Sample QR code"></canvas>' +
+        '<p class="small">Sample code. It doesn’t scan to anything.</p></div>' +
+        '<p class="linkbox">crossfade.app/j/MV4R</p>' +
+        '<p class="small">Sharing “' + esc(S.pick.name) + "”" + (S.tab === "albums" ? " by " + esc(S.pick.by) : "") + ".</p>";
+    },
+    bJoined: function () {
+      var other = S.service === "Spotify" ? "Apple Music" : "Spotify";
+      var found = Math.max(1, S.pick.n - 1);
+      S.members = [
+        { name: "You", svc: S.service, cls: S.service === "Spotify" ? "sp" : "am" },
+        { name: "Jordan", svc: other, cls: other === "Spotify" ? "sp" : "am" }
+      ];
+      if (!S.queue.length) {
+        S.queue = TRACKS.slice(0, 5).map(function (t) { return { t: t[0], a: t[1], by: "You" }; });
+      }
+      setBar('<button type="button" class="btn btn-primary" data-go="bRoom">Open the group</button>');
+      return brand() + '<div class="done-mark">+1</div>' +
+        "<h1>Jordan joined from " + other + "</h1>" +
+        '<p class="summary">' + found + " of " + S.pick.n + " songs found on " + other + ".</p>" +
+        '<p class="small">One song wasn’t on ' + other + ". Jordan can see which one.</p>";
+    },
+    bRoom: function () {
+      S.tried.b = true;
+      var title = S.pick.name;
+      setBar('<button type="button" class="btn btn-primary" data-go="bPlaying">Play in ' + esc(S.service) + "</button>" +
+        '<p class="small">Everyone plays in their own app. Crossfade keeps the list the same for all of you.</p>');
+      return brand() +
+        "<h1>" + esc(title) + "</h1>" +
+        '<ul class="people">' + S.members.map(function (m) {
+          return '<li><span class="avatar ' + m.cls + '">' + m.name[0] + '</span><span><b>' + m.name + '</b><span class="svc">' + m.svc + "</span></span></li>";
+        }).join("") + "</ul>" +
+        "<h2>Up next</h2>" +
+        '<ol class="rows" id="queue">' + S.queue.map(function (q, i) {
+          return '<li class="' + (q.isNew ? "new" : "") + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(q.t) + '</span><span class="r">' + esc(q.by) + '</span><span class="a">' + esc(q.a) + "</span></li>";
+        }).join("") + "</ol>" +
+        '<div class="sheet"><h2 style="margin-top:0">Add a song</h2>' +
+        SUGGEST.map(function (s, i) {
+          var done = S.added[i];
+          return '<div class="addrow"><span><b>' + esc(s[0]) + '</b><br><span class="small">' + esc(s[1]) + '</span></span><button type="button" data-add="' + i + '"' + (done ? " disabled" : "") + ">" + (done ? "Added" : "Add") + "</button></div>";
+        }).join("") + "</div>";
+    },
+    bPlaying: function () {
+      setBar('<button type="button" class="btn btn-primary" data-go="start">Back to both ideas</button>');
+      return brand() + '<div class="done-mark">Playing</div>' +
+        "<h1>" + esc(S.service) + " would open here with the group list</h1>" +
+        '<div class="notice"><b>What this idea can and can’t do:</b> everyone gets the same list in their own app, and new songs show up for everyone. It can’t make you hear the same second of the same song at the same time. No music app lets another app control playback that way.</div>';
+    },
+
+    vote: function () {
+      setBar('<button type="button" class="btn btn-primary" data-go="start">Back to start</button>');
+      return brand() + "<h1>Which one would you actually use?</h1>" +
+        '<p class="lede">Pick one, then tell Aaliyah why. The reason matters more than the pick.</p>' +
+        '<div class="choice-row">' +
+        '<button type="button" class="idea" data-vote="Send a link"><b>Send a link</b><span>Quick, no sign-in, one playlist at a time.</span></button>' +
+        '<button type="button" class="idea" data-vote="Listen together"><b>Listen together</b><span>Sign in once, share by QR code, one shared list.</span></button>' +
+        '<button type="button" class="idea" data-vote="Neither"><b>Neither</b><span>I’d still send a screenshot, or just not bother.</span></button>' +
+        '</div><p class="summary" id="voted" style="margin-top:18px" hidden></p>';
+    }
+  };
+
+  // ---------- QR placeholder: deterministic pattern with three finder squares ----------
+  function drawQR() {
+    var c = document.getElementById("qr"); if (!c) return;
+    var x = c.getContext("2d"), n = 25, cell = 196 / n, seed = 7;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    x.fillStyle = "#fff"; x.fillRect(0, 0, 196, 196); x.fillStyle = "#1F1D3A";
+    var finder = function (r, q) { return (r < 7 && q < 7) || (r < 7 && q >= n - 7) || (r >= n - 7 && q < 7); };
+    for (var r = 0; r < n; r++) for (var q = 0; q < n; q++) {
+      if (finder(r, q)) continue;
+      if (rnd() > 0.52) x.fillRect(q * cell, r * cell, Math.ceil(cell), Math.ceil(cell));
+    }
+    [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
+      var y0 = p[0] * cell, x0 = p[1] * cell;
+      x.fillRect(x0, y0, 7 * cell, 7 * cell);
+      x.fillStyle = "#fff"; x.fillRect(x0 + cell, y0 + cell, 5 * cell, 5 * cell);
+      x.fillStyle = "#1F1D3A"; x.fillRect(x0 + 2 * cell, y0 + 2 * cell, 3 * cell, 3 * cell);
+    });
+  }
+
+  // ---------- navigation ----------
+  var current = "start";
+  function go(name, replace) {
+    if (!replace && current !== name) history.push(current);
+    if (name === "start") history = [];
+    current = name;
+    clearInterval(timer);
+    app.innerHTML = '<section class="screen">' + screens[name]() + "</section>";
+    window.scrollTo(0, 0);
+  }
+  function rerender() { var y = window.scrollY; app.innerHTML = '<section class="screen">' + screens[current]() + "</section>"; window.scrollTo(0, y); }
+
+  document.addEventListener("click", function (ev) {
+    var el = ev.target.closest("button"); if (!el) return;
+    if (el.id === "restart") { reset(); S.tried = {}; history = []; go("start", true); return; }
+    if (el.hasAttribute("data-back")) { var prev = history.pop() || "start"; current = prev; clearInterval(timer); app.innerHTML = '<section class="screen">' + screens[prev]() + "</section>"; window.scrollTo(0, 0); return; }
+    if (el.dataset.go) {
+      if (el.dataset.go === "bConnect" || el.dataset.go === "aCreate") { var tried = S.tried; reset(); S.tried = tried; }
+      go(el.dataset.go); return;
+    }
+    if (el.dataset.service) { S.service = el.dataset.service; rerender(); return; }
+    if (el.dataset.tab) { S.tab = el.dataset.tab; S.pick = SHAREABLE[S.tab][0]; rerender(); return; }
+    if (el.dataset.pick) { S.pick = SHAREABLE[S.tab][+el.dataset.pick]; rerender(); return; }
+    if (el.dataset.add) {
+      var i = +el.dataset.add; S.added[i] = true;
+      S.queue.forEach(function (q) { q.isNew = false; });
+      S.queue.push({ t: SUGGEST[i][0], a: SUGGEST[i][1], by: "You", isNew: true });
+      if (S.members.length < 3 && Object.keys(S.added).length === 2) {
+        var svc = S.service === "Spotify" ? "Spotify" : "Apple Music";
+        S.members.push({ name: "Maya", svc: svc, cls: svc === "Spotify" ? "sp" : "am" });
+        S.queue.push({ t: "Redbone", a: "Childish Gambino", by: "Maya", isNew: true });
+      }
+      rerender(); return;
+    }
+    if (el.dataset.copy) {
+      var text = el.dataset.copy, label = el.textContent;
+      var done = function () { el.textContent = label === "Copy link" ? "Copied" : "Invite link copied"; setTimeout(function () { el.textContent = label; }, 2000); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function () { selectLink(); done(); });
+      } catch (e) { selectLink(); done(); }
+      return;
+    }
+    if (el.dataset.vote) {
+      var v = document.getElementById("voted");
+      document.querySelectorAll("[data-vote]").forEach(function (b) { b.style.borderColor = b === el ? "var(--signal)" : ""; });
+      v.hidden = false;
+      v.textContent = "You picked “" + el.dataset.vote + ".” Tell Aaliyah what made you choose it.";
+    }
+  });
+  function selectLink() {
+    var box = document.querySelector(".linkbox"); if (!box) return;
+    var r = document.createRange(); r.selectNodeContents(box);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+
+  go("start", true);
+})();
+</script>
