@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crossfade</title>
+  <meta name="description" content="Send an Apple Music playlist to a friend on Spotify.">
+  <meta name="theme-color" content="#1C1A33">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Crossfade">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav" aria-label="Main">
+      <a class="brand" href="#/home">Crossfade</a>
+      <a class="tab" href="#/home" data-route="home"><span class="ico" aria-hidden="true">⌂</span>Home</a>
+      <a class="tab" href="#/create" data-route="create"><span class="ico" aria-hidden="true">＋</span>Create</a>
+      <a class="tab" href="#/friends" data-route="friends"><span class="ico" aria-hidden="true">☺</span>Friends</a>
+      <a class="tab" href="#/settings" data-route="settings"><span class="ico" aria-hidden="true">⚙</span>Settings</a>
+    </nav>
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

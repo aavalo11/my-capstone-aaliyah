@@ -1,0 +1,7 @@
+# Secrets — never commit these. Supabase secrets go in `supabase secrets set`.
+*.p8
+.env
+.env.*
+
+# macOS
+.DS_Store

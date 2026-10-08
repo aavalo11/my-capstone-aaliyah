@@ -6,8 +6,8 @@ itself as a real, playable playlist in whatever service your friend already uses
 The thing it replaces is a screenshot of a tracklist that the other person has to retype
 song by song. Most of the time, they don't — so the playlist never actually gets shared.
 
-**Status:** 🚧 Pre-build. Requirements and research only — no application code until
-Week 9. Solo capstone for IST300, Syracuse University, Fall 2026.
+**Status:** 🚧 Early build. A navigable shell runs locally (see *Running this
+project*); the Apple → Spotify bridge itself starts in Week 9. Solo capstone for IST300, Syracuse University, Fall 2026.
 
 **Live URL:** not deployed yet.
 
@@ -58,17 +58,65 @@ docs/backlog.md            Lab 3 · 11 stories, MoSCoW, MVP     (done)
 docs/research/             interview notes, verbatim + reading
 docs/design/               wireframes and UI notes
 docs/decisions/            one file per call that could have gone otherwise
-src/  tests/               application code — from Week 9
+supabase/schema.sql        database setup, run once in the dashboard
+src/                       the app: plain HTML/CSS/JS (started 2026-10-08)
+tests/                     from Week 9
 ```
 
-## How to run it
+## Running this project
 
-Nothing to run yet. This section gets filled in at Week 9 with install, env vars, and
-dev-server steps.
+**Stack:** Supabase (hosted database, and later Edge Functions and Auth) plus plain
+HTML, CSS and JavaScript. No framework, no build step, no `npm install`. Why:
+`docs/decisions/0007-supabase-and-plain-html.md`.
 
-Planned stack (will change): Spotify Web API + Apple MusicKit, OAuth so each person
-connects their own account, React front end, Node or Python backend. See
-`docs/01-concept-brief.md`.
+### What has to exist on the machine
+
+| Thing | Why | Check |
+|---|---|---|
+| Python 3 | Only to serve `src/` at a local address. It comes with macOS. | `python3 --version` |
+| A browser | To open the app | — |
+| A Supabase project | The database. It's hosted, so nothing gets installed for it. | supabase.com dashboard → `crossfade` |
+
+Nothing is installed system-wide. The Supabase CLI and Docker aren't needed yet; they
+arrive in Week 9 with Edge Functions.
+
+### Start it
+
+```sh
+cd ~/my-capstone-aaliyah
+python3 -m http.server 8000 --bind 127.0.0.1 --directory src
+```
+
+Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
+
+**Pass signal:** Home → *Recently sent* lists the rows from the Supabase `links` table.
+
+### Connect Supabase (once per project)
+
+1. Copy the SQL inside the file (`pbcopy < supabase/schema.sql`), paste it into
+   Supabase → **SQL Editor**, and run it. Paste the SQL itself, not the file name.
+   It creates the `links` table, read-only to the public key, and it's safe to run twice.
+2. **Project Settings → API Keys**: copy the Project URL and the **publishable** key
+   into `src/config.js`.
+3. **Never** put the secret or `service_role` key in `src/`. Everything in there is
+   public.
+
+### Seeing every state
+
+Every screen has an empty and an error state. Add `?demo=empty` or `?demo=error` before
+the `#`, for example `http://localhost:8000/?demo=error#/home`.
+
+### What's real and what isn't (2026-10-08)
+
+| Screen | State |
+|---|---|
+| Home → Recently added, Your numbers | Real: reads Supabase |
+| Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
+| Home → Listening history | Locked: needs an Apple Music sign-in (ADR 0006, backlog S12) |
+| Create → Paste a link | Link and passcode are checked here; building the playlist arrives in Week 9 |
+| Create → Search songs | Disabled: needs a server-side Apple key |
+| Friends | Sample data only (backlog S13) |
+| Settings → Account | Placeholder until Lab 5 login (backlog S14); the theme setting works |
 
 ## A note on the research
 
