@@ -301,6 +301,89 @@ services." Treat as unevidenced.
 
 ---
 
+### Home, Friends, Settings (HOLDING PEN — founder request, no evidence)
+
+Added 2026-10-08. The founder asked for these screens while setting up the stack. They
+exist in `src/` as a navigable shell. Recently sent playlists are real, Friends runs on
+labelled sample data, and the Account settings are disabled. All three stories need
+accounts, which ADR 0006 rules out for v1, so none can leave the holding pen without new
+evidence **and** a revised ADR 0006.
+
+---
+
+**S12.** As a sender, I want Home to show the songs I've listened to recently, so that I
+can send something I just played without searching for it.
+
+**Acceptance criteria**
+
+- [ ] **Given** I've sent playlists before, **when** I open Home, **then** I see them
+  newest first, with `Matched N of M` on each. *(Built: this half needs no account.)*
+- [ ] **Given** I've connected Apple Music, **when** I open Home, **then** I see my last
+  10 played tracks.
+- [ ] **Negative — Given** I haven't connected Apple Music, **when** I open Home,
+  **then** the history card explains why it's empty and never shows sample songs as if
+  they were mine.
+
+**Evidence.** **NONE.** Listening history needs an Apple Music user token, which is an
+account connection (ADR 0006).
+
+---
+
+**S13.** As a sender, I want a Friends screen that shows my friends' playlists and songs
+and how similar our taste is, so that I know what to send whom.
+
+**Acceptance criteria**
+
+- [ ] **Given** a friend, **when** I open them, **then** I see their playlists, their
+  songs, a taste-match percentage, and the artists we share.
+- [ ] **Given** I have no friends added, **when** I open Friends, **then** I see an
+  empty state that explains how to add one, not a blank list.
+- [ ] **Negative — Given** a friend's library can't be read, **when** I open them,
+  **then** I see which service failed, and no match percentage is computed from partial
+  data.
+
+**Evidence.** **NONE.** It needs Crossfade accounts, plus read access to friends'
+libraries. On Spotify that means recipient OAuth, which the 5-user dev-mode cap limits
+(ADR 0006). The closest research is S10, which is itself unevidenced. Taste match was
+first sketched in `docs/design/prototype-v2/`.
+
+---
+
+**S14.** As a sender, I want a Settings screen with my account details, so that I can
+change my email or password and sign out.
+
+**Acceptance criteria**
+
+- [ ] **Given** I'm signed in, **when** I open Settings, **then** I see my email and can
+  change my password or sign out.
+- [ ] **Negative — Given** I enter the wrong current password, **when** I try to change
+  it, **then** I see `That password isn't right.` and nothing changes.
+
+**Evidence.** **NONE.** It depends on Lab 5. If that lab's login is for the sender only,
+replacing the D7 passcode, this story fits v1 without breaking ADR 0006.
+
+---
+
+**S15.** As a sender, I want Home to show new and top songs, each with a way to find it
+on Spotify, so that the app feels full and gives me something to send.
+
+**Acceptance criteria**
+
+- [ ] **Given** Apple's public US chart loads, **when** I open Home, **then** I see
+  *New this week* (released in the last 14 days), *Top songs* and *Top albums*, each with
+  cover art. *(Built 2026-10-08, from the free iTunes RSS feed, no key.)*
+- [ ] **Given** a chart song, **when** I tap *Find on Spotify*, **then** Spotify's own
+  search opens for that title and artist. No Spotify API is called.
+- [ ] **Negative — Given** the chart feed fails or is retired, **when** I open Home,
+  **then** those sections say `Couldn't load Apple's chart`, and *Recently added* and
+  sending still work.
+
+**Evidence.** **NONE.** Founder request for a fuller Home. A risk to log: discovery
+competes with the five-second send, which is the only job the sender has in the PRD.
+Keep the paste box first on Home.
+
+---
+
 ## 4. MoSCoW board
 
 | MUST | SHOULD | COULD | WON'T (+ why not) |
@@ -310,6 +393,7 @@ services." Treat as unevidenced.
 | ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
+| | | | S12–S15 — Home history, Friends, Account, Discover *(holding pen, Evidence: NONE; shell only)* |
 
 **MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
 product. Without S8, the first person who opens a link and finds junk in their library
