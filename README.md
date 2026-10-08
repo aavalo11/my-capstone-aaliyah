@@ -89,7 +89,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory src
 
 Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
 
-**Pass signal:** Home → *Recently sent* lists the rows from the Supabase `links` table.
+**Pass signal:** Home → *Recently added* lists the rows from the Supabase `links` table.
 
 ### Connect Supabase (once per project)
 
@@ -97,9 +97,27 @@ Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
    Supabase → **SQL Editor**, and run it. Paste the SQL itself, not the file name.
    It creates the `links` table, read-only to the public key, and it's safe to run twice.
 2. **Project Settings → API Keys**: copy the Project URL and the **publishable** key
-   into `src/config.js`.
+   into `src/config.js`. The Project URL is **not** the address in your browser bar:
+   - Wrong: `https://supabase.com/dashboard/project/irzqwrznqvtjrrmkddzw`
+   - Right: `https://irzqwrznqvtjrrmkddzw.supabase.co`
 3. **Never** put the secret or `service_role` key in `src/`. Everything in there is
    public.
+
+### Things that went wrong the first time
+
+| What I saw | What fixed it |
+|---|---|
+| `syntax error at or near "supabase"` in the SQL Editor | I pasted the file name. Paste the SQL *inside* `supabase/schema.sql`. |
+| `Could not find the table 'public.links'` | The SQL never ran. Run it again, or run `notify pgrst, 'reload schema';`. |
+| Home says *Couldn't load your playlists* after a break | Free Supabase projects pause after about a week of no use. Dashboard → **Restore project**, wait a few minutes. |
+| `Address already in use` when starting the server | An old server is still running. Close that terminal, or use port `8001`. |
+
+### What changed from the first draft
+
+I didn't like the layout of the first version, so I reworked it and added ideas I
+wanted: more buttons on Home (paste from clipboard, invite a friend, new and top songs),
+and a Friends screen that shows how friends interact: their playlists, their songs, and
+how similar our taste is.
 
 ### Seeing every state
 
