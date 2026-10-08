@@ -14,18 +14,22 @@ already uses, instead of a screenshot they have to retype. Solo capstone for IST
 - **The recipient** — on Spotify, often a free or family-plan account, doesn't want a
   stranger's playlist written into their library without asking.
 
-## Current state (2026-09-17)
+## Current state (2026-10-08)
 
-Docs only. **No code yet — `src/` and `tests/` start Week 9.** Don't create them early.
+**Stack: Supabase + plain HTML/CSS/JS** (ADR 0007). `src/` holds a navigable shell that
+runs at `localhost:8000` (see README, *Running this project*). The Apple → Spotify
+bridge itself, the Edge Functions and `tests/` start Week 9. Home, Friends and Settings
+beyond v1 are holding-pen stories S12–S14, so keep Friends on labelled sample data until
+ADR 0006 is revised.
 
 | Doc | State |
 |---|---|
 | `docs/01-concept-brief.md` | Done (CP-M1) |
-| `docs/backlog.md` | Done (Lab 3) — 11 stories, MoSCoW, MVP slice |
+| `docs/backlog.md` | Lab 3, plus S12–S14 in the holding pen (2026-10-08) |
 | `docs/research/interview-01.md` | Done — W01, 2026-09-10 |
 | `docs/research/interview-02.md` | **Empty — W02 not yet run** |
-| `docs/02-prd.md` | Due 2026-09-27 |
-| `docs/03-architecture.md` | Due 2026-10-11 |
+| `docs/02-prd.md` | Done (CP-M2) |
+| `docs/03-architecture.md` | **Empty — due 2026-10-11** |
 
 ## Conventions
 
