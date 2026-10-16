@@ -1,7 +1,7 @@
 # 0007 · Supabase and plain HTML
 
 **Date.** 2026-10-08
-**Status.** Decided, pending the three stack challenges in class
+**Status.** Decided. Workshop 3 (2026-10-08) challenged it and the decision didn't change.
 
 **Context.** `docs/design/requirements.md` lines 8–10 need three things whichever version
 of Crossfade ships: server code that keeps the Apple and Spotify keys secret, storage
@@ -19,6 +19,12 @@ FastAPI or Django means hosting and patching my own server, and free hosts often
 local files. Streamlit can't give a clean `/p/<code>` page on a phone. Supabase also
 works for both answers to ADR 0006: v1 uses a table and one Edge Function, and the
 account version adds Auth and row-level security without me building them.
+
+**What it costs.** Edge Functions run TypeScript on Deno, which is new to this project.
+The free plan caps a function at 150 s wall clock and 2 s CPU (architecture §2). Free
+projects pause after about a week without use. Auth, RLS and RPC tie me to Supabase, so
+moving off it means rewriting everything except the front end. Plain HTML gives up
+components and routing, and I'm accepting that for four screens.
 
 **What would change my mind.** If the Week 9 spike shows one Edge Function can't finish
 Apple → 100 Spotify searches → playlist creation inside its time limit, then matching
