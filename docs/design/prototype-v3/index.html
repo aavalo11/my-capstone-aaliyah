@@ -1,0 +1,995 @@
+<title>Crossfade Phone Prototype</title>
+<meta name="description" content="Clickable phone prototype of Crossfade: send a playlist link from Apple Music, open it in Spotify, fix matches, and try every error state.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone in the middle of the screen, a notes column beside it on laptops. On a real phone the frame drops away and the app fills the screen. */
+:root {
+  --paper: #F7F7FB;
+  --surface: #FFFFFF;
+  --ink: #1C1A33;
+  --on-ink: #FFFFFF;
+  --ink-soft: #5A5775;
+  --signal: #2B45D8;
+  --amber: #A86400;
+  --danger: #B3261E;
+  --mist: #B9B6CC;
+  --line: #E2E0EC;
+  --note: #ECEBF6;
+  --you: #2B45D8;
+  --them: #C2365B;
+  --desk: #E4E3EE;
+  --bezel: #16151F;
+  --bubble: #E9E9EF;
+  --scrim: rgba(20, 18, 40, .38);
+  --font: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121120; --surface: #1B1A2C; --ink: #EDECF6; --on-ink: #121120;
+    --ink-soft: #A7A4BF; --signal: #8C9BFF; --amber: #E3A23B; --danger: #FF8A80; --mist: #4E4C66;
+    --line: #2A2842; --note: #211F38; --you: #8C9BFF; --them: #FF7FA3;
+    --desk: #0B0A14; --bezel: #2C2B3A; --bubble: #2A2842; --scrim: rgba(0, 0, 0, .55); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121120; --surface: #1B1A2C; --ink: #EDECF6; --on-ink: #121120;
+  --ink-soft: #A7A4BF; --signal: #8C9BFF; --amber: #E3A23B; --danger: #FF8A80; --mist: #4E4C66;
+  --line: #2A2842; --note: #211F38; --you: #8C9BFF; --them: #FF7FA3;
+  --desk: #0B0A14; --bezel: #2C2B3A; --bubble: #2A2842; --scrim: rgba(0, 0, 0, .55); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--desk); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.42;
+  font-variant-numeric: tabular-nums;
+  padding-inline: 16px; padding-block: 20px;
+  display: grid; place-items: center;
+}
+button { font: inherit; color: inherit; }
+img { max-width: 100%; display: block; }
+:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; border-radius: 6px; }
+
+.wrap { display: flex; gap: 56px; align-items: center; justify-content: center; max-width: 1100px; width: 100%; }
+
+/* ---------- the phone ---------- */
+.device {
+  position: relative; flex: none;
+  width: 390px; height: min(844px, calc(100vh - 40px)); min-height: 560px;
+  background: var(--paper); border: 11px solid var(--bezel); border-radius: 56px;
+  box-shadow: 0 30px 60px -20px rgba(20, 18, 50, .35), 0 0 0 1.5px color-mix(in srgb, var(--bezel) 60%, #888);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 118px; height: 34px; border-radius: 20px; background: #000; z-index: 30; }
+.status { flex: none; height: 52px; display: flex; justify-content: space-between; align-items: center; padding: 6px 30px 0 34px; font-size: 15px; font-weight: 650; }
+.status .icons { display: flex; gap: 6px; align-items: center; }
+.status svg { display: block; }
+.status .off { font-size: 12px; font-weight: 700; color: var(--danger); }
+.home { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); width: 132px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; z-index: 25; }
+
+.view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 20px 24px; scrollbar-width: none; }
+.view::-webkit-scrollbar { display: none; }
+.actions { flex: none; padding: 10px 20px 10px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 94%, transparent); display: grid; gap: 6px; }
+.actions .small { text-align: center; }
+.tabbar { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 6px 24px; border-top: 1px solid var(--line); background: var(--surface); }
+.tabbar button { background: none; border: 0; display: grid; justify-items: center; gap: 2px; font-size: 11px; font-weight: 650; color: var(--ink-soft); padding: 4px 0; cursor: pointer; }
+.tabbar button[aria-selected="true"] { color: var(--signal); }
+.tabbar svg { width: 24px; height: 24px; }
+
+/* top bar inside a screen */
+.top { display: flex; align-items: center; justify-content: space-between; min-height: 40px; margin: 0 0 6px; gap: 8px; }
+.back { background: none; border: 0; color: var(--signal); padding: 6px 0; cursor: pointer; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-stretch: 112%; letter-spacing: -0.01em; }
+.brand::before { content: ""; width: 22px; height: 11px; border-radius: 6px; background: linear-gradient(90deg, var(--ink) 0 45%, var(--signal) 55% 100%); }
+.pill { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--note); color: var(--ink-soft); white-space: nowrap; }
+
+h1 { font-size: 30px; line-height: 1.02; letter-spacing: -0.03em; font-weight: 850; font-stretch: 116%; margin: 4px 0 10px; text-wrap: balance; }
+h2 { font-size: 18px; font-weight: 750; font-stretch: 110%; letter-spacing: -0.01em; margin: 0 0 10px; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); font-weight: 700; margin: 22px 0 8px; }
+.lede { color: var(--ink-soft); margin: 0 0 18px; font-size: 16px; }
+.small { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
+p { margin: 0 0 10px; }
+.gap-top { margin-top: 22px; }
+
+/* buttons */
+.btn { display: block; width: 100%; text-align: center; font-weight: 700; padding: 15px; border-radius: 14px; border: 0; cursor: pointer; font-size: 16px; }
+.btn-primary { background: var(--ink); color: var(--on-ink); font-size: 17px; }
+.btn-primary:disabled { background: var(--mist); color: var(--paper); cursor: default; }
+.btn-quiet { background: transparent; border: 1.5px solid var(--line); color: var(--ink); padding: 13px; }
+.btn-text { background: none; border: 0; color: var(--signal); padding: 8px 0; cursor: pointer; font-weight: 650; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.icon-btn { background: var(--note); border: 0; border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+
+/* fields */
+label { display: block; font-weight: 650; font-size: 14px; margin: 0 0 6px; }
+.field { display: flex; gap: 6px; align-items: stretch; margin: 0 0 14px; }
+.field input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); }
+.field input[aria-invalid="true"] { border-color: var(--danger); }
+.field button { flex: none; border: 1.5px solid var(--line); background: var(--surface); border-radius: 13px; padding: 0 13px; font-weight: 650; font-size: 14px; cursor: pointer; color: var(--signal); }
+.err { display: flex; gap: 8px; align-items: flex-start; color: var(--danger); font-size: 14.5px; font-weight: 600; background: color-mix(in srgb, var(--danger) 9%, transparent); border-radius: 12px; padding: 10px 12px; margin: -4px 0 14px; }
+.err::before { content: "!"; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--danger); color: var(--paper); font-size: 12px; font-weight: 900; display: grid; place-items: center; margin-top: 1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.chip { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--signal); color: var(--signal); }
+
+/* covers */
+.cover { height: auto; border-radius: 10px; aspect-ratio: 1; object-fit: cover; background: var(--note); }
+.cover-hero { width: 170px; margin: 4px 0 16px; border-radius: 12px; box-shadow: 0 12px 30px -14px rgba(20, 18, 50, .45); }
+.cover-sm { width: 42px; border-radius: 5px; flex: none; }
+.cover-md { width: 56px; border-radius: 7px; flex: none; }
+.stack { display: flex; }
+.stack img { width: 52px; border-radius: 8px; border: 3px solid var(--surface); margin-right: -20px; }
+.stack img:last-child { margin-right: 0; }
+
+/* track strip */
+.strip { display: flex; gap: 3px; height: 52px; margin: 0 0 10px; }
+.strip i { flex: 1; border-radius: 3px; background: var(--ink); transform-origin: bottom; }
+.strip i.close { background: var(--amber); }
+.strip i.fixed { background: var(--signal); }
+.strip i.miss { background: transparent; box-shadow: inset 0 0 0 2px var(--mist); }
+.strip i.pending { background: var(--line); }
+.strip.rise i { animation: rise .5s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i) * 22ms); }
+@keyframes rise { from { transform: scaleY(.08); opacity: .2; } }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--ink-soft); margin: 0 0 12px; padding: 0; list-style: none; }
+.legend li::before { content: ""; display: inline-block; width: 9px; height: 13px; border-radius: 2px; margin-right: 5px; vertical-align: -2px; background: var(--ink); }
+.legend .close::before { background: var(--amber); }
+.legend .fixed::before { background: var(--signal); }
+.legend .miss::before { background: transparent; box-shadow: inset 0 0 0 2px var(--mist); }
+.summary { font-size: 19px; line-height: 1.28; font-weight: 650; margin: 0 0 4px; }
+.progress { font-size: 18px; font-weight: 650; margin: 0 0 12px; }
+
+/* rows */
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { border-top: 1px solid var(--line); }
+.row { width: 100%; background: none; border: 0; text-align: left; display: grid; grid-template-columns: 22px 42px minmax(0, 1fr) auto; gap: 0 11px; padding: 9px 0; align-items: center; cursor: pointer; }
+.row:active { background: var(--note); }
+.row.static { cursor: default; }
+.rows .n { color: var(--ink-soft); font-size: 13px; }
+.rows .txt { min-width: 0; }
+.rows .t { font-weight: 650; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .a { color: var(--ink-soft); font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .m { font-size: 13px; margin-top: 1px; display: block; }
+.rows .r { font-size: 14px; color: var(--ink-soft); text-align: right; }
+.rows li.close .m { color: var(--amber); }
+.rows li.fixed .m { color: var(--signal); }
+.rows li.miss .t, .rows li.miss .a, .rows li.miss .r { color: var(--mist); }
+.rows li.miss img { opacity: .35; filter: grayscale(1); }
+.rows li.miss .m { color: var(--ink-soft); }
+.rows li.new { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: color-mix(in srgb, var(--signal) 18%, transparent); } }
+.empty { text-align: center; padding: 28px 12px; color: var(--ink-soft); border-top: 1px solid var(--line); }
+.empty b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+
+.seg { display: flex; gap: 4px; margin: 0 0 12px; padding: 3px; background: var(--note); border-radius: 11px; }
+.seg button { flex: 1; border: 0; padding: 8px 4px; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 650; font-size: 13.5px; color: var(--ink-soft); }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.linkbox { font-size: 16px; font-weight: 650; padding: 13px 14px; border: 1.5px dashed var(--signal); border-radius: 13px; word-break: break-all; user-select: all; margin: 0 0 6px; }
+.from { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 15px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; background: #3B3866; flex: none; }
+.avatar.am { background: #C2365B; }
+.avatar.sp { background: #1F7A4D; }
+.avatar.me { background: var(--signal); color: var(--on-ink); }
+
+.notice { background: var(--note); border-radius: 14px; padding: 13px 15px; font-size: 14.5px; color: var(--ink-soft); margin: 0 0 12px; }
+.notice b { color: var(--ink); }
+.done-mark { font-size: 64px; line-height: 1; font-weight: 900; font-stretch: 125%; letter-spacing: -0.04em; color: var(--signal); margin: 18px 0 10px; }
+
+/* option lists */
+.options { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.opt { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px; text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 15px; cursor: pointer; }
+.opt[aria-pressed="true"] { border-color: var(--signal); box-shadow: inset 0 0 0 1.5px var(--signal); }
+.opt b { font-weight: 700; display: block; }
+.opt .d { color: var(--ink-soft); font-size: 13.5px; display: block; }
+.opt .tag { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--amber); white-space: nowrap; }
+.opt > span:not(.tag):not(.avatar) { min-width: 0; }
+
+/* grouped list (settings) */
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.group > * + * { border-top: 1px solid var(--line); }
+.item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 14px; background: none; border: 0; text-align: left; cursor: pointer; font-size: 15.5px; }
+.item .d { color: var(--ink-soft); font-size: 13px; display: block; font-weight: 400; }
+.item .chev { color: var(--mist); font-size: 20px; line-height: 1; }
+.switch { width: 50px; height: 30px; border-radius: 999px; background: var(--mist); position: relative; flex: none; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.item[aria-checked="true"] .switch { background: #2FA35A; }
+.item[aria-checked="true"] .switch::after { transform: translateX(20px); }
+.cant { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14.5px; }
+.cant li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; color: var(--ink-soft); }
+.cant li::before { content: "×"; color: var(--danger); font-weight: 900; }
+.cant b { color: var(--ink); }
+
+/* qr + taste */
+canvas.qr { width: 200px; height: 200px; background: #fff; border-radius: 12px; padding: 10px; border: 1.5px solid var(--line); display: block; margin: 0 auto 8px; }
+.venn { position: relative; height: 130px; width: 100%; max-width: 300px; margin-bottom: 10px; }
+.venn span { position: absolute; top: 0; width: 130px; height: 130px; border-radius: 50%; mix-blend-mode: multiply; }
+.venn .you { left: 0; background: color-mix(in srgb, var(--you) 55%, transparent); }
+.venn .them { background: color-mix(in srgb, var(--them) 55%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .venn span { mix-blend-mode: screen; } }
+:root[data-theme="dark"] .venn span { mix-blend-mode: screen; }
+.venn .lbl { position: absolute; top: 52px; font-size: 12px; font-weight: 700; color: var(--ink); mix-blend-mode: normal; width: auto; height: auto; border-radius: 0; background: none; }
+.pct-big { font-size: 48px; font-weight: 900; font-stretch: 122%; letter-spacing: -0.04em; line-height: 1; margin: 0 0 6px; }
+.artist-chips li { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px; background: var(--note); font-size: 13.5px; font-weight: 600; }
+.artist-chips img { width: 24px; border-radius: 50%; }
+.people { display: grid; gap: 10px; list-style: none; padding: 0; margin: 0 0 6px; }
+.people li { display: flex; align-items: center; gap: 10px; }
+.people .svc { color: var(--ink-soft); font-size: 13px; display: block; }
+.people .pct { margin-left: auto; font-weight: 750; font-stretch: 112%; font-size: 14px; }
+.addrow { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 11px; padding: 9px 0; border-top: 1px solid var(--line); }
+.addrow button { border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 5px 14px; cursor: pointer; font-weight: 650; font-size: 14px; }
+.addrow button:disabled { color: var(--ink-soft); cursor: default; }
+
+/* messages mock */
+.thread { display: grid; gap: 6px; padding-top: 8px; }
+.thread .stamp { text-align: center; font-size: 12px; color: var(--ink-soft); margin: 4px 0 8px; }
+.bub { max-width: 78%; padding: 8px 13px; border-radius: 18px; font-size: 15.5px; line-height: 1.3; }
+.bub.in { background: var(--bubble); justify-self: start; border-bottom-left-radius: 5px; }
+.bub.out { background: #2E7CF6; color: #fff; justify-self: end; border-bottom-right-radius: 5px; }
+.card-bub { justify-self: end; width: 74%; border-radius: 18px; overflow: hidden; background: var(--bubble); border: 0; padding: 0; text-align: left; cursor: pointer; border-bottom-right-radius: 5px; }
+.card-bub img { width: 100%; aspect-ratio: 1.6; object-fit: cover; }
+.card-bub span { display: block; padding: 8px 12px 10px; font-size: 13px; color: var(--ink-soft); }
+.card-bub b { display: block; color: var(--ink); font-size: 14.5px; }
+.read { justify-self: end; font-size: 11.5px; color: var(--ink-soft); }
+.msgbar { display: flex; gap: 8px; align-items: center; }
+.msgbar span { flex: 1; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 14px; color: var(--mist); font-size: 15px; }
+
+/* bottom sheet + toast */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 40; opacity: 0; transition: opacity .2s; }
+.scrim.on { opacity: 1; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--surface); border-radius: 22px 22px 0 0; padding: 8px 20px 30px; max-height: 82%; overflow-y: auto; transform: translateY(100%); transition: transform .26s cubic-bezier(.2,.8,.2,1); }
+.sheet.on { transform: none; }
+.sheet .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
+.sheet-head { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.sheet-head b { display: block; font-size: 17px; }
+.sheet-list { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+.sheet-list button { background: none; border: 0; text-align: left; padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; }
+.sheet-list button + button { border-top: 1px solid var(--line); }
+.sheet-list .d { color: var(--ink-soft); font-weight: 400; font-size: 13.5px; }
+.share-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 14px; }
+.share-grid button { background: none; border: 0; display: grid; justify-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+.share-grid i { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; color: #fff; }
+.toast { position: absolute; left: 50%; bottom: 104px; transform: translate(-50%, 16px); z-index: 50; background: var(--ink); color: var(--on-ink); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* notes column */
+.notes { width: 300px; flex: none; font-size: 14.5px; color: var(--ink-soft); }
+.notes .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; margin: 0 0 8px; }
+.notes h2 { color: var(--ink); font-size: 26px; font-stretch: 116%; font-weight: 850; letter-spacing: -0.02em; margin: 0 0 6px; line-height: 1.05; }
+.notes .stories { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; padding: 0; list-style: none; }
+.notes .stories li { font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.notes p { max-width: 36ch; }
+.notes .open { margin-top: 16px; padding: 12px 14px; border-radius: 12px; border: 1.5px dashed var(--amber); color: var(--ink); font-size: 13.5px; }
+.notes .open b { color: var(--amber); display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+.notes .foot { margin-top: 22px; font-size: 12.5px; }
+.notes .foot button { background: none; border: 0; color: var(--signal); padding: 0; cursor: pointer; font-size: 12.5px; font-weight: 650; }
+
+@media (max-width: 900px) { .notes { display: none; } }
+@media (max-width: 520px) {
+  body { padding: 0; display: block; background: var(--paper); }
+  .wrap { display: block; height: 100%; }
+  .device { width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .island, .status, .home { display: none; }
+  .view { padding-top: 10px; }
+  .tabbar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="device" id="device">
+    <div class="island" aria-hidden="true"></div>
+    <div class="status" aria-hidden="true">
+      <span>9:41</span>
+      <span class="icons" id="statusIcons"></span>
+    </div>
+    <main class="view" id="view" aria-live="polite"></main>
+    <div class="actions" id="actions" hidden></div>
+    <nav class="tabbar" id="tabbar" role="tablist" aria-label="Sections"></nav>
+    <div class="home" aria-hidden="true"></div>
+    <div class="scrim" id="scrim" hidden></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+  <aside class="notes" id="notes" aria-label="Screen notes"></aside>
+</div>
+
+<script>
+(function () {
+  // ---------- sample data (same playlist as prototype-v2) ----------
+  // [title, artist, status, duration, close-match title, close-match artist]
+  var TRACKS = [
+    ["Pink + White","Frank Ocean","exact","3:04"],["Good Days","SZA","exact","4:39"],["Bad Habit","Steve Lacy","exact","3:51"],
+    ["Get You","Daniel Caesar","exact","4:38"],["Cranes in the Sky","Solange","exact","4:11"],["After the Storm","Kali Uchis","exact","3:27"],
+    ["Focus","H.E.R.","exact","3:16"],["Blue Lights","Jorja Smith","exact","3:15"],["Dead Man Walking","Brent Faiyaz","exact","4:16"],
+    ["I Want You Around","Snoh Aalegra","exact","3:57"],["Heartbreak Anniversary","Giveon","exact","3:16"],
+    ["See You Again","Tyler, The Creator","close","3:00","See You Again (feat. Kali Uchis)","Tyler, The Creator, Kali Uchis"],
+    ["Easy","Mac Ayres","miss","3:28"],["Roll Some Mo","Lucky Daye","exact","3:17"],["Love Me Not","Ravyn Lenae","exact","3:33"],
+    ["Next Lifetime","Erykah Badu","exact","3:48"],["Redbone","Childish Gambino","exact","5:26"],["Girls Need Love","Summer Walker","exact","2:42"],
+    ["Tadow","Masego","exact","3:22"],["Them Changes","Thundercat","exact","3:08"],["Honey","Raveena","miss","3:35"],
+    ["Slow Dancing in the Dark","Joji","exact","3:29"],["Why Don't You","Cleo Sol","exact","3:11"],["Evergreen","Omar Apollo","exact","2:44"],
+    ["River","Leon Bridges","exact","4:04"]
+  ];
+  var N = TRACKS.length;
+  var PLAYLIST = "late train home";
+  var LINK = "https://crossfade.app/p/x7Kq2mVb9R";
+  var SAMPLE_URL = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
+  var PASSCODE = "crossfade";
+  // Buy sources (S5). Missing tracks never get one.
+  var BUY = { 18: "Bandcamp", 19: "Bandcamp", 0: "iTunes Store", 1: "iTunes Store", 4: "iTunes Store", 15: "iTunes Store", 16: "iTunes Store", 24: "iTunes Store" };
+  // Fix-a-match candidates (S9). Up to 5; empty list means none cleared the threshold.
+  var ALTS = {
+    11: [
+      { t: "See You Again (feat. Kali Uchis)", a: "Tyler, The Creator, Kali Uchis", al: "Flower Boy", d: "3:00", tag: "Featured artist added" },
+      { t: "See You Again (feat. Kali Uchis)", a: "Tyler, The Creator, Kali Uchis", al: "Flower Boy (Clean)", d: "3:00", tag: "Clean version" },
+      { t: "See You Again - Live", a: "Tyler, The Creator", al: "Live at Camp Flog Gnaw", d: "3:41", tag: "Live, 0:41 longer" }
+    ],
+    12: [], 20: []
+  };
+  function altsFor(i) { var t = TRACKS[i]; return ALTS[i] || [{ t: t[0], a: t[1], al: "Current match", d: t[3], tag: "" }]; }
+  var SEARCH = [
+    { t: "Easy", a: "Mac Ayres", al: "Drive Slow (Deluxe)", d: "3:28", tag: "" },
+    { t: "Easy - Acoustic", a: "Mac Ayres", al: "Easy (Acoustic)", d: "3:12", tag: "Acoustic, 0:16 shorter" },
+    { t: "Honey", a: "Raveena", al: "Lucid", d: "3:35", tag: "" },
+    { t: "Honey (Sped Up)", a: "Raveena", al: "Honey (Sped Up)", d: "2:58", tag: "Sped up" }
+  ];
+  var SHAREABLE = {
+    playlists: [{ name: "late train home", by: "25 songs", n: 25 }, { name: "Friday pregame", by: "18 songs", n: 18 }, { name: "study, no words", by: "40 songs", n: 40 }],
+    albums: [{ name: "SOS", by: "SZA", n: 23 }, { name: "Blonde", by: "Frank Ocean", n: 17 }, { name: "Flower Boy", by: "Tyler, The Creator", n: 14 }]
+  };
+  var SUGGEST = [["Best Part","Daniel Caesar, H.E.R."],["Location","Khalid"],["Pyramids","Frank Ocean"],["Kill Bill","SZA"]];
+  var JORDAN = { pct: 72, shared: ["SZA","Frank Ocean","Daniel Caesar","Steve Lacy","Giveon"], diff: "You lean R&B. Jordan leans hip-hop." };
+
+  // ---------- generated artwork (from prototype-v2) ----------
+  var PALETTES = [
+    ["#1E2A78","#F2C14E","#F7F3E3"],["#7A1F3D","#F4A6B7","#FFF1F4"],["#0F5257","#E8D9A8","#F5F0E1"],["#14213D","#FCA311","#E5E5E5"],
+    ["#264653","#E9C46A","#F4F1DE"],["#3A0CA3","#F72585","#F8EDFF"],["#1B4332","#B7E4C7","#F1FAEE"],["#5C2A2A","#F4A259","#FBEBD5"],
+    ["#2E294E","#9FFFCB","#EFFFF6"],["#0B3954","#FF5A5F","#FFF6F0"],["#463F3A","#E0AFA0","#F4F3EE"],["#22223B","#C9ADA7","#F2E9E4"]
+  ];
+  function hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  var artCache = {};
+  function art(title, sub, size) {
+    var key = title + "|" + (sub || "") + "|" + size;
+    if (artCache[key]) return artCache[key];
+    var px = size * 2, c = document.createElement("canvas"); c.width = c.height = px;
+    var x = c.getContext("2d"), h = hash(title + (sub || "")), pal = PALETTES[h % PALETTES.length], style = (h >> 4) % 5;
+    var seed = h; var rnd = function () { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    x.fillStyle = pal[0]; x.fillRect(0, 0, px, px);
+    x.fillStyle = pal[1];
+    if (style === 0) {
+      x.beginPath(); x.arc(px * .5, px * .58, px * .3, Math.PI, 0); x.fill();
+      x.fillStyle = pal[2]; for (var b = 0; b < 5; b++) x.fillRect(0, px * (.6 + b * .07), px, px * .02 * (b + 1));
+    } else if (style === 1) {
+      x.save(); x.translate(px / 2, px / 2); x.rotate(-Math.PI / 4);
+      for (var s = -px; s < px; s += px * .12) x.fillRect(s, -px, px * .05, px * 2);
+      x.restore();
+    } else if (style === 2) {
+      var g = 7, r = px / g;
+      for (var i = 0; i < g; i++) for (var j = 0; j < g; j++) {
+        if (rnd() < .2) continue;
+        x.beginPath(); x.arc(r * i + r / 2, r * j + r / 2, r * (.18 + rnd() * .2), 0, 7); x.fill();
+      }
+    } else if (style === 3) {
+      x.lineWidth = px * .035; x.strokeStyle = pal[1];
+      for (var k = 1; k < 9; k++) { x.beginPath(); x.arc(px * .72, px * .3, px * .07 * k, 0, 7); x.stroke(); }
+    } else {
+      for (var q = 0; q < 6; q++) { x.fillStyle = q % 2 ? pal[1] : pal[2]; x.fillRect(px * rnd() * .5, px * (.08 + q * .13), px * (.3 + rnd() * .5), px * .08); }
+    }
+    if (size >= 56) {
+      var label = title.length > 18 ? title.slice(0, 17) + "…" : title;
+      var fs = Math.round(px * (label.length > 10 ? .11 : .16));
+      try { x.fontStretch = "expanded"; } catch (e) {}
+      x.font = "900 " + fs + "px Archivo, sans-serif";
+      while (fs > 10 && x.measureText(label).width > px * .86) { fs -= 2; x.font = "900 " + fs + "px Archivo, sans-serif"; }
+      x.fillStyle = pal[2];
+      x.fillText(label, px * .07, px * .93);
+      if (sub) { x.font = "600 " + Math.round(fs * .42) + "px Archivo, sans-serif"; x.globalAlpha = .85; x.fillText(sub, px * .07, px * .93 - fs * 1.05); x.globalAlpha = 1; }
+    }
+    return (artCache[key] = c.toDataURL());
+  }
+  function img(title, sub, size, cls, alt) {
+    return '<img class="cover ' + (cls || "") + '" src="' + art(title, sub, size) + '" alt="' + esc(alt || "") + '" width="' + size + '" height="' + size + '">';
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // ---------- state ----------
+  var S, timer = null;
+  function fresh() {
+    return {
+      tab: "send",
+      stacks: { send: ["send"], friend: ["friend"], together: ["tIntro"], more: ["more"] },
+      url: SAMPLE_URL, code: PASSCODE, showCode: false, err: null, problem: null, zero: false,
+      offline: false, fixed: {}, filter: "all", query: "",
+      fixFor: null, fixPick: null, fixQuery: "", fixSearched: false, playFrom: 0,
+      service: null, ttab: "playlists", pick: SHAREABLE.playlists[0], queue: [], added: {}, maya: false,
+      vote: null, themeMode: "system"
+    };
+  }
+  S = fresh();
+
+  function status(i) { return S.fixed[i] ? "fixed" : TRACKS[i][2]; }
+  function matched() { var n = 0; for (var i = 0; i < N; i++) if (status(i) !== "miss") n++; return n; }
+  function misses() { var out = []; for (var i = 0; i < N; i++) if (status(i) === "miss") out.push(TRACKS[i]); return out; }
+  function missText() { var m = misses(); return m.length ? m.map(function (t) { return "“" + esc(t[0]) + "” by " + esc(t[1]); }).join(" and ") : ""; }
+  function secs(d) { var p = d.split(":"); return +p[0] * 60 + +p[1]; }
+  function length() {
+    var s = 0; for (var i = 0; i < N; i++) if (status(i) !== "miss") s += secs(S.fixed[i] ? S.fixed[i].d : TRACKS[i][3]);
+    return Math.floor(s / 3600) + " hr " + Math.round((s % 3600) / 60) + " min";
+  }
+
+  // ---------- shared pieces ----------
+  function strip(upto, rise, allMiss) {
+    var out = "";
+    for (var i = 0; i < N; i++) {
+      var st = allMiss ? "miss" : status(i), c = st === "exact" ? "" : st;
+      if (upto !== undefined && upto !== null && i >= upto) c = "pending";
+      out += '<i class="' + c + '" style="--i:' + i + '"></i>';
+    }
+    return '<div class="strip' + (rise ? " rise" : "") + '" role="img" aria-label="' + (allMiss ? 0 : matched()) + " of " + N + ' songs found on Spotify, in playlist order">' + out + "</div>";
+  }
+  function legend() {
+    var hasFix = Object.keys(S.fixed).length > 0;
+    return '<ul class="legend"><li>Found</li><li class="close">Close match</li>' + (hasFix ? '<li class="fixed">Fixed</li>' : "") + '<li class="miss">Not found</li></ul>';
+  }
+  function top(title, right) {
+    var stack = S.stacks[S.tab];
+    var left = stack.length > 1 ? '<button type="button" class="back" data-back aria-label="Back"><svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2 2 10l8 8"/></svg> ' + esc(title || "Back") + "</button>" : '<span class="brand">Crossfade</span>';
+    return '<div class="top">' + left + (right || "") + "</div>";
+  }
+  function trackRow(i) {
+    var t = TRACKS[i], st = status(i), m = "", title = t[0], artist = t[1], dur = t[3];
+    if (st === "close") m = '<span class="m">Close match: “' + esc(t[4]) + "”</span>";
+    if (st === "miss") m = '<span class="m">Not found on Spotify (US)</span>';
+    if (st === "fixed") { m = '<span class="m">Fixed: ' + esc(S.fixed[i].al) + "</span>"; dur = S.fixed[i].d; }
+    return '<li class="' + (st === "exact" ? "" : st) + '"><button type="button" class="row" data-track="' + i + '"><span class="n">' + (i + 1) + "</span>" + img(artist, "", 42, "cover-sm") +
+      '<span class="txt"><span class="t">' + esc(title) + '</span><span class="a">' + esc(artist) + "</span>" + m + '</span><span class="r">' + dur + "</span></button></li>";
+  }
+
+  // ---------- screens ----------
+  // Each returns { body, actions, note: { name, stories, text, open } }
+  var screens = {
+    // ===== Send (sender) =====
+    send: function () {
+      var e = S.err, inv = function (f) { return e && e.field === f ? ' aria-invalid="true" aria-describedby="err-' + f + '"' : ""; };
+      var errHtml = function (f) { return e && e.field === f ? '<p class="err" id="err-' + f + '">' + e.msg + "</p>" : ""; };
+      var probs = [["wrongcode", "Wrong passcode"], ["badlink", "Not a playlist link"], ["nonus", "UK store link"], ["toolong", "140 songs"], ["zero", "No songs match"]];
+      return {
+        body: top("", '<span class="pill">Sender</span>') +
+          "<h1>Send a playlist to Spotify</h1>" +
+          '<p class="lede">In Apple Music, open a playlist, tap Share, then Copy Link. Paste it below.</p>' +
+          '<label for="url">Apple Music link</label>' +
+          '<div class="field"><input id="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="' + esc(S.url) + '"' + inv("url") + '>' +
+          (S.url ? '<button type="button" data-clear aria-label="Clear link">Clear</button>' : '<button type="button" data-paste>Paste</button>') + "</div>" + errHtml("url") +
+          '<label for="code">Passcode</label>' +
+          '<div class="field"><input id="code" type="' + (S.showCode ? "text" : "password") + '" autocomplete="off" value="' + esc(S.code) + '"' + inv("code") + '>' +
+          '<button type="button" data-showcode aria-pressed="' + S.showCode + '">' + (S.showCode ? "Hide" : "Show") + "</button></div>" + errHtml("code") + errHtml("net") +
+          "<h3>Try a problem</h3>" +
+          '<ul class="chips">' + probs.map(function (p) { return '<li><button type="button" class="chip" data-problem="' + p[0] + '" aria-pressed="' + (S.problem === p[0]) + '">' + p[1] + "</button></li>"; }).join("") + "</ul>" +
+          '<p class="small" style="margin-top:8px">Each one fills the form so Create link fails the way the real thing would. Turn on No connection in More to try offline.</p>',
+        actions: '<button type="button" class="btn btn-primary" data-create' + (S.url.trim() ? "" : " disabled") + ">Create link</button>" +
+          '<p class="small">About 10 seconds for 25 songs. Nobody signs in.</p>',
+        note: { name: "Create a link", stories: ["S7 AC1", "PRD R1", "PRD R6"], text: "The sender's only screen. One link, one passcode, one button. Errors are checked in PRD order: passcode, then link format, then rate limit.", open: "Paste can't read your clipboard in this prototype, so it fills the sample link." }
+      };
+    },
+    building: function () {
+      return {
+        body: top("Cancel") + img(PLAYLIST, "Aaliyah", 170, "cover-hero", PLAYLIST + " cover") + "<h1>" + PLAYLIST + "</h1>" +
+          '<p class="progress" id="prog">Reading playlist…</p><div id="stripHold">' + strip(0) + '</div><p class="small">Finding each song on Spotify, in order.</p>',
+        actions: '<button type="button" class="btn btn-quiet" data-back>Cancel</button>',
+        note: { name: "Building", stories: ["S7 AC1"], text: "Progress is shown per song so a 15-second wait doesn't feel like a freeze. Cancel throws the half-built link away." }
+      };
+    },
+    ready: function () {
+      var m = misses();
+      return {
+        body: top("Edit", '<button type="button" class="icon-btn" data-sheet="share" aria-label="Share">' + ICON.share + "</button>") +
+          img(PLAYLIST, "Aaliyah", 170, "cover-hero", PLAYLIST + " cover") + "<h1>" + PLAYLIST + "</h1>" + strip() + legend() +
+          '<p class="summary">' + matched() + " of " + N + " songs found on Spotify.</p>" +
+          (m.length ? '<p class="small">Your friend won’t hear ' + missText() + ".</p>" : '<p class="small">Every song made it.</p>') +
+          '<h2 class="gap-top">Your link</h2><p class="linkbox" id="linkbox">' + LINK + "</p>" +
+          '<p class="small">Text it to a friend. They don’t need to sign in. Crossfade doesn’t keep a list of your links, so copy it now.</p>' +
+          '<div class="btn-row gap-top"><button type="button" class="btn btn-quiet" data-sheet="qr">QR code</button><button type="button" class="btn btn-quiet" data-go="messages">Text it</button></div>' +
+          '<button type="button" class="btn btn-text" data-newlink>Send another playlist</button>',
+        actions: '<button type="button" class="btn btn-primary" data-copy="' + LINK + '">Copy link</button>' +
+          '<button type="button" class="btn btn-text" data-friendview>See what your friend sees</button>',
+        note: { name: "Link ready", stories: ["S7 AC3", "Match report"], text: "The misses are named before you send, so nothing surprises your friend. Share opens a sheet with Messages, QR code and Copy.", open: "PRD rules out link history. If you lose this link, you have to create it again. Is that OK for the sender?" }
+      };
+    },
+    zero: function () {
+      return {
+        body: top("Edit") + img("study, no words", "Aaliyah", 170, "cover-hero") + "<h1>study, no words</h1>" + strip(null, false, true) +
+          '<p class="summary">None of these 25 songs are on Spotify (US).</p>' +
+          '<p class="small">No link was made, because your friend would get an empty playlist. This happens most with local files and songs only sold in other countries.</p>',
+        actions: '<button type="button" class="btn btn-primary" data-newlink>Try another playlist</button>',
+        note: { name: "Zero matches", stories: ["S7 negative", "PRD R3"], text: "Error state: no link is issued when nothing matched. Better than sending a friend an empty page." }
+      };
+    },
+    messages: function () {
+      return {
+        body: top("Crossfade", '<span class="pill">Messages</span>') +
+          '<div class="thread"><div class="from" style="justify-content:center;flex-direction:column;gap:4px"><span class="avatar" style="width:52px;height:52px;font-size:18px">J</span><b style="font-size:13px">Jordan</b></div>' +
+          '<p class="stamp">Today 9:38 PM</p>' +
+          '<div class="bub in">what were you listening to on the train earlier</div>' +
+          '<div class="bub out">made a playlist for it, here</div>' +
+          '<button type="button" class="card-bub" data-friendview>' + img(PLAYLIST, "Aaliyah", 260, "") + "<span><b>" + PLAYLIST + "</b>" + matched() + " of " + N + " songs on Spotify · crossfade.app</span></button>" +
+          '<span class="read">Delivered</span></div>',
+        actions: '<div class="msgbar"><span>iMessage</span></div>',
+        note: { name: "Messages (outside Crossfade)", stories: ["MVP shot 3"], text: "Not a Crossfade screen. Shows what the link preview looks like in a text. Tap the preview to become Jordan." }
+      };
+    },
+
+    // ===== Friend (recipient) =====
+    friend: function () {
+      if (S.offline) return screens.friendOffline();
+      var counts = { all: N, changed: 0, missing: 0 };
+      for (var i = 0; i < N; i++) { var st = status(i); if (st === "close" || st === "fixed") counts.changed++; if (st === "miss") counts.missing++; }
+      var q = S.query.trim().toLowerCase(), list = [];
+      for (var j = 0; j < N; j++) {
+        var s = status(j);
+        if (S.filter === "changed" && !(s === "close" || s === "fixed")) continue;
+        if (S.filter === "missing" && s !== "miss") continue;
+        if (q && (TRACKS[j][0] + " " + TRACKS[j][1]).toLowerCase().indexOf(q) < 0) continue;
+        list.push(j);
+      }
+      var empty = S.filter === "missing" && counts.missing === 0 ? "<b>Nothing missing</b>Every song in this playlist is on Spotify." :
+        q ? "<b>No songs match “" + esc(S.query) + "”</b>Try an artist name." : "<b>Nothing here</b>No songs in this group.";
+      return {
+        body: top("", '<span class="pill">Friend view</span>') +
+          '<div class="from"><span class="avatar me">A</span><span>Aaliyah sent you this from Apple Music</span></div>' +
+          img(PLAYLIST, "Aaliyah", 170, "cover-hero", PLAYLIST + " cover") + "<h1>" + PLAYLIST + "</h1>" + strip(null, !S.seenRise) + legend() +
+          '<p class="summary">' + matched() + " of " + N + ' songs are on Spotify, <span style="white-space:nowrap">' + length() + ".</span></p>" +
+          (misses().length ? '<p class="small">Missing: ' + missText() + ".</p>" : "") +
+          '<h2 class="gap-top">What’s in it</h2>' +
+          '<div class="seg" role="tablist">' +
+          ["all", "changed", "missing"].map(function (f) { return '<button type="button" role="tab" data-filter="' + f + '" aria-selected="' + (S.filter === f) + '">' + { all: "All", changed: "Changed", missing: "Missing" }[f] + " " + counts[f] + "</button>"; }).join("") + "</div>" +
+          '<div class="field"><input id="q" type="search" placeholder="Find a song or artist" value="' + esc(S.query) + '" autocomplete="off" aria-label="Find a song or artist"></div>' +
+          '<div id="rowsHold">' + (list.length ? '<ol class="rows">' + list.map(trackRow).join("") + "</ol>" : '<div class="empty">' + empty + "</div>") + "</div>" +
+          '<p class="small" style="margin-top:12px">Tap a song to play from there, fix a wrong match, or find where to buy it.</p>',
+        actions: '<button type="button" class="btn btn-primary" data-play="0">Play in Spotify</button><p class="small">Opens Spotify. No sign-in, nothing added to your library.</p>',
+        note: { name: "Recipient view", stories: ["S7 AC2", "S7 AC4", "S8", "S11 AC1", "Match report"], text: "The screen the MVP turns on. One primary button, pinned for thumb reach. Songs stay in source order; there's no shuffle on purpose, because order is the point of a shared playlist (S11).", open: "Tapping a row now opens a sheet. That settles the S5/S9 gap where both stories claimed the same tap." }
+      };
+    },
+    friendOffline: function () {
+      return {
+        body: top("", '<span class="pill">Friend view</span>') +
+          '<div class="done-mark" style="color:var(--danger)">Offline</div><h1>Can’t load this playlist</h1>' +
+          '<p class="lede">Your phone isn’t connected. Crossfade doesn’t save playlists on your phone, so it needs a connection to show this one.</p>' +
+          '<div class="notice">Turn off No connection in <b>More</b> to bring it back.</div>',
+        actions: '<button type="button" class="btn btn-primary" data-retry>Try again</button>',
+        note: { name: "Recipient, no connection", stories: ["Error state"], text: "Every feature needs an error state. Nothing is cached on the recipient's phone (PRD R6: no cookies, nothing stored)." }
+      };
+    },
+    fix: function () {
+      var i = S.fixFor, t = TRACKS[i], alts = altsFor(i);
+      var results = [];
+      if (S.fixSearched) {
+        var q = S.fixQuery.trim().toLowerCase();
+        results = q ? SEARCH.filter(function (r) { return (r.t + " " + r.a).toLowerCase().indexOf(q) >= 0; }).slice(0, 5) : [];
+      }
+      var listFor = function (arr, pre) {
+        return '<ul class="options">' + arr.map(function (r, k) {
+          var id = pre + k;
+          return '<li><button type="button" class="opt" data-fixpick="' + id + '" aria-pressed="' + (S.fixPick === id) + '">' + img(r.al, r.a, 56, "cover-md") +
+            "<span><b>" + esc(r.t) + '</b><span class="d">' + esc(r.a) + " · " + esc(r.al) + " · " + r.d + "</span></span>" + (r.tag ? '<span class="tag">' + esc(r.tag) + "</span>" : "") + "</button></li>";
+        }).join("") + "</ul>";
+      };
+      var noneClose = alts.length === 0;
+      return {
+        body: top("Playlist") + "<h1>Fix a match</h1>" +
+          '<div class="notice">Aaliyah’s playlist has <b>“' + esc(t[0]) + "”</b> by " + esc(t[1]) + ", " + t[3] + ".</div>" +
+          (noneClose ? '<p class="small" style="margin-bottom:14px">No version on Spotify was close enough to suggest. Search for it yourself.</p>' :
+            "<h3>Closest on Spotify</h3>" + listFor(alts, "a")) +
+          "<h3>Search Spotify</h3>" +
+          '<form class="field" id="fixForm"><input id="fixq" type="search" placeholder="Song or artist" value="' + esc(S.fixQuery) + '" autocomplete="off" aria-label="Search Spotify"><button type="submit">Search</button></form>' +
+          (S.fixSearched ? (results.length ? listFor(results, "s") : '<div class="empty"><b>No songs on Spotify (US) match “' + esc(S.fixQuery) + '”</b>Try the artist name, or leave it missing.</div>') :
+            '<p class="small">Sample searches: “Mac Ayres”, “Raveena”, “easy”.</p>'),
+        actions: '<button type="button" class="btn btn-primary" data-usefix' + (S.fixPick ? "" : " disabled") + ">Use this version</button>" +
+          '<button type="button" class="btn btn-text" data-back>' + (status(i) === "miss" ? "Leave it missing" : "Keep the current match") + "</button>",
+        note: { name: "Fix a match", stories: ["S9"], text: "Up to five candidates with album and length, so you can tell the clean edit from the live take. When none clear the threshold, you get a search box instead of a bad guess.", open: "S9 AC2 says a fix is reused next time. Who sees it? The PRD stores nothing about the recipient, so for now a fix only changes this link." }
+      };
+    },
+    playing: function () {
+      var t = TRACKS[S.playFrom];
+      return {
+        body: top("Playlist") + '<div class="done-mark">Playing</div><h1>Spotify would open here' + (S.playFrom ? " at song " + (S.playFrom + 1) : "") + "</h1>" +
+          '<div class="from">' + img(t[1], "", 56, "cover-md") + "<span><b>" + esc(t[0]) + "</b><br>" + esc(t[1]) + "</span></div>" +
+          '<div class="notice"><b>What just happened:</b> one link, one tap, music. ' + matched() + " of " + N + " songs play in order on your own Spotify account.</div>" +
+          '<div class="notice"><b>Check your library:</b> nothing was added. The playlist lives on Crossfade’s Spotify account and you’re only listening to it.</div>',
+        actions: '<button type="button" class="btn btn-quiet" data-back>Back to the playlist</button>',
+        note: { name: "Handoff to Spotify", stories: ["S7 AC2", "S8", "MVP shots 5–6"], text: "In the real build this is a deep link into the Spotify app. Crossfade and transition timing stay whatever the listener already set in Spotify." }
+      };
+    },
+    missing: function () {
+      return {
+        body: top("More") + '<div class="done-mark" style="color:var(--mist)">404</div><h1>This Crossfade link doesn’t exist.</h1>' +
+          '<p class="lede">Check the link in your messages for a missing letter, or ask the person who sent it to send it again.</p>',
+        actions: '<button type="button" class="btn btn-quiet" data-back>Back</button>',
+        note: { name: "Link doesn't exist", stories: ["PRD R5"], text: "No story backs this screen; it comes from PRD R5 only. It names the problem and what to do about it, and nothing else." }
+      };
+    },
+
+    // ===== Together (idea 2) =====
+    tIntro: function () {
+      return {
+        body: top("", '<span class="pill">Idea 2</span>') + '<div class="stack" style="margin:6px 0 16px">' + img("SOS", "SZA", 104, "") + img("Blonde", "Frank Ocean", 104, "") + img("Friday pregame", "", 104, "") + "</div>" +
+          "<h1>Listen together</h1>" +
+          '<p class="lede">Connect your account, share by QR code, see how alike your taste is, and build one list together.</p>' +
+          '<div class="notice"><b>The catch:</b> everyone has to sign in. ADR 0006 keeps this out of v1. It’s here so interviewees can compare it with sending a link.</div>',
+        actions: '<button type="button" class="btn btn-primary" data-go="tConnect">Try it</button>',
+        note: { name: "Idea 2 intro", stories: ["S6", "S10"], text: "Kept from prototype v2 for the W02/W03 comparison. Out of v1 scope by ADR 0006." }
+      };
+    },
+    tConnect: function () {
+      var on = function (s) { return S.service === s ? "true" : "false"; };
+      return {
+        body: top("Back") + "<h1>Which app do you listen on?</h1>" +
+          '<p class="lede">Crossfade reads your playlists and albums so you can share them.</p>' +
+          '<ul class="options">' +
+          '<li><button type="button" class="opt" data-service="Apple Music" aria-pressed="' + on("Apple Music") + '"><span class="avatar am">AM</span><span><b>Apple Music</b><span class="d">Share from your library</span></span></button></li>' +
+          '<li><button type="button" class="opt" data-service="Spotify" aria-pressed="' + on("Spotify") + '"><span class="avatar sp">S</span><span><b>Spotify</b><span class="d">Share from your library</span></span></button></li></ul>' +
+          '<p class="small" style="margin-top:14px">On a family plan? Connecting uses your own profile. The person who pays isn’t notified.</p>',
+        actions: '<button type="button" class="btn btn-primary" data-go="tPick"' + (S.service ? "" : " disabled") + ">Connect " + esc(S.service || "your account") + "</button>",
+        note: { name: "Connect", stories: ["S6"], text: "Only playlist read and playlist create would be requested (S6 AC2)." }
+      };
+    },
+    tPick: function () {
+      var list = SHAREABLE[S.ttab];
+      return {
+        body: top("Back") + "<h1>Pick something to share</h1>" +
+          '<div class="seg" role="tablist"><button type="button" role="tab" data-ttab="playlists" aria-selected="' + (S.ttab === "playlists") + '">Playlists</button><button type="button" role="tab" data-ttab="albums" aria-selected="' + (S.ttab === "albums") + '">Albums</button></div>' +
+          '<ul class="options">' + list.map(function (x, i) {
+            return '<li><button type="button" class="opt" data-tpick="' + i + '" aria-pressed="' + (S.pick === x) + '">' + img(x.name, S.ttab === "albums" ? x.by : "", 56, "cover-md") + "<span><b>" + esc(x.name) + '</b><span class="d">' + esc(x.by) + "</span></span></button></li>";
+          }).join("") + "</ul>",
+        actions: '<button type="button" class="btn btn-primary" data-go="tShare">Share “' + esc(S.pick.name) + "”</button>",
+        note: { name: "Pick", stories: ["S10"], text: "Sample library. Signed in to " + (S.service || "a service") + "." }
+      };
+    },
+    tShare: function () {
+      setTimeout(function () { drawQR("qr"); }, 0);
+      return {
+        body: top("Back") + "<h1>Show this to your friends</h1>" +
+          '<p class="lede">They scan it with their camera and join from whatever app they use.</p>' +
+          '<canvas class="qr" id="qr" width="200" height="200" role="img" aria-label="Sample QR code"></canvas><p class="small" style="text-align:center;margin-bottom:12px">Sample code. It doesn’t scan to anything.</p>' +
+          '<p class="linkbox">crossfade.app/j/MV4R</p>',
+        actions: '<button type="button" class="btn btn-primary" data-go="tJoined">Pretend a friend scanned it</button><button type="button" class="btn btn-quiet" data-copy="https://crossfade.app/j/MV4R">Copy invite link</button>',
+        note: { name: "Invite", stories: ["S10"], text: "QR for in-person, link for texting." }
+      };
+    },
+    tJoined: function () {
+      var other = S.service === "Spotify" ? "Apple Music" : "Spotify", f = JORDAN, d = 130, off = Math.round(d * (1 - f.pct / 100) * 1.25);
+      if (!S.queue.length) S.queue = TRACKS.slice(0, 5).map(function (t) { return { t: t[0], a: t[1], by: "You" }; });
+      return {
+        body: top("Back") + '<div class="done-mark">+1</div><h1>Jordan joined from ' + other + "</h1>" +
+          '<p class="small" style="margin-bottom:18px">' + (S.pick.n - 1) + " of " + S.pick.n + " songs found on " + other + ". Jordan can see which one is missing.</p>" +
+          '<div class="venn" role="img" aria-label="Taste overlap ' + f.pct + ' percent"><span class="you"></span><span class="them" style="left:' + off + 'px"></span><span class="lbl" style="left:14px">You</span><span class="lbl" style="left:' + (off + d - 60) + 'px">Jordan</span></div>' +
+          '<p class="pct-big">' + f.pct + "% alike</p><p class=\"small\">Based on the artists in both libraries. " + esc(f.diff) + "</p>" +
+          '<h3>You both play</h3><ul class="chips artist-chips">' + f.shared.map(function (a) { return "<li>" + img(a, "", 24, "") + esc(a) + "</li>"; }).join("") + "</ul>",
+        actions: '<button type="button" class="btn btn-primary" data-go="tRoom">Open the group</button>',
+        note: { name: "Taste match", stories: ["Evidence: NONE"], text: "Only possible because both people signed in. No story asks for it yet." }
+      };
+    },
+    tRoom: function () {
+      var other = S.service === "Spotify" ? "Apple Music" : "Spotify";
+      var members = [{ n: "You", s: S.service, c: S.service === "Spotify" ? "sp" : "am" }, { n: "Jordan", s: other, c: other === "Spotify" ? "sp" : "am", p: 72 }];
+      if (S.maya) members.push({ n: "Maya", s: "Spotify", c: "sp", p: 54 });
+      return {
+        body: top("Back", '<button type="button" class="icon-btn" data-go="tShare" aria-label="Invite more people">+</button>') +
+          "<h1>" + esc(S.pick.name) + "</h1>" +
+          '<ul class="people">' + members.map(function (m) { return '<li><span class="avatar ' + m.c + '">' + m.n[0] + "</span><span><b>" + m.n + '</b><span class="svc">' + esc(m.s) + "</span></span>" + (m.p ? '<span class="pct">' + m.p + "% alike</span>" : "") + "</li>"; }).join("") + "</ul>" +
+          '<h2 class="gap-top">Up next</h2><ol class="rows">' + S.queue.map(function (q, i) {
+            return '<li class="' + (q.isNew ? "new" : "") + '"><div class="row static"><span class="n">' + (i + 1) + "</span>" + img(q.a, "", 42, "cover-sm") + '<span class="txt"><span class="t">' + esc(q.t) + '</span><span class="a">' + esc(q.a) + '</span></span><span class="r">' + esc(q.by) + "</span></div></li>";
+          }).join("") + "</ol>" +
+          '<h2 class="gap-top">Add a song</h2>' + SUGGEST.map(function (s, i) {
+            var done = S.added[i];
+            return '<div class="addrow">' + img(s[1], "", 42, "cover-sm") + "<span><b>" + esc(s[0]) + '</b><br><span class="small">' + esc(s[1]) + '</span></span><button type="button" data-add="' + i + '"' + (done ? " disabled" : "") + ">" + (done ? "Added" : "Add") + "</button></div>";
+          }).join(""),
+        actions: '<button type="button" class="btn btn-primary" data-go="tPlaying">Play in ' + esc(S.service || "your app") + '</button><p class="small">Everyone plays in their own app. The list stays the same for all of you.</p>',
+        note: { name: "Group playlist", stories: ["S10"], text: "Each song shows who added it. Add two songs and Maya joins.", open: "This is a shared list, not a synced listening session. No public API lets one app control another app's playback position." }
+      };
+    },
+    tPlaying: function () {
+      return {
+        body: top("Group") + '<div class="done-mark">Playing</div><h1>' + esc(S.service || "Your app") + " would open here with the group list</h1>" +
+          '<div class="notice"><b>What this idea can and can’t do:</b> everyone gets the same list in their own app, and new songs show up for everyone. It can’t make you hear the same second of the same song at the same time.</div>',
+        actions: '<button type="button" class="btn btn-quiet" data-back>Back to the group</button>',
+        note: { name: "Handoff", stories: ["S10"], text: "Same honesty as idea 1: Crossfade hands off to each person's own subscription." }
+      };
+    },
+
+    // ===== More =====
+    more: function () {
+      var mode = S.themeMode;
+      return {
+        body: top("", '<span class="pill">Prototype</span>') + "<h1>More</h1>" +
+          "<h3>Appearance</h3>" +
+          '<div class="seg" role="tablist">' + ["system", "light", "dark"].map(function (m) { return '<button type="button" role="tab" data-theme-mode="' + m + '" aria-selected="' + (mode === m) + '">' + m[0].toUpperCase() + m.slice(1) + "</button>"; }).join("") + "</div>" +
+          "<h3>Try other states</h3>" +
+          '<div class="group">' +
+          '<button type="button" class="item" role="switch" data-offline aria-checked="' + S.offline + '"><span>No connection<span class="d">Send and Friend view show their offline errors</span></span><span class="switch"></span></button>' +
+          '<button type="button" class="item" data-state="missing"><span>Link doesn’t exist<span class="d">What a mistyped link shows</span></span><span class="chev">›</span></button>' +
+          '<button type="button" class="item" data-state="zero"><span>Zero matches<span class="d">A playlist with nothing on Spotify</span></span><span class="chev">›</span></button>' +
+          '<button type="button" class="item" data-state="allfixed"><span>Every song found<span class="d">The Missing tab’s empty state</span></span><span class="chev">›</span></button>' +
+          "</div>" +
+          "<h3>Feedback</h3>" +
+          '<div class="group"><button type="button" class="item" data-go="vote"><span>Which idea would you use?<span class="d">For W02 and W03 interviews</span></span><span class="chev">›</span></button></div>' +
+          "<h3>What Crossfade can’t do</h3>" +
+          '<ul class="cant">' +
+          "<li><span><b>Move music files.</b> Songs are locked to each person’s own subscription.</span></li>" +
+          "<li><span><b>Set crossfade or transitions.</b> That’s a setting in your own music app.</span></li>" +
+          "<li><span><b>Play in sync across apps.</b> No music app lets another app control playback timing.</span></li>" +
+          "<li><span><b>Match every song.</b> Remixes, live takes and clean edits break it. Misses are shown, never swapped.</span></li></ul>",
+        actions: '<button type="button" class="btn btn-quiet" data-restart>Start over</button>',
+        note: { name: "More", stories: ["Prototype controls"], text: "Not a product screen. Switches between states so you can show every error and empty state during a review." }
+      };
+    },
+    vote: function () {
+      var opts = [["Send a link", "Quick, no sign-in, one playlist at a time."], ["Listen together", "Sign in once, share by QR code, one shared list."], ["Neither", "I’d still send a screenshot, or not bother."]];
+      return {
+        body: top("More") + "<h1>Which one would you actually use?</h1><p class=\"lede\">Pick one, then tell Aaliyah why. The reason matters more than the pick.</p>" +
+          '<ul class="options">' + opts.map(function (o) { return '<li><button type="button" class="opt" data-vote="' + o[0] + '" aria-pressed="' + (S.vote === o[0]) + '"><span><b>' + o[0] + '</b><span class="d">' + o[1] + "</span></span></button></li>"; }).join("") + "</ul>" +
+          (S.vote ? '<p class="summary gap-top">You picked “' + esc(S.vote) + ".” Tell Aaliyah what made you choose it.</p>" : ""),
+        actions: "",
+        note: { name: "Vote", stories: ["W02/W03"], text: "Interview prompt. The pick isn't stored anywhere." }
+      };
+    }
+  };
+
+  // ---------- icons ----------
+  var ICON = {
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z"/></svg>',
+    friend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+    together: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>',
+    share: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>'
+  };
+  var TABS = [["send", "Send"], ["friend", "Friend view"], ["together", "Together"], ["more", "More"]];
+
+  // ---------- rendering ----------
+  var view = document.getElementById("view"), actionsEl = document.getElementById("actions"), tabbar = document.getElementById("tabbar");
+  var notesEl = document.getElementById("notes"), sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim"), toastEl = document.getElementById("toast");
+
+  function current() { var s = S.stacks[S.tab]; return s[s.length - 1]; }
+  function paint(keepScroll) {
+    var y = view.scrollTop, name = current(), r = screens[name]();
+    view.innerHTML = r.body;
+    actionsEl.innerHTML = r.actions || ""; actionsEl.hidden = !r.actions;
+    tabbar.innerHTML = TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + ICON[t[0]] + "<span>" + t[1] + "</span></button>"; }).join("");
+    document.getElementById("statusIcons").innerHTML = S.offline ? '<span class="off">No service</span>' :
+      '<svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>' +
+      '<svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5"/></svg>';
+    var n = r.note || {};
+    notesEl.innerHTML = '<p class="eyebrow">' + esc(TABS.filter(function (t) { return t[0] === S.tab; })[0][1]) + "</p><h2>" + esc(n.name || "") + "</h2>" +
+      '<ul class="stories">' + (n.stories || []).map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ul>" +
+      "<p>" + esc(n.text || "") + "</p>" + (n.open ? '<div class="open"><b>Open question</b>' + esc(n.open) + "</div>" : "") +
+      '<p class="foot">Prototype. No real accounts or music. Artwork is generated. <button type="button" data-restart>Start over</button></p>';
+    view.scrollTop = keepScroll ? y : 0;
+    if (name === "friend" && !S.offline) S.seenRise = true;
+  }
+  function go(name) { S.stacks[S.tab].push(name); clearInterval(timer); paint(false); if (name === "building") startBuild(); }
+  function back() { var s = S.stacks[S.tab]; if (s.length > 1) s.pop(); clearInterval(timer); paint(false); }
+  function switchTab(tab, stack) { if (stack && tab === "friend") S.seenRise = false; S.tab = tab; if (stack) S.stacks[tab] = stack; clearInterval(timer); closeSheet(); paint(false); }
+
+  function startBuild() {
+    var k = 0;
+    timer = setInterval(function () {
+      k++;
+      var p = document.getElementById("prog"), st = document.getElementById("stripHold");
+      if (!p) { clearInterval(timer); return; }
+      p.textContent = k < 4 ? "Reading playlist…" : "Matching " + Math.min(k - 3, N) + " of " + N + "…";
+      st.innerHTML = strip(Math.max(0, k - 3), false, S.zero);
+      if (k - 3 >= N) {
+        clearInterval(timer);
+        setTimeout(function () { if (current() !== "building") return; S.stacks.send.pop(); go(S.zero ? "zero" : "ready"); }, 350);
+      }
+    }, 95);
+  }
+
+  var toastT;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove("on"); }, 2200); }
+
+  // ---------- sheets ----------
+  function openSheet(html) {
+    sheet.innerHTML = '<div class="grab"></div>' + html;
+    sheet.hidden = false; scrim.hidden = false;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.add("on"); scrim.classList.add("on"); var f = sheet.querySelector("button"); if (f) f.focus({ preventScroll: true }); }); });
+  }
+  function closeSheet() {
+    if (sheet.hidden) return;
+    sheet.classList.remove("on"); scrim.classList.remove("on");
+    setTimeout(function () { sheet.hidden = true; scrim.hidden = true; }, 230);
+  }
+  var SHEETS = {
+    share: function () {
+      return '<div class="sheet-head">' + img(PLAYLIST, "Aaliyah", 56, "cover-md") + "<span><b>" + PLAYLIST + '</b><span class="small">crossfade.app/p/x7Kq2mVb9R</span></span></div>' +
+        '<div class="share-grid">' +
+        '<button type="button" data-sheetgo="messages"><i style="background:#2FA35A">Msg</i>Messages</button>' +
+        '<button type="button" data-airdrop><i style="background:#2E7CF6">Air</i>AirDrop</button>' +
+        '<button type="button" data-sheet="qr"><i style="background:#1C1A33">QR</i>QR code</button>' +
+        '<button type="button" data-copy="' + LINK + '"><i style="background:#5A5775">Copy</i>Copy</button></div>' +
+        '<div class="sheet-list"><button type="button" data-friendview>See what your friend sees <span class="d">Preview</span></button></div>' +
+        '<button type="button" class="btn btn-quiet" data-close>Cancel</button>';
+    },
+    qr: function () {
+      setTimeout(function () { drawQR("qr2"); }, 30);
+      return "<h2 style=\"text-align:center\">Scan to open " + PLAYLIST + '</h2><canvas class="qr" id="qr2" width="200" height="200" role="img" aria-label="Sample QR code"></canvas>' +
+        '<p class="small" style="text-align:center;margin-bottom:14px">For handing a phone across a table. Sample code, it doesn’t scan to anything.</p>' +
+        '<button type="button" class="btn btn-quiet" data-close>Done</button>';
+    },
+    track: function (i) {
+      var t = TRACKS[i], st = status(i), buy = st !== "miss" && BUY[i];
+      var line = { exact: "On Spotify, same recording.", close: "Close match: Spotify has “" + esc(t[4]) + "”.", miss: "Not found on Spotify (US).", fixed: "Fixed: " + (S.fixed[i] ? esc(S.fixed[i].t + ", " + S.fixed[i].al) : "") }[st];
+      return '<div class="sheet-head">' + img(t[1], "", 56, "cover-md") + "<span><b>" + esc(t[0]) + '</b><span class="small">' + esc(t[1]) + " · " + t[3] + "</span></span></div>" +
+        '<p class="small" style="margin:-4px 0 14px;color:' + (st === "close" ? "var(--amber)" : st === "fixed" ? "var(--signal)" : "var(--ink-soft)") + '">' + line + "</p>" +
+        '<div class="sheet-list">' +
+        (st !== "miss" ? '<button type="button" data-play="' + i + '">Play from this song <span class="d">Spotify</span></button>' : "") +
+        '<button type="button" data-fix="' + i + '">' + (st === "miss" ? "Find it on Spotify" : st === "exact" ? "Wrong song? Pick another" : "Fix this match") + ' <span class="d">' + (st === "miss" ? "Search" : "Alternatives") + "</span></button>" +
+        (buy ? '<button type="button" data-buy="' + esc(buy) + '">Buy on ' + esc(buy) + ' <span class="d">Own it</span></button>' : "") +
+        '<button type="button" data-copy="' + esc(t[0] + " - " + t[1]) + '">Copy song and artist</button></div>' +
+        (buy || st === "miss" ? "" : '<p class="small" style="margin-bottom:12px">No place to buy this one was found, so there’s no buy button.</p>') +
+        '<button type="button" class="btn btn-quiet" data-close>Cancel</button>';
+    }
+  };
+
+  function drawQR(id) {
+    var c = document.getElementById(id); if (!c) return;
+    var x = c.getContext("2d"), n = 25, W = c.width, cell = W / n, seed = 7;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    x.fillStyle = "#fff"; x.fillRect(0, 0, W, W); x.fillStyle = "#1C1A33";
+    var finder = function (r, q) { return (r < 7 && q < 7) || (r < 7 && q >= n - 7) || (r >= n - 7 && q < 7); };
+    for (var r = 0; r < n; r++) for (var q = 0; q < n; q++) { if (!finder(r, q) && rnd() > 0.52) x.fillRect(q * cell, r * cell, Math.ceil(cell), Math.ceil(cell)); }
+    [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
+      var y0 = p[0] * cell, x0 = p[1] * cell;
+      x.fillRect(x0, y0, 7 * cell, 7 * cell); x.fillStyle = "#fff"; x.fillRect(x0 + cell, y0 + cell, 5 * cell, 5 * cell);
+      x.fillStyle = "#1C1A33"; x.fillRect(x0 + 2 * cell, y0 + 2 * cell, 3 * cell, 3 * cell);
+    });
+  }
+
+  // ---------- create-link validation (PRD order: passcode, format, rate limit) ----------
+  function validate() {
+    var url = S.url.trim(), code = S.code;
+    if (S.offline) return { field: "net", msg: "No connection. Crossfade needs the internet to read your playlist." };
+    if (!url) return { field: "url", msg: "Paste an Apple Music playlist link first." };
+    if (code !== PASSCODE) return { field: "code", msg: "Wrong passcode." };
+    var m = url.match(/^https?:\/\/music\.apple\.com\/([a-z]{2})\/playlist\//i);
+    if (!m) return { field: "url", msg: "That isn’t an Apple Music playlist link. It should start with music.apple.com/us/playlist/." };
+    if (m[1].toLowerCase() !== "us") return { field: "url", msg: "Crossfade only reads US Apple Music links for now. This one is from the " + m[1].toUpperCase() + " store." };
+    if (S.problem === "toolong") return { field: "url", msg: "This playlist has 140 songs. Crossfade handles up to 100. Split it into two playlists and send both." };
+    return null;
+  }
+  var PROBLEMS = {
+    wrongcode: { url: SAMPLE_URL, code: "1234" },
+    badlink: { url: "https://music.apple.com/us/album/sos/1657869377", code: PASSCODE },
+    nonus: { url: "https://music.apple.com/gb/playlist/late-train-home/pl.u-8aAVZ", code: PASSCODE },
+    toolong: { url: "https://music.apple.com/us/playlist/every-song-ive-liked/pl.u-2kQ9", code: PASSCODE },
+    zero: { url: "https://music.apple.com/us/playlist/study-no-words/pl.u-0zZ1", code: PASSCODE }
+  };
+
+  function readFields() {
+    var u = document.getElementById("url"), c = document.getElementById("code");
+    if (u) S.url = u.value; if (c) S.code = c.value;
+  }
+
+  // ---------- events ----------
+  document.addEventListener("click", function (ev) {
+    if (ev.target === scrim) { closeSheet(); return; }
+    var el = ev.target.closest("button"); if (!el) return;
+    var d = el.dataset;
+    if (current() === "send") readFields();
+
+    if (d.tab) { switchTab(d.tab); return; }
+    if (el.hasAttribute("data-back")) { closeSheet(); back(); return; }
+    if (d.go) { closeSheet(); go(d.go); return; }
+    if (el.hasAttribute("data-close")) { closeSheet(); return; }
+    if (el.hasAttribute("data-restart")) { var tm = S.themeMode; S = fresh(); S.themeMode = tm; closeSheet(); paint(false); toast("Started over"); return; }
+
+    // send
+    if (el.hasAttribute("data-paste")) { S.url = SAMPLE_URL; S.err = null; paint(true); return; }
+    if (el.hasAttribute("data-clear")) { S.url = ""; S.err = null; S.problem = null; paint(true); var u = document.getElementById("url"); if (u) u.focus(); return; }
+    if (el.hasAttribute("data-showcode")) { S.showCode = !S.showCode; paint(true); return; }
+    if (d.problem) {
+      if (S.problem === d.problem) { S.problem = null; S.url = SAMPLE_URL; S.code = PASSCODE; }
+      else { S.problem = d.problem; S.url = PROBLEMS[d.problem].url; S.code = PROBLEMS[d.problem].code; }
+      S.err = null; paint(true); return;
+    }
+    if (el.hasAttribute("data-create")) {
+      S.err = validate();
+      if (S.err) { paint(true); return; }
+      S.zero = S.problem === "zero"; go("building"); return;
+    }
+    if (el.hasAttribute("data-newlink")) { S.url = ""; S.err = null; S.problem = null; S.zero = false; S.stacks.send = ["send"]; paint(false); return; }
+    if (d.sheet) { openSheet(SHEETS[d.sheet]()); return; }
+    if (d.sheetgo) { closeSheet(); if (S.tab !== "send") switchTab("send"); go(d.sheetgo); return; }
+    if (el.hasAttribute("data-airdrop")) { closeSheet(); toast("AirDrop would open here"); return; }
+    if (el.hasAttribute("data-friendview")) { S.filter = "all"; S.query = ""; switchTab("friend", ["friend"]); return; }
+    if (d.copy) {
+      var text = d.copy, done = function () { toast(text.indexOf("http") === 0 ? "Link copied" : "Copied “" + text + "”"); };
+      try { navigator.clipboard.writeText(text).then(done, function () { selectLink(); done(); }); } catch (e) { selectLink(); done(); }
+      closeSheet(); return;
+    }
+
+    // friend
+    if (d.filter) { S.filter = d.filter; paint(true); return; }
+    if (d.track) { openSheet(SHEETS.track(+d.track)); return; }
+    if (d.play !== undefined) { S.playFrom = +d.play; closeSheet(); go("playing"); return; }
+    if (d.fix !== undefined) {
+      S.fixFor = +d.fix; S.fixPick = null; S.fixQuery = ""; S.fixSearched = false;
+      if (TRACKS[S.fixFor][2] === "miss" && !S.fixed[S.fixFor]) { S.fixQuery = TRACKS[S.fixFor][1]; S.fixSearched = true; }
+      closeSheet(); go("fix"); return;
+    }
+    if (d.fixpick) { S.fixPick = d.fixpick; paint(true); return; }
+    if (el.hasAttribute("data-usefix")) {
+      var i = S.fixFor, src = S.fixPick[0] === "a" ? altsFor(i) : SEARCH.filter(function (r) { return (r.t + " " + r.a).toLowerCase().indexOf(S.fixQuery.trim().toLowerCase()) >= 0; });
+      var pick = src[+S.fixPick.slice(1)];
+      if (pick) S.fixed[i] = pick;
+      back(); toast("Fixed. " + matched() + " of " + N + " now on Spotify"); return;
+    }
+    if (d.buy) { closeSheet(); toast("Would open this release on " + d.buy); return; }
+    if (el.hasAttribute("data-retry")) { if (S.offline) toast("Still offline"); else paint(false); return; }
+
+    // together
+    if (d.service) { S.service = d.service; paint(true); return; }
+    if (d.ttab) { S.ttab = d.ttab; S.pick = SHAREABLE[S.ttab][0]; paint(true); return; }
+    if (d.tpick) { S.pick = SHAREABLE[S.ttab][+d.tpick]; paint(true); return; }
+    if (d.add) {
+      var a = +d.add; S.added[a] = true;
+      S.queue.forEach(function (q) { q.isNew = false; });
+      S.queue.push({ t: SUGGEST[a][0], a: SUGGEST[a][1], by: "You", isNew: true });
+      if (!S.maya && Object.keys(S.added).length === 2) { S.maya = true; S.queue.push({ t: "Redbone", a: "Childish Gambino", by: "Maya", isNew: true }); toast("Maya joined from Spotify"); }
+      paint(true); return;
+    }
+
+    // more
+    if (d.themeMode) {
+      S.themeMode = d.themeMode;
+      if (d.themeMode === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", d.themeMode);
+      paint(true); return;
+    }
+    if (el.hasAttribute("data-offline")) { S.offline = !S.offline; S.err = null; paint(true); toast(S.offline ? "Phone is offline" : "Back online"); return; }
+    if (d.state === "missing") { switchTab("friend", ["friend", "missing"]); return; }
+    if (d.state === "zero") { S.problem = "zero"; S.url = PROBLEMS.zero.url; S.code = PASSCODE; S.zero = true; S.err = null; switchTab("send", ["send"]); go("building"); return; }
+    if (d.state === "allfixed") {
+      S.fixed[11] = ALTS[11][0]; S.fixed[12] = SEARCH[0]; S.fixed[20] = SEARCH[2];
+      S.filter = "missing"; S.query = ""; switchTab("friend", ["friend"]); toast("Every song is on Spotify now"); return;
+    }
+    if (d.vote) { S.vote = d.vote; paint(true); return; }
+  });
+
+  document.addEventListener("input", function (ev) {
+    var t = ev.target;
+    if (t.id === "url") {
+      S.url = t.value; S.problem = null;
+      var b = document.querySelector("[data-create]"); if (b) b.disabled = !t.value.trim();
+    }
+    if (t.id === "code") { S.code = t.value; }
+    if (t.id === "q") {
+      S.query = t.value;
+      var tmp = document.createElement("div"); tmp.innerHTML = screens.friend().body;
+      document.getElementById("rowsHold").innerHTML = tmp.querySelector("#rowsHold").innerHTML;
+    }
+    if (t.id === "fixq") { S.fixQuery = t.value; }
+  });
+  document.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (ev.target.id === "fixForm") { S.fixSearched = true; S.fixPick = null; paint(true); }
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") closeSheet();
+    if (ev.key === "Enter" && (ev.target.id === "url" || ev.target.id === "code")) { ev.preventDefault(); var b = document.querySelector("[data-create]"); if (b && !b.disabled) b.click(); }
+  });
+  function selectLink() {
+    var box = document.getElementById("linkbox"); if (!box) return;
+    var r = document.createRange(); r.selectNodeContents(box);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('900 40px "Archivo"'), document.fonts.load('600 20px "Archivo"')]).then(function () {
+      artCache = {}; if (current() !== "building") paint(true);
+    }, function () {});
+  }
+  paint(false);
+})();
+</script>
