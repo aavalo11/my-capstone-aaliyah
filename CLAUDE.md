@@ -1,73 +1,29 @@
 # CLAUDE.md
 
-## What this is
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Crossfade** — a playlist bridge between Apple Music and Spotify. You send one link and
-the playlist rebuilds itself as a playable playlist in whatever service your friend
-already uses, instead of a screenshot they have to retype. Solo capstone for IST300.
+**Crossfade** (IST300 solo capstone): paste a shared Apple Music playlist link, get one link a friend opens as a playable Spotify playlist. The name is a metaphor. The app can't control crossfade.
+- **Sender:** on Apple Music, on her phone, mid-chat. It has to take about 5 s or she sends a screenshot. **Recipient:** on Spotify, never logs in, nothing is written to their library.
+- These are assumptions. **W01 declined the cross-service premise, and W02/W03 haven't run.** Say so when evidence contradicts the idea.
 
-## Who uses it
+## Run and check
+- `python3 -m http.server 8000 --bind 127.0.0.1 --directory src` → http://localhost:8000. No build, no npm.
+- Empty and error states: add `?demo=empty` or `?demo=error` before the `#`. Recipient page: `p.html?code=sample` (also `code=nope`).
+- Checks: `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --virtual-time-budget=3000 --dump-dom "<url>"`.
 
-- **The sender** — on Apple Music, on her phone, mid-conversation. Wants it to take five
-  seconds. If it takes longer she sends a screenshot instead, which is the status quo
-  this replaces.
-- **The recipient** — on Spotify, often a free or family-plan account, doesn't want a
-  stranger's playlist written into their library without asking.
+## Rules
+- `docs/backlog.md` is the source of truth. If a request contradicts it, say so.
+- Evidence comes only from `docs/research/`. A story with no quote goes in the holding pen as `Evidence: NONE`.
+- Don't over-read field notes. If one is ambiguous, ask (ADR 0004: an over-read note cost S3 its evidence).
+- Every story has a failure-path AC. Every feature has an empty state and an error state.
+- Fake data is labelled on screen and marked `TODO(W10): real data`.
+- The browser never calls Apple or Spotify. Only the publishable key goes in `src/`. Use `esc()` on every interpolated string.
+- A decision that could have gone another way gets a five-line ADR in `docs/decisions/` first. No new dependency without saying why.
 
-## Current state (2026-10-08)
+## Never propose
+- Moving audio between services (DRM), controlling crossfade/transitions, or cross-service synced playback. No API allows any of them.
+- Recipient login or account connection (ADR 0006).
+- Substituting a different recording. Unmatched shows `Not found on Spotify (US)` (PRD R2).
 
-**Stack: Supabase + plain HTML/CSS/JS** (ADR 0007). `src/` holds a navigable shell that
-runs at `localhost:8000` (see README, *Running this project*). The Apple → Spotify
-bridge itself, the Edge Functions and `tests/` start Week 9. Home, Friends and Settings
-beyond v1 are holding-pen stories S12–S14, so keep Friends on labelled sample data until
-ADR 0006 is revised.
-
-| Doc | State |
-|---|---|
-| `docs/01-concept-brief.md` | Done (CP-M1) |
-| `docs/backlog.md` | Lab 3, plus S12–S14 in the holding pen (2026-10-08) |
-| `docs/research/interview-01.md` | Done — W01, 2026-09-10 |
-| `docs/research/interview-02.md` | **Empty — W02 not yet run** |
-| `docs/02-prd.md` | Done (CP-M2) |
-| `docs/03-architecture.md` | **Empty — due 2026-10-11** |
-
-## Conventions
-
-- **`docs/backlog.md` is the source of truth for requirements.** If a request
-  contradicts it, say so rather than guessing. Keep it current, not historical.
-- **Never cite evidence that isn't in `docs/research/`.** Every story carries an evidence
-  pointer. If I ask for a story you can't trace to a quote in a research file, write it
-  in the holding pen and mark it `Evidence: NONE`, don't invent support for it.
-- **Don't over-read field notes.** A fragment is a fragment. If a note is ambiguous, say
-  it's ambiguous and ask — this already cost one story (see `decisions/0004`).
-- **Every story needs a negative case.** Acceptance criteria are Given-When-Then, and at
-  least one must be a failure path.
-- **Every feature needs an empty state and an error state.**
-- **Decisions that could have gone another way get an ADR** in `docs/decisions/`, five
-  lines, before the work starts.
-- **Don't add dependencies without telling me why.**
-
-## Hard constraints — don't propose features that need these
-
-- **Audio cannot move between services.** Downloaded Spotify/Apple tracks are
-  DRM-encrypted and licensed to the account, not the listener. No upload, no transfer, no
-  local-file sync. This comes up repeatedly; the answer is always no.
-- **Crossfade and transition timing are not controllable.** They're client playback
-  settings in the listener's own app. Neither the Spotify Web API nor MusicKit exposes
-  them to a third party.
-- **No true cross-service synchronized playback.** No public API exposes playback
-  position on another service, so a live cross-service "jam" is not buildable.
-- **Each listener plays on their own subscription.** The bridge moves track identities,
-  never audio.
-- **Catalog matching will never be perfect.** Remixes, live versions, explicit vs. clean,
-  and regional availability all break it. Surfacing a failure honestly always beats
-  silently substituting a different recording.
-
-## Working style
-
-- Commit history is graded — it should show what was asked for, what changed, and **what
-  was rejected**. Prefer a new commit on top over rewriting pushed history. Amend only
-  before pushing.
-- Read what you propose back to me before committing.
-- If evidence contradicts the product idea, say so plainly. W01 already declined the
-  cross-service premise; that belongs in the docs, not buried.
+## Commits
+- History is graded (asked / changed / rejected). Add new commits, never rewrite pushed ones. Read the change and message back to me before committing.
