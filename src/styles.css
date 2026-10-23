@@ -103,6 +103,7 @@ p { margin: 0 0 .75rem; }
 .row .grow { flex: 1; min-width: 0; }
 .row .title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 a.row { color: inherit; text-decoration: none; }
+.row.unmatched { opacity: .55; } /* R3: greyed, never dropped */
 .chev { color: var(--ink-soft); }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; flex: none;

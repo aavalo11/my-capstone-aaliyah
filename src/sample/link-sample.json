@@ -1,0 +1,18 @@
+{
+  "_sample": true,
+  "_note": "Made-up link for the recipient page until Week 9. Shaped like get_link(code) in docs/03-architecture.md §3–4. The tiers are invented, not real match results.",
+  "links": {
+    "sample": {
+      "name": "late night drive",
+      "spotify_playlist_id": null,
+      "tracks": [
+        { "position": 0, "source_title": "Pink + White", "source_artist": "Frank Ocean", "tier": "exact", "spotify_title": "Pink + White", "spotify_artists": "Frank Ocean" },
+        { "position": 1, "source_title": "Nobody", "source_artist": "Mitski", "tier": "unmatched", "spotify_title": null, "spotify_artists": null },
+        { "position": 2, "source_title": "Get You (feat. Kali Uchis)", "source_artist": "Daniel Caesar", "tier": "close", "spotify_title": "Get You", "spotify_artists": "Daniel Caesar, Kali Uchis" },
+        { "position": 3, "source_title": "Kill Bill", "source_artist": "SZA", "tier": "exact", "spotify_title": "Kill Bill", "spotify_artists": "SZA" },
+        { "position": 4, "source_title": "Bags", "source_artist": "Clairo", "tier": "unmatched", "spotify_title": null, "spotify_artists": null },
+        { "position": 5, "source_title": "Bad Habit", "source_artist": "Steve Lacy", "tier": "exact", "spotify_title": "Bad Habit", "spotify_artists": "Steve Lacy" }
+      ]
+    }
+  }
+}
