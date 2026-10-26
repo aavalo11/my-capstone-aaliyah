@@ -203,6 +203,9 @@
         "</section>" +
 
         '<div class="col">' +
+          '<section><div class="section-head"><h2>Your links</h2><span class="small muted">Saved on this device</span></div>' +
+            '<div id="my-links">' + stateBlock("Loading…", "") + "</div></section>" +
+
           '<section><div class="section-head"><h2>Recently added</h2><a class="small" href="#/create">Add one</a></div>' +
             '<div id="recent">' + stateBlock("Loading…", "") + "</div></section>" +
 
@@ -237,6 +240,7 @@
       location.hash = "#/create";
     };
     wireTiles();
+    loadMyLinks();
     loadRecent();
     loadCharts();
   }
@@ -278,6 +282,93 @@
         }
       };
     });
+  }
+
+  // ---------- your links (create, read, rename, delete; ADR 0010) ----------
+
+  var LINK_ERRORS = {
+    "title-empty": "Give the playlist a name.",
+    "title-too-long": "Keep the name to " + window.CrossfadeLinks.MAX_TITLE + " characters or fewer.",
+    "not-found": "That link isn't here any more. It may have been deleted in another tab.",
+    "write-failed": "Couldn't save on this device. Nothing changed.",
+  };
+
+  function linkError(err) {
+    return LINK_ERRORS[err && err.name] || "Something went wrong. Nothing changed.";
+  }
+
+  function recipientUrl(code) {
+    return location.origin + location.pathname.replace(/[^/]*$/, "") + "p.html?code=" + encodeURIComponent(code);
+  }
+
+  // mode: { code, kind: "rename" | "delete", error } for the one row being changed, or null.
+  function loadMyLinks(mode) {
+    var box = document.getElementById("my-links");
+    if (!box) return;
+    var rows;
+    try { rows = window.CrossfadeLinks.list(); } catch (e) {
+      box.innerHTML = '<div class="card">' + stateBlock("Couldn't read your links",
+        "This browser wouldn't open Crossfade's saved links. Nothing was deleted.",
+        '<button class="btn quiet" type="button" id="links-retry">Try again</button>') + "</div>";
+      document.getElementById("links-retry").onclick = function () { loadMyLinks(); };
+      return;
+    }
+    if (!rows.length) {
+      box.innerHTML = '<div class="card">' + stateBlock("No links yet",
+        "Links you make on Create show up here, so you can rename or delete them.",
+        '<a class="btn quiet" href="#/create">Make a link</a>') + "</div>";
+      return;
+    }
+
+    box.innerHTML = '<div class="card"><ul class="list" id="my-links-list">' + rows.map(function (r) {
+      var editing = mode && mode.code === r.code ? mode : null;
+      var head = '<div class="grow"><div class="title">' + esc(r.title) + "</div>" +
+        '<div class="small muted">Made ' + esc(formatDate(r.created_at)) +
+        (r.updated_at !== r.created_at ? " · renamed " + esc(formatDate(r.updated_at)) : "") + "</div>";
+      var err = editing && editing.error ? '<div class="field-error" role="alert">' + esc(editing.error) + "</div>" : "";
+
+      if (editing && editing.kind === "rename") {
+        return '<li class="row link-row" data-code="' + esc(r.code) + '"><form class="grow link-edit" data-rename-form novalidate>' +
+          '<label for="rename-' + esc(r.code) + '">New name</label>' +
+          '<input id="rename-' + esc(r.code) + '" type="text" maxlength="' + window.CrossfadeLinks.MAX_TITLE + '" value="' + esc(editing.value != null ? editing.value : r.title) + '">' +
+          err + '<div class="link-actions"><button class="btn" type="submit">Save</button>' +
+          '<button class="btn quiet" type="button" data-cancel>Cancel</button></div></form></li>';
+      }
+      if (editing && editing.kind === "delete") {
+        return '<li class="row link-row" data-code="' + esc(r.code) + '"><div class="grow">' +
+          "<div>Delete <b>" + esc(r.title) + "</b>? Anyone you sent it to will see it was removed.</div>" + err +
+          '<div class="link-actions"><button class="btn danger" type="button" data-confirm-delete>Delete</button>' +
+          '<button class="btn quiet" type="button" data-cancel>Cancel</button></div></div></li>';
+      }
+      return '<li class="row link-row" data-code="' + esc(r.code) + '">' + head + "</div>" +
+        '<div class="link-actions"><a class="pill" href="' + esc(recipientUrl(r.code)) + '">Open</a>' +
+        '<button class="pill" type="button" data-rename>Rename</button>' +
+        '<button class="pill warn" type="button" data-delete>Delete</button></div></li>';
+    }).join("") + "</ul></div>";
+
+    box.querySelectorAll(".link-row").forEach(function (li) {
+      var code = li.getAttribute("data-code");
+      var on = function (sel, fn) { var el = li.querySelector(sel); if (el) el.onclick = fn; };
+      on("[data-rename]", function () { loadMyLinks({ code: code, kind: "rename" }); focusIn(li); });
+      on("[data-delete]", function () { loadMyLinks({ code: code, kind: "delete" }); });
+      on("[data-cancel]", function () { loadMyLinks(); });
+      on("[data-confirm-delete]", function () {
+        try { window.CrossfadeLinks.remove(code); loadMyLinks(); }
+        catch (e) { loadMyLinks({ code: code, kind: "delete", error: linkError(e) }); }
+      });
+      var form = li.querySelector("[data-rename-form]");
+      if (form) form.onsubmit = function (e) {
+        e.preventDefault();
+        var value = form.querySelector("input").value;
+        try { window.CrossfadeLinks.rename(code, value); loadMyLinks(); }
+        catch (err) { loadMyLinks({ code: code, kind: "rename", value: value, error: linkError(err) }); }
+      };
+    });
+  }
+
+  function focusIn(li) {
+    var input = document.getElementById("rename-" + li.getAttribute("data-code"));
+    if (input) { input.focus(); input.select(); }
   }
 
   function loadRecent() {
@@ -423,6 +514,9 @@
 
     body.innerHTML =
       '<form class="card" id="create-form" novalidate>' +
+        '<label for="title">Playlist name</label>' +
+        '<input id="title" type="text" autocomplete="off" maxlength="' + window.CrossfadeLinks.MAX_TITLE + '" placeholder="What your friend will see">' +
+        '<div class="field-error" id="title-error" role="alert"></div>' +
         '<label for="link">Apple Music link</label>' +
         '<input id="link" type="url" inputmode="url" autocomplete="off" placeholder="https://music.apple.com/us/playlist/…">' +
         '<div class="field-error" id="link-error" role="alert"></div>' +
@@ -440,14 +534,16 @@
 
     document.getElementById("create-form").onsubmit = function (e) {
       e.preventDefault();
+      var title = document.getElementById("title").value;
       var link = document.getElementById("link").value;
       var pass = document.getElementById("passcode").value;
+      var titleErr = document.getElementById("title-error");
       var linkErr = document.getElementById("link-error");
       var passErr = document.getElementById("pass-error");
       var result = document.getElementById("create-result");
-      linkErr.textContent = passErr.textContent = result.innerHTML = "";
+      titleErr.textContent = linkErr.textContent = passErr.textContent = result.innerHTML = "";
 
-      // Same order as PRD R1: passcode, then link format.
+      // Same order as PRD R1: passcode, then link format. The name is checked last.
       if (!pass) { passErr.textContent = "Enter the passcode."; return; }
       var problem = checkAppleLink(link);
       if (problem) { linkErr.textContent = problem; return; }
@@ -457,8 +553,27 @@
           "Nothing was sent. Try again.</div>";
         return;
       }
-      result.innerHTML = '<div class="notice"><b>That link looks right.</b> Building the Spotify ' +
-        "playlist isn't wired up yet (Week 9), so nothing was sent and nothing was saved.</div>";
+      var made;
+      try { made = window.CrossfadeLinks.create(title, link); } catch (err) {
+        if (err.name === "title-empty" || err.name === "title-too-long") titleErr.textContent = linkError(err);
+        else result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
+        return;
+      }
+      var url = recipientUrl(made.code);
+      result.innerHTML = '<div class="card" id="made-link"><strong>' + esc(made.title) + "</strong>" +
+        '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
+        '<button class="btn quiet" type="button" id="copy-made">Copy link</button> ' +
+        '<span class="small muted" id="copy-msg" role="status"></span>' +
+        '<div class="notice" style="margin-top:12px"><b>Saved on this device only.</b> It opens in this ' +
+        "browser and nowhere else, and the Spotify playlist isn't built yet (Week 9).</div></div>";
+      document.getElementById("copy-made").onclick = function () {
+        var msg = document.getElementById("copy-msg");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
+            function () { msg.textContent = "Copy the link above instead."; });
+        } else { msg.textContent = "Copy the link above instead."; }
+      };
+      document.getElementById("create-form").reset();
     };
   }
 

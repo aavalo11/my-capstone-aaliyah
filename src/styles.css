@@ -254,3 +254,9 @@ a.pill { text-decoration: none; flex: none; }
 @media (max-width: 520px) {
   .hero-form { flex-direction: column; }
 }
+
+/* Your links: rename and delete happen inline in the row (ADR 0010). */
+.link-row { flex-wrap: wrap; }
+.link-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.link-row button.pill { cursor: pointer; border: 0; font-family: inherit; }
+.btn.danger { background: var(--danger); }

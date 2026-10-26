@@ -23,6 +23,10 @@
   // TODO(W10): real data. Replace with POST /rest/v1/rpc/get_link { p_code } (architecture §3).
   function fetchLink(code) {
     if (DEMO === "error") return Promise.reject(new Error("demo"));
+    // A link made in this browser (ADR 0010). It has a name but no songs until Week 9.
+    var mine;
+    try { mine = window.CrossfadeLinks.get(code); } catch (e) { return Promise.reject(e); }
+    if (mine) return Promise.resolve(mine.deleted_at ? { removed: true } : { local: true, name: mine.title });
     return fetch("sample/link-sample.json")
       .then(function (res) {
         if (!res.ok) throw new Error("http-" + res.status);
@@ -56,6 +60,21 @@
       if (!link) {
         view.innerHTML = '<div class="card">' + stateBlock("This Crossfade link doesn't exist.",
           "Check that the whole link was copied, or ask whoever sent it.") + "</div>";
+        return;
+      }
+      if (link.removed) {
+        view.innerHTML = '<div class="card">' + stateBlock("This link was removed by whoever sent it.",
+          "Nothing on your Spotify was touched. Ask them for a new link if they meant to send it.") + "</div>";
+        return;
+      }
+      if (link.local) {
+        view.innerHTML =
+          '<div class="notice"><b>Saved on this device only.</b> This link was made in this browser ' +
+          "and won't open anywhere else until Crossfade has a real database.</div>" +
+          "<h1>" + esc(link.name) + "</h1>" +
+          '<button class="btn block" type="button" disabled>Play in Spotify</button>' +
+          '<div class="card" style="margin-top:12px">' + stateBlock("Songs appear once Crossfade builds the Spotify playlist",
+            "That arrives in Week 9. Nothing is ever added to your library.") + "</div>";
         return;
       }
       if (!link.tracks.length) {
