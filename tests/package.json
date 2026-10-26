@@ -1,0 +1,12 @@
+{
+  "name": "crossfade-tests",
+  "private": true,
+  "description": "Test-only tools. The app in src/ has no build and no dependencies (ADR 0007, ADR 0011).",
+  "scripts": {
+    "test": "node --test unit/*.test.js",
+    "e2e": "node e2e/run.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

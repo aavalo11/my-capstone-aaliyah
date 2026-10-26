@@ -51,7 +51,8 @@ Browser `localStorage`, key `crossfade-links-v1`, through `src/links-store.js` (
 
 ## Evidence
 Playwright (preinstalled in the cloud container, not added to the repo) against
-`python3 -m http.server 8000 --directory src`. The scripts are outside the repo, as with S7.
+`python3 -m http.server 8000 --directory src`. The checks are now in `tests/e2e/link-crud.js`
+(ADR 0011); `node tests/e2e/run.js` runs them.
 
 ```
 PASS C1f :: link error="That isn't an Apple Music playlist link." | name error="Give the playlist a name." | records=0
@@ -110,7 +111,7 @@ what was corrected afterwards and which check in **Fixes** proves it.
   Both were fixed in the scripts, not the app, and both cost a rerun.
 
 ## Fixes
-Each fix got its own check (`fixes.js`, outside the repo like the others). Every check was
+Each fix got its own check (`tests/e2e/link-crud-fixes.js`). Every check was
 run against commit `57ce734` (before the fixes) and against the fixed code. All 13 fail
 before, which shows they test the bug. All 13 pass after, and the original 9 checks
 still pass.
@@ -172,5 +173,6 @@ hard to specify, hard for the agent to build, or only hard once you tried to bre
 - Still open from the break-it table: R-2 lowercase codes (needs an ADR on the code
   alphabet), R-4 has no recovery from corrupted data, D-1 untested in Safari, D-2 has no
   undo. R-1, D-4 and D-5 wait for the database and the login.
-- Check scripts live outside the repo. Move them into `tests/` with S7's.
+- The checks are in `tests/` (unit tests for the store, plus the browser checks). S7's
+  check scripts still aren't (`tests/README.md`).
 - Architecture §9's table doesn't list Your links yet.

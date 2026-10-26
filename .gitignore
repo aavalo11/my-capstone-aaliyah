@@ -2,6 +2,10 @@
 *.p8
 .env
 .env.*
+!.env.example
+
+# Test tools (tests/package.json)
+node_modules/
 
 # macOS
 .DS_Store

@@ -56,11 +56,13 @@ docs/02-prd.md             CP-M2 · requirements                (due Sep 27)
 docs/03-architecture.md    CP-M3 · how it's built              (due Oct 11)
 docs/backlog.md            Lab 3 · 11 stories, MoSCoW, MVP     (done)
 docs/research/             interview notes, verbatim + reading
-docs/design/               wireframes and UI notes
+docs/design/               UI notes, prototypes, wireframes/ for sketch photos
 docs/decisions/            one file per call that could have gone otherwise
+docs/features/             one card per built feature: checks, evidence, what I corrected
 supabase/schema.sql        database setup, run once in the dashboard
 src/                       the app: plain HTML/CSS/JS (started 2026-10-08)
-tests/                     from Week 9
+tests/                     unit tests + Playwright browser checks (started 2026-10-26)
+.env.example               the secrets the Week 9 bridge needs, names only
 ```
 
 ## Running this project
@@ -124,14 +126,25 @@ how similar our taste is.
 Every screen has an empty and an error state. Add `?demo=empty` or `?demo=error` before
 the `#`, for example `http://localhost:8000/?demo=error#/home`.
 
-### What's real and what isn't (2026-10-08)
+### Running the tests
+
+```sh
+node --test tests/unit/*.test.js   # no install; Node 18+
+node tests/e2e/run.js              # browser checks; first run needs Playwright, see tests/README.md
+```
+
+**Pass signal:** `# fail 0` for the unit tests, then `All browser checks passed`.
+
+### What's real and what isn't (updated 2026-10-26)
 
 | Screen | State |
 |---|---|
 | Home → Recently added, Your numbers | Real: reads Supabase |
 | Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
 | Home → Listening history | Locked: needs an Apple Music sign-in (ADR 0006, backlog S12) |
-| Create → Paste a link | Link and passcode are checked here; building the playlist arrives in Week 9 |
+| Create → Paste a link | Link, passcode and name are checked here. The link is saved **in this browser only** (ADR 0010); building the playlist arrives in Week 9 |
+| Home → Your links | Real, but local: rename and delete the links made on Create. Saved in this browser only |
+| Friend page `p.html?code=…` | Shows a link made in this browser, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009) |
 | Create → Search songs | Disabled: needs a server-side Apple key |
 | Friends | Sample data only (backlog S13) |
 | Settings → Account | Placeholder until Lab 5 login (backlog S14); the theme setting works |

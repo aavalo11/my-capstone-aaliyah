@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `python3 -m http.server 8000 --bind 127.0.0.1 --directory src` → http://localhost:8000. No build, no npm.
 - Empty and error states: add `?demo=empty` or `?demo=error` before the `#`. Recipient page: `p.html?code=sample` (also `code=nope`).
 - Checks: `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --virtual-time-budget=3000 --dump-dom "<url>"`.
+- Tests: `node --test tests/unit/*.test.js` (no install) and `node tests/e2e/run.js` (Playwright, set up per `tests/README.md`). Playwright stays inside `tests/` (ADR 0011).
 
 ## Rules
 - `docs/backlog.md` is the source of truth. If a request contradicts it, say so.
