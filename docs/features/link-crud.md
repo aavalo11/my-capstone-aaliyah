@@ -76,34 +76,80 @@ Everything here comes from the break-it run. Nothing was predicted and filled in
 
 | Verb | What I tried | What happened | Did I have to correct the agent? |
 |---|---|---|---|
-| Create | **C-1** Double-tap Create | 1 record, but the second tap cleared the result and showed `Enter the passcode.` The link *was* made, and the sender never sees it | _you_ |
-| Create | **C-2** Same playlist, same name, twice | 2 links, 2 codes, no warning | _you_ |
-| Create | **C-3** Name `<img src=x onerror=alert(1)>` | No script ran; shown literally (`esc()` works) | _you_ |
-| Create | **C-4** 150-character name | `maxlength` silently cut it to 100. No message, so the error I wrote never shows | _you_ |
-| Create | **C-5** Share-sheet link with spaces and `?ls=1&app=music` | Accepted, trimmed, query string kept | _you_ |
-| Create | **C-6** UK link and blank name together | Only the link error shows. The name error appears only after fixing the link | _you_ |
-| Read | **R-1** Friend opens the link in another browser | `This Crossfade link doesn't exist.` The friend's half of Read doesn't work off-device (ADR 0010's cost) | _you_ |
-| Read | **R-2** Trailing `.` from Messages; lowercased code | Both: `doesn't exist`. Codes are case-sensitive and nothing trims punctuation | _you_ |
-| Read | **R-3** Home open in tab A, link made in tab B | Tab A still shows 1 row until reload | _you_ |
-| Read | **R-4** Saved data corrupted | Home: `Couldn't read your links`. Create: `Something went wrong. Nothing changed.` Every old link is unreachable and nothing can be made until the data is cleared | _you_ |
-| Update | **U-1** Rename in tab A after tab B deleted it | Tab A silently shows `No links yet`. The `not-found` message I wrote is thrown away because the row it belongs to is gone | _you_ |
-| Update | **U-2** Open Rename, Save unchanged | Row now says `renamed Oct 26` though nothing changed | _you_ |
-| Update | **U-3** Start renaming one link, tap Rename on another | The first row's half-typed name is lost without warning | _you_ |
-| Update | **U-4** Escape to back out | Nothing happens; still editing | _you_ |
-| Update | **U-5** Rename while the friend has the page open | Friend keeps the old name until they reload | _you_ |
-| Delete | **D-1** Delete, then Back to the friend page | Chromium re-ran the page and showed `removed`. Not tried in Safari, where back/forward cache may show the old page | _you_ |
-| Delete | **D-2** Delete by mistake, then re-create | New code. The old texted link stays `removed` forever, and there's no undo | _you_ |
-| Delete | **D-3** Two tabs both confirm delete | Second tab silently shows `No links yet` (same swallowed error as U-1) | _you_ |
-| Delete | **D-4** Sender clears website data | Friend sees `doesn't exist`, not `removed`. The tombstone went too | _you_ |
-| Delete | **D-5** Someone else holding the phone | Delete is right there, no passcode asked | _you_ |
+| Create | **C-1** Double-tap Create | 1 record, but the second tap cleared the result and showed `Enter the passcode.` The link *was* made, and the sender never sees it | **Yes.** You asked for the break-it bugs to be fixed. Create now stays off until you type again (F-C1) |
+| Create | **C-2** Same playlist, same name, twice | 2 links, 2 codes, no warning | **Yes**, same request. A second link is still allowed, but it now says `You already had a link for this playlist (…)` (F-C2) |
+| Create | **C-3** Name `<img src=x onerror=alert(1)>` | No script ran; shown literally (`esc()` works) | No |
+| Create | **C-4** 150-character name | `maxlength` silently cut it to 100. No message, so the error I wrote never shows | **Yes.** `maxlength` removed; the field keeps all 150 and says `Keep the name to 100 characters or fewer.` (F-C4) |
+| Create | **C-5** Share-sheet link with spaces and `?ls=1&app=music` | Accepted, trimmed, query string kept | No |
+| Create | **C-6** UK link and blank name together | Only the link error shows. The name error appears only after fixing the link | **Yes.** All field errors show at once. Focus goes to the first in PRD R1 order (F-C6) |
+| Read | **R-1** Friend opens the link in another browser | `This Crossfade link doesn't exist.` The friend's half of Read doesn't work off-device (ADR 0010's cost) | Not fixable here. Needs the real database (Workshop 4) |
+| Read | **R-2** Trailing `.` from Messages; lowercased code | Both: `doesn't exist`. Codes are case-sensitive and nothing trims punctuation | **Half.** Junk characters are now stripped, so `code.` and `code)` open (F-R2). Lowercase still fails: codes use both cases (architecture §6), and changing that is an ADR, not a bug fix |
+| Read | **R-3** Home open in tab A, link made in tab B | Tab A still shows 1 row until reload | **Yes.** Home redraws when another tab changes the saved links (F-R3) |
+| Read | **R-4** Saved data corrupted | Home: `Couldn't read your links`. Create: `Something went wrong. Nothing changed.` Every old link is unreachable and nothing can be made until the data is cleared | **Partly.** Create now says `Couldn't read the links saved on this device, so nothing was saved.` (F-R4). There's still no way to recover or clear the data from the page |
+| Update | **U-1** Rename in tab A after tab B deleted it | Tab A silently shows `No links yet`. The `not-found` message I wrote is thrown away because the row it belongs to is gone | **Yes.** It now shows `That link was already deleted, maybe in another tab.` above the list (F-U1) |
+| Update | **U-2** Open Rename, Save unchanged | Row now says `renamed Oct 26` though nothing changed | **Yes.** Saving the same name changes nothing (F-U2) |
+| Update | **U-3** Start renaming one link, tap Rename on another | The first row's half-typed name is lost without warning | **Yes.** Other rows' Rename and Delete are off until you Save or Cancel (F-U3) |
+| Update | **U-4** Escape to back out | Nothing happens; still editing | **Yes.** Escape cancels a rename or a delete confirm (F-U4) |
+| Update | **U-5** Rename while the friend has the page open | Friend keeps the old name until they reload | **Yes.** The friend's page redraws when the link changes in the same browser (F-U5). On another device it still can't (R-1) |
+| Delete | **D-1** Delete, then Back to the friend page | Chromium re-ran the page and showed `removed`. Not tried in Safari, where back/forward cache may show the old page | **Guarded, not tested.** The friend's page now redraws on `pageshow` from the back/forward cache. Still needs a try in Safari on your phone |
+| Delete | **D-2** Delete by mistake, then re-create | New code. The old texted link stays `removed` forever, and there's no undo | Not fixed. Undo is a feature decision, not a bug |
+| Delete | **D-3** Two tabs both confirm delete | Second tab silently shows `No links yet` (same swallowed error as U-1) | **Yes.** Same notice as U-1 (F-D3) |
+| Delete | **D-4** Sender clears website data | Friend sees `doesn't exist`, not `removed`. The tombstone went too | Not fixable here. Needs the real database |
+| Delete | **D-5** Someone else holding the phone | Delete is right there, no passcode asked | Not fixable here. Needs the sender login (Week 12) |
 
-Fill the last column with what *you* corrected. So far you picked the four lines and the
-storage from options I offered. Nothing in this table has been fixed yet.
+"What happened" is what the first break-it run saw, before any fix. The last column says
+what was corrected afterwards and which check in **Fixes** proves it.
 
 ## What I corrected
-- _(yours to write)_ Agent-side, for honesty: the check harness had two bugs of its own.
+- **Asked for the break-it bugs to be fixed** after reading the table. That was one request
+  for all of them, not row by row. The agent chose each fix. Two rows are only half fixed
+  (R-2 lowercase, R-4 recovery), and D-2 (undo) was left as a feature decision.
+- _(add your own)_
+- Agent-side, for honesty: the check harness had two bugs of its own.
   Navigating to the same `#/home` didn't re-render, and "Back" landed on `about:blank`.
   Both were fixed in the scripts, not the app, and both cost a rerun.
+
+## Fixes
+Each fix got its own check (`fixes.js`, outside the repo like the others). Every check was
+run against commit `57ce734` (before the fixes) and against the fixed code. All 13 fail
+before, which shows they test the bug. All 13 pass after, and the original 9 checks
+still pass.
+
+```
+===== BEFORE (commit 57ce734)
+FAIL F-C1 :: records=1, link still shown=false, pass error="Enter the passcode."
+FAIL F-C2 :: "…" records=2
+FAIL F-C4 :: field kept 100 chars, error="", records=3
+FAIL F-C6 :: errors=["Enter the passcode.","",""], focus=#
+FAIL F-R2 :: "rMOkE77IaG." opens=false, "rMOkE77IaG)" opens=false
+FAIL F-R3 :: tab A rows before=1, after (no reload)=1
+FAIL F-U5 :: friend tab shows "late train home" without reloading
+FAIL F-U2 :: updated_at unchanged=false
+FAIL F-U3 :: other row's Rename disabled=false, typed text kept="half-typed"
+FAIL F-U4 :: still editing=true, name unchanged=renamed while watching
+FAIL F-U1 :: tab A shows "No links yetLinks you make on Create show up here, …"
+FAIL F-D3 :: second tab shows "No links yetLinks you make on Create show up here, …"
+FAIL F-R4 :: "Something went wrong. Nothing changed."
+0/13 passed
+===== AFTER
+PASS F-C1 :: records=1, link still shown=true, pass error=""
+PASS F-C2 :: "You already had a link for this playlist (late train home). This is a …" records=2
+PASS F-C4 :: field kept 150 chars, error="Keep the name to 100 characters or fewer.", records=2
+PASS F-C6 :: errors=["Enter the passcode.","Crossfade only handles US Apple Music links.","Give the playlist a name."], focus=#passcode
+PASS F-R2 :: "WB1W1t0mXZ." opens=true, "WB1W1t0mXZ)" opens=true
+PASS F-R3 :: tab A rows before=1, after (no reload)=2
+PASS F-U5 :: friend tab shows "renamed while watching" without reloading
+PASS F-U2 :: updated_at unchanged=true
+PASS F-U3 :: other row's Rename disabled=true, typed text kept="half-typed"
+PASS F-U4 :: still editing=false, name unchanged=renamed while watching
+PASS F-U1 :: tab A shows "That link was already deleted, maybe in another tab. Nothing else changed. …"
+PASS F-D3 :: second tab shows "That link was already deleted, maybe in another tab. Nothing…"
+PASS F-R4 :: "Couldn't read the links saved on this device, so nothing was saved."
+13/13 passed
+```
+
+The fixes split by verb like this: Create 4 (C-1, C-2, C-4, C-6), Read 3 (R-2 half, R-3,
+R-4 partly), Update 5 (U-1 to U-5), Delete 1 (D-3) plus one untested guard (D-1).
 
 ## Wanted login here (keep for D10)
 The sender's login only. The recipient never logs in (ADR 0006).
@@ -123,7 +169,8 @@ hard to specify, hard for the agent to build, or only hard once you tried to bre
 
 ## Left for later
 - `TODO(W10): real data`: `links-store.js` gets replaced at Workshop 4.
-- The bugs in the break-it table are recorded, not fixed: C-1, C-4, C-6, R-2, U-1/D-3,
-  U-2, U-3, U-4.
+- Still open from the break-it table: R-2 lowercase codes (needs an ADR on the code
+  alphabet), R-4 has no recovery from corrupted data, D-1 untested in Safari, D-2 has no
+  undo. R-1, D-4 and D-5 wait for the database and the login.
 - Check scripts live outside the repo. Move them into `tests/` with S7's.
 - Architecture §9's table doesn't list Your links yet.

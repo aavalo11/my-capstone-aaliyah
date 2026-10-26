@@ -39,11 +39,24 @@
     }
   }
 
-  function cleanTitle(title) {
+  // The error name for a bad playlist name, or null. Screens use it to show every field error at once.
+  function checkTitle(title) {
     var t = String(title == null ? "" : title).trim();
-    if (!t) throw fail("title-empty");
-    if (t.length > MAX_TITLE) throw fail("title-too-long");
-    return t;
+    if (!t) return "title-empty";
+    if (t.length > MAX_TITLE) return "title-too-long";
+    return null;
+  }
+
+  function cleanTitle(title) {
+    var problem = checkTitle(title);
+    if (problem) throw fail(problem);
+    return String(title).trim();
+  }
+
+  // The playlist itself, without the share sheet's ?ls=1&app=music.
+  function playlistKey(appleUrl) {
+    try { var u = new URL(String(appleUrl).trim()); return u.hostname + u.pathname.replace(/\/$/, ""); }
+    catch (e) { return String(appleUrl).trim(); }
   }
 
   function findIndex(rows, code) {
@@ -63,6 +76,12 @@
     return i === -1 ? null : rows[i];
   }
 
+  // Live links already made for the same Apple Music playlist.
+  function samePlaylist(appleUrl) {
+    var key = playlistKey(appleUrl);
+    return list().filter(function (r) { return playlistKey(r.apple_url) === key; });
+  }
+
   function create(title, appleUrl) {
     var rows = load(), taken = {};
     rows.forEach(function (r) { taken[r.code] = true; });
@@ -78,7 +97,9 @@
   function rename(code, title) {
     var rows = load(), i = findIndex(rows, code);
     if (i === -1 || rows[i].deleted_at) throw fail("not-found");
-    rows[i].title = cleanTitle(title);
+    var t = cleanTitle(title);
+    if (t === rows[i].title) return rows[i]; // nothing changed, so it isn't "renamed"
+    rows[i].title = t;
     rows[i].updated_at = new Date().toISOString();
     save(rows);
     return rows[i];
@@ -92,5 +113,8 @@
     save(rows);
   }
 
-  window.CrossfadeLinks = { list: list, get: get, create: create, rename: rename, remove: remove, MAX_TITLE: MAX_TITLE };
+  window.CrossfadeLinks = {
+    list: list, get: get, create: create, rename: rename, remove: remove,
+    checkTitle: checkTitle, samePlaylist: samePlaylist, KEY: KEY, MAX_TITLE: MAX_TITLE,
+  };
 })();

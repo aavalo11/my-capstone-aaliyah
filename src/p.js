@@ -6,7 +6,8 @@
   var view = document.getElementById("view");
   var params = new URLSearchParams(location.search);
   var DEMO = params.get("demo"); // "empty" | "error" | null
-  var CODE = params.get("code") || location.pathname.split("/p/")[1] || "";
+  // Codes are only [A-Za-z0-9], so anything else is junk a messaging app added (a trailing "." or ")").
+  var CODE = (params.get("code") || location.pathname.split("/p/")[1] || "").replace(/[^A-Za-z0-9]/g, "");
 
   // Copied from app.js. Loading app.js here would start the sender's router.
   function esc(s) {
@@ -101,6 +102,10 @@
       document.getElementById("retry").onclick = render;
     });
   }
+
+  // The sender renamed or deleted this link in another tab, or Back restored an old copy of the page.
+  window.addEventListener("storage", function (e) { if (e.key === window.CrossfadeLinks.KEY) render(); });
+  window.addEventListener("pageshow", function (e) { if (e.persisted) render(); });
 
   render();
 })();
