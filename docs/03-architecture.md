@@ -12,13 +12,13 @@ how-questions (§10). It doesn't change any requirement. Where it would, it says
 
 The PRD said the architecture doc would be "built on facts" from K1–K3, checked by
 Oct 9. As of 2026-10-16, it still isn't. Nothing in this table has changed since
-2026-10-08.
+2026-10-08. **Updated 2026-10-29:** K1 and K2 are settled by ADR 0012.
 
 | Dependency | State 2026-10-16 (unchanged since 10-08) | This doc assumes | If it goes the other way |
 |---|---|---|---|
 | **Go/no-go (PRD §3)**: W02 and W03 test the premise | **Missed.** The Oct 4 deadline passed and `research/interview-02.md` is empty. This is the second missed go/no-go. | The bridge is still the product | If W02 and W03 lead with downloading, the capstone moves to J1 and this doc is rewritten |
-| **K1**: a developer token reads a user-shared `pl.u-` playlist, with ISRCs | **Untested** | It works through `GET /v1/catalog/us/playlists/{id}` | ADR. Scraping Apple's pages is still not a fallback (PRD K1). |
-| **K2**: Apple developer token, $99/yr | **Asking SU** whether there's a university developer team to join | The official Apple Music API is available | Decide: pay, or repoint (PRD §3) |
+| **K1**: a developer token reads a user-shared `pl.u-` playlist, with ISRCs | **Replaced (ADR 0012).** The public share page held all 52 tracks of one playlist, with no ISRCs. A ~100-track playlist is untested. | Steps 5–6 read the share page and skip the ISRC search | Pay $99 or repoint (ADR 0012) |
+| **K2**: Apple developer token, $99/yr | **Settled 2026-10-29:** SU has no team, so no developer token | No Apple key at all | — |
 | **K3**: Spotify Premium for the app owner, plus the Developer Policy check | Premium: **yes**. Policy reread and test playlist: **not done** | Crossfade's own account builds public playlists (D1) | Recipient OAuth, capped at 5 friends (ADR 0006's fallback) |
 
 Nothing below is built until these are settled. The current `src/` is a UI shell with no
@@ -31,9 +31,9 @@ Apple or Spotify code (§9).
 ```
  Sender's iPhone                       Supabase (hosted)                     Outside
  ───────────────                       ─────────────────                     ───────
- Create page ──POST link+passcode──▶  Edge Function: create-link  ──────▶  Apple Music API
-      ▲                                 │  1 check passcode, format             (read playlist,
-      │ poll progress (1s)              │  2 check rate limit                    ISRCs)
+ Create page ──POST link+passcode──▶  Edge Function: create-link  ──────▶  Apple share page
+      ▲                                 │  1 check passcode, format             (public HTML,
+      │ poll progress (1s)              │  2 check rate limit                    no ISRCs)
       └──────────────── builds row ◀────┤  3 read Apple playlist
                                         │  4 match each track   ──────────▶  Spotify Web API
                                         │  5 create playlist                    (search, create,
@@ -73,8 +73,8 @@ poll progress (§5).
 | 2 | Validate the link: `music.apple.com`, `/us/`, `/playlist/` | `That isn't an Apple Music playlist link.` / `Crossfade only handles US Apple Music links.` | none |
 | 3 | Rate limit: count `builds` rows in the last hour. If there are 20 or more, stop. | `Crossfade is rate-limited. Try again in N minutes.` | none |
 | 4 | Insert the `builds` row. From here on it counts toward the limit (R6). | — | — |
-| 5 | Apple: `GET /v1/catalog/us/playlists/{id}?include=tracks`. Over 100 items → stop. | `Apple Music wouldn't share this playlist…` / size message | Apple |
-| 6 | Match each item in source order (R2): ISRC search first, then the close-match search | — | Spotify (search) |
+| 5 | Apple: fetch the share page from `music.apple.com`, parse `<script id="serialized-server-data">`, and take the section whose id starts with `track-list` (ADR 0012). Over 100 items → stop. A page without that block or section fails the same way as an Apple error. | `Apple Music wouldn't share this playlist…` / size message | Apple |
+| 6 | Match each item in source order (R2): the close-match search. There's no ISRC search, because the page has no ISRCs (ADR 0012). | — | Spotify (search) |
 | 7 | Zero matched → stop. No playlist is created and no link is issued (R1). | report with every track unmatched | — |
 | 8 | Create the playlist on Crossfade's account, then add the tracks in order, duplicates included (R4) | `Something failed on Spotify's side…` | Spotify (write) |
 | 9 | Insert `links` and `link_tracks` in one transaction, then return `{ code, report }` | `Something failed on Crossfade's side…` | — |
@@ -84,7 +84,7 @@ only form of delete). If the unfollow also fails, log the playlist id for manual
 The sender sees the same message either way.
 
 **Speed (S7 AC 1: 25 tracks in 15 s).** Run Spotify searches **5 at a time**, not one by
-one. The worst case is 2 searches per track. On a `429`, wait for Spotify's `Retry-After`
+one. The worst case is 1 search per track (no ISRC search, ADR 0012). On a `429`, wait for Spotify's `Retry-After`
 and then continue. Week 9 benchmark: time 25, 50 and 100-track builds.
 
 **Function limits** (Supabase docs, *Edge Functions → Limits*, checked 2026-10-16):
@@ -149,7 +149,7 @@ link_tracks
   link_id            → links.id
   position           int               source order, 0-based; (link_id, position) is the key
   source_title, source_artist  text
-  isrc               text null
+  isrc               text null        always null in v1 (ADR 0012)
   tier               text  exact | close | unmatched
   spotify_track_id   text null
   spotify_title, spotify_artists  text null    shown under "Close match" (R3)
@@ -186,7 +186,6 @@ In Week 9 it becomes this schema, as a Supabase migration.
 | Secret | Used for | Lives in |
 |---|---|---|
 | `SENDER_PASSCODE` | Step 1 | `supabase secrets set` |
-| `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (`.p8`) | Signing the Apple developer token (ES256 JWT, valid 12 h, reused across calls) | `supabase secrets set` |
 | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` | A fresh Spotify access token for Crossfade's account each build | `supabase secrets set` |
 | Supabase secret key | `create-link` writing to the database | Provided to Edge Functions automatically |
 | Supabase **publishable** key | Front end: `get_link`, `get_build` | `src/config.js` (public by design) |
@@ -266,3 +265,5 @@ decision, so it gets an ADR when Lab 5 starts.
 2. **R1 progress.** Progress is polled once per second (§5). There's no requirement
    change, just a note.
 3. **`supabase/schema.sql`** moves from the shell table to §4's schema in Week 9.
+4. **K1, K2, D3, R2, R6 and §8** were updated on 2026-10-29 for ADR 0012: the share page
+   replaces the Apple Music API, there are no Apple keys, and there's no `exact` tier in v1.

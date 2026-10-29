@@ -70,7 +70,7 @@ re-decide them.
 |---|---|---|---|
 | D1 | **Nobody connects an account in v1.** The sender pastes a link. The rebuilt playlist lives on a Crossfade-owned Spotify account. | Removes both OAuth flows. The recipient can't be written to (S8 holds by design), and family-plan recipients have nothing to authorize (S6 holds by design). See ADR 0006. | Recipient OAuth + create in their library. Since Mar 2026, Spotify dev mode allows only **5 allowlisted users**, and extended quota needs 250k MAU. So recipient login caps the product at 5 hand-registered friends. It would also break S8 and ask a friend to log in to a stranger's site. |
 | D2 | **Apple Music → Spotify only.** | ADR 0002. | Both directions: double the work, no extra demo value. |
-| D3 | **Match by ISRC first, then a strict metadata rule, and nothing else.** No fuzzy scores, no "best guess." | ISRC identifies a specific recording. Anything looser is exactly how a sped-up or karaoke version gets in. | Scored fuzzy matching: better recall, and it silently substitutes recordings. |
+| D3 | **Match by ISRC first, then a strict metadata rule, and nothing else.** No fuzzy scores, no "best guess." The share page has no ISRCs (ADR 0012), so in v1 every track uses the strict rule. | ISRC identifies a specific recording. Anything looser is exactly how a sped-up or karaoke version gets in. | Scored fuzzy matching: better recall, and it silently substitutes recordings. |
 | D4 | **Unmatched tracks are left out of the Spotify playlist and shown on the Crossfade page in their original position.** | A Spotify playlist can't hold a placeholder. The Crossfade page is where the honest report lives. | Substituting the closest search result: the lie this product exists to avoid. |
 | D5 | **US storefront and US Spotify market only.** | One region to test. "Not available" then means one thing. | Detecting the recipient's region: needs recipient data I've chosen not to collect. |
 | D6 | **1–100 tracks per playlist.** | One page of Apple's API and one Spotify add-items call. Covers every playlist I actually send. | Unlimited: pagination and partial-failure handling for a case I don't have. |
@@ -149,22 +149,24 @@ Run for every item, in source order. The first rule that produces a result wins.
 
 1. **Exact.** If the source track has an ISRC, search Spotify for `isrc:<ISRC>` with
    `market=US`. If any results come back, take the first result. Tier = `exact`.
+   *In v1 this never fires:* the share page has no ISRCs (ADR 0012).
 2. **Close.** If there's no ISRC, **or** the ISRC search returned nothing, search Spotify
    for `track:"<title>" artist:"<primary artist>"` with `market=US`. Of the first 10
    results, take the first one where **all** of these hold:
    - the normalized titles are equal. Normalization (below) is applied to both sides.
    - the primary artist equals, case-insensitively, one of the candidate's artist names
    - the durations differ by at most 3,000 ms, inclusive
-   - the explicit flags are equal. A source track is explicit only if Apple's
-     `contentRating` is `explicit`. `clean` and a missing rating both count as not
+   - the explicit flags are equal. A source track is explicit only if the share page's
+     `showExplicitBadge` is `true`. `false` and a missing flag both count as not
      explicit.
 
    Tier = `close`.
 3. **Otherwise** the track is `unmatched`. No other rule and no manual override exists
    in v1.
 
-**Primary artist:** the first artist in Apple's `artists` relationship for the song. If
-that's missing, use Apple's full `artistName` string unchanged. Don't try to split it.
+**Primary artist:** the first entry in the track's `subtitleLinks` on the share page, so
+`DJ Snake` for `DJ Snake & AlunaGeorge`. If that's missing, use the full `artistName`
+string unchanged. Don't try to split it.
 
 **Title normalization:** lowercase. Remove any feature segment: a parenthesized or
 bracketed segment, or a ` - ` suffix, whose first word is exactly `feat`, `feat.`, `ft`,
@@ -234,14 +236,14 @@ content is identical for both.
 - There's one passcode, and it comes from the `SENDER_PASSCODE` environment variable.
   It's sent with each Create link submission, and it's never logged, never stored, and
   never sent back to the browser.
-- Spotify credentials (client secret, the Crossfade account's refresh token) and the
-  Apple developer token's private key live only on the server.
+- Spotify credentials (client secret, the Crossfade account's refresh token) live only
+  on the server. There are no Apple credentials (ADR 0012).
 - **Rate limit:** at most 20 builds per rolling hour, in total. A build counts once it
   passes the passcode and format checks and reaches Apple, whether or not it succeeds.
   Past the limit, the sender sees `Crossfade is rate-limited. Try again in N minutes.`,
   where N is rounded up with a minimum of 1, and no API calls are made.
 - Stored per link: code, source URL, playlist name, Spotify playlist id, per-track
-  source title/artist/ISRC, match tier, Spotify track id, and creation time. **Nothing
+  source title/artist/ISRC (always empty in v1, ADR 0012), match tier, Spotify track id, and creation time. **Nothing
   about the recipient is stored.** No cookies on any page, and no analytics.
 
 ## 7. Out of scope
@@ -268,7 +270,8 @@ Not in v1. The reasons are why each one is out, not just what.
    It passes if audio plays at shot 5 and the library is unchanged at shot 6.
 2. **Match-rate benchmark, which answers CB-01.** I run 5 of my own Apple Music
    playlists (at least 150 tracks total) through R2 and check every `close` match by
-   hand, along with a sample of 20 `exact` matches (ISRCs can be wrong too). I record
+   hand, along with a sample of 20 `exact` matches (ISRCs can be wrong too). In v1
+   there are no `exact` matches (ADR 0012), so every match gets checked by hand. I record
    exact / close / unmatched counts and every wrong match in
    `docs/research/match-benchmark.md`.
    - **Target:** matched ≥ 90%, and wrong matches ≤ 2% of all tracks. A "wrong match"
@@ -292,8 +295,8 @@ reason to build against fake Apple data.
 
 | # | Risk | Check | If it fails |
 |---|---|---|---|
-| K1 | Apple's API won't return a user-shared `pl.u-` playlist's tracks and ISRCs with just a developer token. Forum reports say it will, via `GET /v1/catalog/us/playlists/{id}`, with catalog songs carrying `attributes.isrc`. | Fetch one of my shared playlists | Record in an ADR. Scraping Apple's web pages is not a fallback. |
-| K2 | **Known cost, not a risk:** an Apple developer token needs a MusicKit key, which needs the **$99/yr Apple Developer Program**. There's no individual student waiver. | Ask the instructor or SU IT whether there's a university developer team I can join | Decide by Oct 9: join SU's team, pay $99, or repoint (§3). |
+| K1 | Apple's API won't return a user-shared `pl.u-` playlist's tracks and ISRCs with just a developer token. Forum reports say it will, via `GET /v1/catalog/us/playlists/{id}`, with catalog songs carrying `attributes.isrc`. | Fetch one of my shared playlists | Record in an ADR. Scraping Apple's web pages is not a fallback. **2026-10-29: reversed by ADR 0012.** The API was never tried (K2). The public share page held all 52 tracks of one shared playlist, with no ISRCs. A playlist near 100 tracks is still untested. |
+| K2 | **Known cost, not a risk:** an Apple developer token needs a MusicKit key, which needs the **$99/yr Apple Developer Program**. There's no individual student waiver. | Ask the instructor or SU IT whether there's a university developer team I can join | Decide by Oct 9: join SU's team, pay $99, or repoint (§3). **2026-10-29, 20 days late:** SU has no team. Neither pay nor repoint: read the share page instead (ADR 0012). |
 | K3 | **Known cost:** since Mar 2026 a dev-mode Spotify app's owner account must have **Premium**. It's also a gray area whether Spotify's policy allows one app-owned account to make public playlists for other people. It's not explicitly banned, but the Policy bars apps that "replicate a core user experience." | Confirm a Premium account for Crossfade. Reread the Developer Policy. Create one test playlist via `POST /me/playlists`. | If the policy rules it out, fall back to recipient OAuth (rejected in D1), capped at 5 allowlisted friends, with S8's preview-first flow back in scope. |
 | K4 | Spotify Free on mobile limits on-demand play to a daily allowance (since Sep 2025), so a Free recipient may hit shuffle or skip caps | Open a test playlist on a Free account | Accept it. Audio still plays. R4 keeps the order even if the listener's tier doesn't honor it. |
 

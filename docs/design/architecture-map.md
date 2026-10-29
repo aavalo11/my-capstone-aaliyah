@@ -9,7 +9,7 @@ requirement it serves. The prose is in `docs/03-architecture.md`.
 
  ┌───────────────────┐   POST        ┌──────────────────────────────┐        ┌──────────────────┐
  │ [A] Create page   │ link+passcode │ [C] Edge Function            │  GET   │ [G] Apple Music  │
- │  R1 · S7          │──────────────▶│     create-link              │───────▶│     API          │
+ │  R1 · S7          │──────────────▶│     create-link              │───────▶│     share page   │
  │                   │               │  R1 · R2 · R4 · R6           │        │  R1 · K1 · K2    │
  └───────────────────┘               │  1 passcode  (R6, D7)        │        └──────────────────┘
        │ poll 1s                     │  2 link format (R1, D5)      │
@@ -53,7 +53,7 @@ requirement it serves. The prose is in `docs/03-architecture.md`.
 | D | Postgres: `links`, `link_tracks`, `builds` | R3, R5 (links last for days), R6 (rate-limit count) | Links would die, and the rate limit would have nothing to count |
 | E | `get_link(code)` | R5, R6 | The publishable key could list every link (architecture §3) |
 | F | `/p/<code>` page | R3, R5, S8 | The recipient has nothing to open |
-| G | Apple Music API | R1 (read playlist + ISRCs) | Nothing to rebuild |
+| G | Apple Music share page, public HTML (ADR 0012) | R1 (read playlist, no ISRCs) | Nothing to rebuild |
 | H | Spotify Web API | R2 (search), R4 (create, add) | Nothing to play |
 | I | `open.spotify.com` link | R5 | The recipient would have to search Spotify themselves |
 | S | Netlify static host (ADR 0008) | R1, R5, D8 (a real `/p/<code>` URL that Messages previews) | No public URL to send |
@@ -72,10 +72,10 @@ comes off the map.
 3. **C → D.** C inserts the `builds` row. From here on the build counts toward the limit
    (R6).
 4. **A → B → D, every second.** The page polls `get_build` and shows `done / total` (R1).
-5. **C → G.** C reads the playlist, its tracks and the ISRCs. Over 100 tracks, or a
+5. **C → G.** C reads the share page and its tracks. There are no ISRCs (ADR 0012). Over 100 tracks, or a
    private playlist, stops the build with R1's wording.
-6. **C → H.** For each track, C tries an ISRC search first, then the strict close-match
-   rule, 5 searches at a time (R2, D3). If nothing matches, the build stops and no link
+6. **C → H.** For each track, C runs the strict close-match rule (no ISRC search,
+   ADR 0012), 5 searches at a time (R2, D3). If nothing matches, the build stops and no link
    is made (R1).
 7. **C → H.** C creates the playlist on Crossfade's account and adds the tracks in source
    order (R4, D1). If this or step 8 fails, C unfollows the playlist (R1 cleanup).
