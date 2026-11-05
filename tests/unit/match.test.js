@@ -131,5 +131,5 @@ test("closeQuery: quoted raw title and primary artist", async () => {
   const { closeQuery } = await load();
   assert.equal(closeQuery(src({ title: "Suit & Tie (feat. JAŸ-Z)", primaryArtist: "Justin Timberlake" })),
     'track:"Suit & Tie (feat. JAŸ-Z)" artist:"Justin Timberlake"');
-  assert.equal(closeQuery(src({ title: 'The "Real" One' })), 'track:"The Real One" artist:"SZA"');
+  assert.equal(closeQuery(src({ title: 'The "Real" One' })), 'track:"The  Real  One" artist:"SZA"');
 });

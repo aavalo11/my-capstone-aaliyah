@@ -24,9 +24,9 @@ test("searchTrack sends R2's quoted query, market=US and the first 10 results", 
   assert.equal(req.init.headers.Authorization, "Bearer tok");
 });
 
-test("trackQuery drops double quotes inside a name", async () => {
+test("trackQuery replaces double quotes inside a name with a space (architecture §5)", async () => {
   const { trackQuery } = await load();
-  assert.equal(trackQuery('The "Real" One', "SZA"), 'track:"The Real One" artist:"SZA"');
+  assert.equal(trackQuery('The "Real" One', "SZA"), 'track:"The  Real  One" artist:"SZA"');
 });
 
 test("Negative: a non-200 from Spotify throws SpotifyError with the status and body", async () => {
