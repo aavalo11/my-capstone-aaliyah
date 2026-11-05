@@ -6,12 +6,41 @@ itself as a real, playable playlist in whatever service your friend already uses
 The thing it replaces is a screenshot of a tracklist that the other person has to retype
 song by song. Most of the time, they don't — so the playlist never actually gets shared.
 
-**Status:** 🚧 Early build. A navigable shell runs locally (see *Running this
-project*); the Apple → Spotify bridge itself starts in Week 9. Solo capstone for IST300, Syracuse University, Fall 2026.
+**Status (2026-11-05):** 🚧 Building the bridge. The app runs locally, and `create-link`
+(Apple link in, Spotify playlist and report out) runs end to end against a **fake**
+Spotify. It isn't deployed yet: the Crossfade Spotify account and the database migration
+come next. Solo capstone for IST300, Syracuse University, Fall 2026. See *Phases* below.
 
 **Live URL:** not deployed yet.
 
 ---
+
+## Phases
+
+Each phase links to what it produced. Dates are from the commit history.
+
+| # | Phase | When | What came out of it | State |
+|---|---|---|---|---|
+| 1 | **Concept** | Sep 9–17 | `docs/01-concept-brief.md`, repointed once to cross-service sharing | Done |
+| 2 | **Research** | Sep 10 → | W01 (`docs/research/interview-01.md`). It **declined** the cross-service premise. W02 and W03 haven't run | **Open: the biggest risk** |
+| 3 | **Backlog** | Sep 17 | `docs/backlog.md`: stories, MoSCoW, MVP slice; ADRs 0002–0005 | Done, provisional on W02/W03 |
+| 4 | **Requirements** | Sep 27 | `docs/02-prd.md` (CP-M2); ADR 0006, nobody logs in | Done, revised as the build goes |
+| 5 | **Prototypes** | Oct 1–16 | Three clickable prototypes in `docs/design/` | Done |
+| 6 | **Architecture and stack** | Oct 8–16 | `docs/03-architecture.md` (CP-M3); Supabase + plain HTML (ADR 0007), Netlify (ADR 0008) | Done |
+| 7 | **Front end** | Oct 8–26 | `src/`: Home, Create, link CRUD (ADR 0010), the friend's match report (ADR 0009); `tests/` | Done, on sample data |
+| 8 | **Outside services** | Oct 29–Nov 3 | Read Apple's public share page, no key (ADR 0012); first outside call (ADR 0013); pay for Spotify Premium (ADR 0014) | Done |
+| 9 | **The bridge: `create-link`** | Nov 5 → | Apple reader, R2 matching, steps 1–9 with retries and cleanup, 83 unit tests, a dry run against a real playlist, and Create playing it back (ADR 0015) | **In progress**, fake Spotify |
+| 10 | **Deploy and go live** | next | Crossfade's Spotify credentials, database migration, Edge Function, Create calls it for real, then the demo test | Not started |
+| 11 | **Benchmark and demo** | after 10 | Match-rate benchmark (PRD §8) on 5 playlists, then the six-shot screen recording | Not started |
+
+### Phase 9 on screen
+
+With `?demo=build`, Create plays back one recorded `create-link` run (ADR 0015). The 52
+tracks are really from Apple Music; **every Spotify match is fake**, and the screen says so.
+
+| Reading | Matching | Report, then the link |
+|---|---|---|
+| ![Reading playlist…](docs/design/screenshots/create-build-1-reading.png) | ![Matching 24 of 52…](docs/design/screenshots/create-build-2-matching.png) | ![Matched 48 of 52, with the 4 misses named](docs/design/screenshots/create-build-3-report.png) |
 
 ## Who it's for
 
@@ -60,6 +89,8 @@ docs/design/               UI notes, prototypes, wireframes/ for sketch photos
 docs/decisions/            one file per call that could have gone otherwise
 docs/features/             one card per built feature: checks, evidence, what I corrected
 supabase/schema.sql        database setup, run once in the dashboard
+supabase/functions/        create-link: Apple reader, R2 matching, the build (not deployed yet)
+scripts/                   terminal tools: one Spotify search, the create-link dry run
 src/                       the app: plain HTML/CSS/JS (started 2026-10-08)
 tests/                     unit tests + Playwright browser checks (started 2026-10-26)
 .env.example               the secrets the Week 9 bridge needs, names only
@@ -124,25 +155,30 @@ how similar our taste is.
 ### Seeing every state
 
 Every screen has an empty and an error state. Add `?demo=empty` or `?demo=error` before
-the `#`, for example `http://localhost:8000/?demo=error#/home`.
+the `#`, for example `http://localhost:8000/?demo=error#/home`. On Create,
+`http://localhost:8000/?demo=build#/create` plays back a recorded build (ADR 0015).
+
+To run `create-link` yourself against a real Apple playlist with a fake Spotify:
+`node scripts/create-link-dry-run.ts "<Apple Music playlist link>"` (Node 24).
 
 ### Running the tests
 
 ```sh
-node --test tests/unit/*.test.js   # no install; Node 18+
+node --test tests/unit/*.test.js   # no install; Node 24 (it runs the .ts files directly)
 node tests/e2e/run.js              # browser checks; first run needs Playwright, see tests/README.md
 ```
 
 **Pass signal:** `# fail 0` for the unit tests, then `All browser checks passed`.
 
-### What's real and what isn't (updated 2026-10-26)
+### What's real and what isn't (updated 2026-11-05)
 
 | Screen | State |
 |---|---|
 | Home → Recently added, Your numbers | Real: reads Supabase |
 | Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
 | Home → Listening history | Locked: needs an Apple Music sign-in (ADR 0006, backlog S12) |
-| Create → Paste a link | Link, passcode and name are checked here. The link is saved **in this browser only** (ADR 0010); building the playlist arrives in Week 9 |
+| Create → Paste a link | Link, passcode and name are checked here. The link is saved **in this browser only** (ADR 0010). With `?demo=build`, a recorded build plays first: real Apple tracks, **fake** Spotify matches (ADR 0015) |
+| `create-link` (server) | Built and unit-tested with a **fake** Spotify and database. Not deployed; never run against real Spotify |
 | Home → Your links | Real, but local: rename and delete the links made on Create. Saved in this browser only |
 | Friend page `p.html?code=…` | Shows a link made in this browser, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009) |
 | Create → Search songs | Disabled: needs a server-side Apple key |
