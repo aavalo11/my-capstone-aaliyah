@@ -28,9 +28,8 @@ const isFeature = (inner: string) => FEATURE_WORDS.has(inner.trim().split(/\s+/)
 
 // R2 title normalization. Lowercase, drop feature segments, keep only letters, digits and
 // spaces in any script, collapse spaces, trim. Never drops remix / live / sped up / etc.
-// Two additions R2 doesn't spell out (see the PRD note in the commit): NFC first, so an
-// "é" stored as e + accent mark isn't turned into "e"; and any whitespace (tab, no-break
-// space) counts as a space, so words don't run together.
+// NFC comes first, so an "é" stored as e + accent mark isn't turned into "e", and any
+// whitespace (tab, no-break space) counts as a space (PRD R2, changed 2026-11-05).
 export function normalizeTitle(title: string): string {
   let t = String(title ?? "").normalize("NFC").toLowerCase().replace(/\s/g, " ");
   t = t.replace(/\(([^()]*)\)|\[([^[\]]*)\]/g, (seg, p, b) => (isFeature(p ?? b) ? " " : seg));

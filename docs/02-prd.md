@@ -1,7 +1,7 @@
 # Crossfade — Product Requirements
 
 **Status:** v1 for CP-M2 · living spec, revised as the build proceeds
-**Last updated:** 2026-09-27
+**Last updated:** 2026-11-05 (R2 title normalization: NFC and whitespace)
 **Owner:** A. Avalo
 **Builds from:** `01-concept-brief.md` (problem, job) · `backlog.md` (stories S1–S11,
 MoSCoW, MVP slice) · `research/interview-01.md` (W01) · `decisions/0002–0006`
@@ -168,13 +168,24 @@ Run for every item, in source order. The first rule that produces a result wins.
 `DJ Snake` for `DJ Snake & AlunaGeorge`. If that's missing, use the full `artistName`
 string unchanged. Don't try to split it.
 
-**Title normalization:** lowercase. Remove any feature segment: a parenthesized or
-bracketed segment, or a ` - ` suffix, whose first word is exactly `feat`, `feat.`, `ft`,
-`ft.`, or `with`. So `(With You)` is removed, but `(Without You)` isn't. Remove every
-character that isn't a letter or digit in any script, or a space, so `é`, `ñ`, and
-non-Latin titles survive. Collapse runs of spaces and trim. **Don't remove words like
-`remix`, `live`, `acoustic`, `sped up`, `remaster`, or `version`.** Those words are what
-keep the wrong recording out.
+**Title normalization:** first convert to Unicode NFC, so an `é` stored as `e` plus an
+accent mark becomes the single letter `é`. Then lowercase, and turn every whitespace
+character (tab, no-break space) into a plain space. Remove any feature segment: a
+parenthesized or bracketed segment, or a ` - ` suffix, whose first word is exactly `feat`,
+`feat.`, `ft`, `ft.`, or `with`. So `(With You)` is removed, but `(Without You)` isn't.
+Remove every character that isn't a letter or digit in any script, or a space, so `é`,
+`ñ`, and non-Latin titles survive. Collapse runs of spaces and trim. **Don't remove words
+like `remix`, `live`, `acoustic`, `sped up`, `remaster`, or `version`.** Those words are
+what keep the wrong recording out.
+
+The artist check also converts both names to NFC before comparing them case-insensitively.
+
+*Changed 2026-11-05:* NFC and the whitespace rule were added while building
+`create-link/match.ts`. Without NFC, the step that removes non-letters would strip the
+accent mark from a decomposed `é` and leave `e`, so the same title could fail to match
+itself. Without the whitespace rule, a no-break space would be removed and two words
+would run together. Neither change loosens the rule: both make two spellings of the same
+title equal, and no different words are treated as the same.
 
 - **Negative — Given** a studio track whose only Spotify title match is a `(Live)` or
   `(Sped Up)` version, **when** it's matched, **then** it's `unmatched`, because the
