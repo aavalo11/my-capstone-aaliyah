@@ -1,10 +1,11 @@
 // Crossfade front end. No framework and no build step: hash routes render into #view.
-// Add ?demo=empty or ?demo=error to the URL to see each screen's empty or error state.
+// Add ?demo=empty or ?demo=error to the URL to see each screen's empty or error state, and
+// ?demo=build on Create to play back a recorded create-link run (ADR 0015).
 (function () {
   "use strict";
 
   var view = document.getElementById("view");
-  var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | null
+  var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | "build" | null
   var CONFIG = window.CROSSFADE_CONFIG || {};
 
   // ---------- helpers ----------
@@ -586,36 +587,102 @@
           "Nothing was sent. Try again.</div>";
         return;
       }
-      var made, earlier = [];
-      try {
-        earlier = window.CrossfadeLinks.samePlaylist(link);
-        made = window.CrossfadeLinks.create(title, link);
-      } catch (err) {
-        result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
+      // Saves the link on this device (ADR 0010). reportHtml is the build report shown above it.
+      var form = e.target;
+      function saveLink(reportHtml) {
+        var made, earlier = [];
+        try {
+          earlier = window.CrossfadeLinks.samePlaylist(link);
+          made = window.CrossfadeLinks.create(title, link);
+        } catch (err) {
+          result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
+          return;
+        }
+        var url = recipientUrl(made.code);
+        result.innerHTML = (reportHtml || "") + '<div class="card" id="made-link"><strong>' + esc(made.title) + "</strong>" +
+          '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
+          '<button class="btn quiet" type="button" id="copy-made">Copy link</button> ' +
+          '<span class="small muted" id="copy-msg" role="status"></span>' +
+          '<div class="notice" style="margin-top:12px"><b>Saved on this device only.</b> It opens in this ' +
+          "browser and nowhere else, and the Spotify playlist isn't built yet (Week 9).</div>" +
+          (earlier.length ? '<div class="notice" style="margin-top:8px">You already had a link for this playlist (<b>' +
+            esc(earlier[0].title) + "</b>). This is a separate one with its own code. Delete either on Home.</div>" : "") +
+          "</div>";
+        document.getElementById("copy-made").onclick = function () {
+          var msg = document.getElementById("copy-msg");
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
+              function () { msg.textContent = "Copy the link above instead."; });
+          } else { msg.textContent = "Copy the link above instead."; }
+        };
+        // Create stays off until something is typed, so a double tap can't replace the new link with an error.
+        form.reset();
+        submit.disabled = true;
+        form.oninput = function () { submit.disabled = false; form.oninput = null; };
+      }
+
+      // ?demo=build plays back a recorded create-link run before saving (ADR 0015).
+      if (DEMO === "build") {
+        submit.disabled = true;
+        playSampleBuild(result).then(function (html) { submit.disabled = false; saveLink(html); },
+          function () {
+            submit.disabled = false;
+            result.innerHTML = '<div class="notice error">Couldn\'t load the sample build. Nothing was sent. Try again.</div>';
+          });
         return;
       }
-      var url = recipientUrl(made.code);
-      result.innerHTML = '<div class="card" id="made-link"><strong>' + esc(made.title) + "</strong>" +
-        '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
-        '<button class="btn quiet" type="button" id="copy-made">Copy link</button> ' +
-        '<span class="small muted" id="copy-msg" role="status"></span>' +
-        '<div class="notice" style="margin-top:12px"><b>Saved on this device only.</b> It opens in this ' +
-        "browser and nowhere else, and the Spotify playlist isn't built yet (Week 9).</div>" +
-        (earlier.length ? '<div class="notice" style="margin-top:8px">You already had a link for this playlist (<b>' +
-          esc(earlier[0].title) + "</b>). This is a separate one with its own code. Delete either on Home.</div>" : "") +
-        "</div>";
-      document.getElementById("copy-made").onclick = function () {
-        var msg = document.getElementById("copy-msg");
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
-            function () { msg.textContent = "Copy the link above instead."; });
-        } else { msg.textContent = "Copy the link above instead."; }
-      };
-      // Create stays off until something is typed, so a double tap can't replace the new link with an error.
-      e.target.reset();
-      submit.disabled = true;
-      e.target.oninput = function () { submit.disabled = false; e.target.oninput = null; };
+      saveLink("");
     };
+  }
+
+  // ---------- recorded build (ADR 0015) ----------
+  // TODO(W10): real data. Plays back src/sample/build-sample.json: Apple's tracks are real,
+  // the Spotify matches are FAKE. Progress wording is PRD R1's.
+  function playSampleBuild(box) {
+    var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var line = function (text) {
+      box.innerHTML = '<div class="card" id="build-progress" role="status" aria-live="polite">' +
+        '<strong>' + esc(text) + "</strong>" +
+        '<p class="small muted" style="margin-top:6px">Sample build: the Spotify side is fake until Crossfade\'s ' +
+        "Spotify account is connected.</p></div>";
+    };
+    line("Reading playlist…");
+    return Promise.all([fetchJSON("sample/build-sample.json", 8000), wait(700)]).then(function (r) {
+      var sample = r[0], total = sample.report.total, k = 0;
+      var step = function () {
+        line("Matching " + k + " of " + total + "…");
+        if (k >= total) return wait(250);
+        k = Math.min(total, k + 4);
+        return wait(90).then(step);
+      };
+      return step().then(function () { return buildReport(sample.report); });
+    });
+  }
+
+  // PRD R3: every source row once, in order. Close matches show Spotify's title and artists.
+  function buildReport(report) {
+    var rows = report.tracks.map(function (t) {
+      var head = '<div class="title">' + esc(t.position) + ". " + esc(t.title) + "</div>" +
+        '<div class="small muted">' + esc(t.artist) + "</div>";
+      if (t.tier === "unmatched") {
+        return '<li class="row unmatched" data-tier="unmatched"><div class="grow">' + head +
+          '<div class="small">Not found on Spotify (US)</div></div></li>';
+      }
+      var sp = t.spotify || {};
+      return '<li class="row" data-tier="' + esc(t.tier) + '"><div class="grow">' + head +
+        (t.tier === "close" ? '<div class="small" style="margin-top:4px"><span class="pill warn">Close match</span> On Spotify: ' +
+          esc(sp.title) + " · " + esc(sp.artists) + "</div>" : "") + "</div></li>";
+    }).join("");
+    var missing = report.tracks.filter(function (t) { return t.tier === "unmatched"; });
+    return '<div class="card" id="build-report">' +
+      '<div class="notice" style="margin-bottom:12px"><b>Sample build, fake matches.</b> Whatever link you paste, ' +
+      "this shows <b>" + esc(report.name) + "</b>: its " + esc(report.total) + " tracks are really from Apple Music, read 2026-11-05, " +
+      "but every Spotify match is made up. No Spotify playlist was created.</div>" +
+      '<h2 style="margin:0">Matched ' + esc(report.matched) + " of " + esc(report.total) + "</h2>" +
+      (missing.length ? '<p class="small muted" style="margin:4px 0 8px">Not on Spotify: ' +
+        missing.map(function (t) { return esc(t.title); }).join(", ") + "</p>" : "") +
+      '<details><summary class="small">All ' + esc(report.total) + " tracks</summary>" +
+      '<ul class="list" id="build-tracks">' + rows + "</ul></details></div>";
   }
 
   function renderFriends() {

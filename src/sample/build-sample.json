@@ -1,0 +1,569 @@
+{
+ "_sample": true,
+ "_note": "One create-link dry run (ADR 0015). Apple's tracks are real, read 2026-11-05 from tests/fixtures/apple-70-degrees-out.html. Every Spotify match is FAKE (tests/fakes/fake-spotify.mts). TODO(W10): real data.",
+ "http": 200,
+ "code": "MrRf6NBE7s",
+ "report": {
+  "name": "70 degrees out",
+  "matched": 48,
+  "total": 52,
+  "tracks": [
+   {
+    "position": 1,
+    "title": "Babydoll",
+    "artist": "Dominic Fike",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-1",
+     "title": "Babydoll",
+     "artists": "Dominic Fike"
+    }
+   },
+   {
+    "position": 2,
+    "title": "Breathe",
+    "artist": "Malcolm Todd",
+    "tier": "unmatched",
+    "spotify": null
+   },
+   {
+    "position": 3,
+    "title": "White Keys",
+    "artist": "Dominic Fike",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-3",
+     "title": "White Keys",
+     "artists": "Dominic Fike"
+    }
+   },
+   {
+    "position": 4,
+    "title": "Earrings",
+    "artist": "Malcolm Todd",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-4",
+     "title": "Earrings",
+     "artists": "Malcolm Todd"
+    }
+   },
+   {
+    "position": 5,
+    "title": "Roommates",
+    "artist": "Malcolm Todd",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-5",
+     "title": "Roommates",
+     "artists": "Malcolm Todd"
+    }
+   },
+   {
+    "position": 6,
+    "title": "Sweet Boy",
+    "artist": "Malcolm Todd",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-6",
+     "title": "Sweet Boy",
+     "artists": "Malcolm Todd"
+    }
+   },
+   {
+    "position": 7,
+    "title": "Chest Pain (I Love)",
+    "artist": "Malcolm Todd",
+    "tier": "unmatched",
+    "spotify": null
+   },
+   {
+    "position": 8,
+    "title": "Pink + White",
+    "artist": "Frank Ocean",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-8",
+     "title": "Pink + White",
+     "artists": "Frank Ocean"
+    }
+   },
+   {
+    "position": 9,
+    "title": "Good Days",
+    "artist": "SZA",
+    "tier": "unmatched",
+    "spotify": null
+   },
+   {
+    "position": 10,
+    "title": "Bad Habit",
+    "artist": "Steve Lacy",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-10",
+     "title": "Bad Habit",
+     "artists": "Steve Lacy"
+    }
+   },
+   {
+    "position": 11,
+    "title": "Normal Girl",
+    "artist": "SZA",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-11",
+     "title": "Normal Girl",
+     "artists": "SZA"
+    }
+   },
+   {
+    "position": 12,
+    "title": "NOBLE",
+    "artist": "F3miii",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-12",
+     "title": "NOBLE",
+     "artists": "F3miii"
+    }
+   },
+   {
+    "position": 13,
+    "title": "You Know You Like It",
+    "artist": "DJ Snake & AlunaGeorge",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-13",
+     "title": "You Know You Like It",
+     "artists": "DJ Snake, AlunaGeorge"
+    }
+   },
+   {
+    "position": 14,
+    "title": "Feel So Close (Radio Edit)",
+    "artist": "Calvin Harris",
+    "tier": "unmatched",
+    "spotify": null
+   },
+   {
+    "position": 15,
+    "title": "Legendary Lovers",
+    "artist": "Katy Perry",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-15",
+     "title": "Legendary Lovers",
+     "artists": "Katy Perry"
+    }
+   },
+   {
+    "position": 16,
+    "title": "I Saw Your Face",
+    "artist": "Malcolm Todd",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-16",
+     "title": "I Saw Your Face",
+     "artists": "Malcolm Todd"
+    }
+   },
+   {
+    "position": 17,
+    "title": "Anything Could Happen",
+    "artist": "Ellie Goulding",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-17",
+     "title": "Anything Could Happen",
+     "artists": "Ellie Goulding"
+    }
+   },
+   {
+    "position": 18,
+    "title": "WE ON GO",
+    "artist": "BIA",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-18",
+     "title": "WE ON GO",
+     "artists": "BIA"
+    }
+   },
+   {
+    "position": 19,
+    "title": "Don't You Worry Child (feat. John Martin)",
+    "artist": "Swedish House Mafia",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-19",
+     "title": "Don't You Worry Child (feat. John Martin)",
+     "artists": "Swedish House Mafia"
+    }
+   },
+   {
+    "position": 20,
+    "title": "MUTT",
+    "artist": "Leon Thomas",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-20",
+     "title": "MUTT",
+     "artists": "Leon Thomas"
+    }
+   },
+   {
+    "position": 21,
+    "title": "Habits (Stay High)",
+    "artist": "Tove Lo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-21",
+     "title": "Habits (Stay High)",
+     "artists": "Tove Lo"
+    }
+   },
+   {
+    "position": 22,
+    "title": "Animals",
+    "artist": "Maroon 5",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-22",
+     "title": "Animals",
+     "artists": "Maroon 5"
+    }
+   },
+   {
+    "position": 23,
+    "title": "Centuries",
+    "artist": "Fall Out Boy",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-23",
+     "title": "Centuries",
+     "artists": "Fall Out Boy"
+    }
+   },
+   {
+    "position": 24,
+    "title": "Sugar on My Tongue",
+    "artist": "Tyler, The Creator",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-24",
+     "title": "Sugar on My Tongue",
+     "artists": "Tyler, The Creator"
+    }
+   },
+   {
+    "position": 25,
+    "title": "Ring Ring Ring",
+    "artist": "Tyler, The Creator",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-25",
+     "title": "Ring Ring Ring",
+     "artists": "Tyler, The Creator"
+    }
+   },
+   {
+    "position": 26,
+    "title": "Judge Judy",
+    "artist": "Tyler, The Creator",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-26",
+     "title": "Judge Judy",
+     "artists": "Tyler, The Creator"
+    }
+   },
+   {
+    "position": 27,
+    "title": "What a Feeling",
+    "artist": "One Direction",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-27",
+     "title": "What a Feeling",
+     "artists": "One Direction"
+    }
+   },
+   {
+    "position": 28,
+    "title": "Hey Angel",
+    "artist": "One Direction",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-28",
+     "title": "Hey Angel",
+     "artists": "One Direction"
+    }
+   },
+   {
+    "position": 29,
+    "title": "Why Don't We Go There",
+    "artist": "One Direction",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-29",
+     "title": "Why Don't We Go There",
+     "artists": "One Direction"
+    }
+   },
+   {
+    "position": 30,
+    "title": "party 4 u",
+    "artist": "Charli xcx",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-30",
+     "title": "party 4 u",
+     "artists": "Charli xcx"
+    }
+   },
+   {
+    "position": 31,
+    "title": "All The Things She Said",
+    "artist": "t.A.T.u.",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-31",
+     "title": "All The Things She Said",
+     "artists": "t.A.T.u."
+    }
+   },
+   {
+    "position": 32,
+    "title": "Can’t Catch Me Now (from The Hunger Games: The Ballad of Songbirds & Snakes)",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-32",
+     "title": "Can’t Catch Me Now (from The Hunger Games: The Ballad of Songbirds & Snakes)",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 33,
+    "title": "Never Be the Same",
+    "artist": "Camila Cabello",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-33",
+     "title": "Never Be the Same",
+     "artists": "Camila Cabello"
+    }
+   },
+   {
+    "position": 34,
+    "title": "Fame is a Gun",
+    "artist": "Addison Rae",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-34",
+     "title": "Fame is a Gun",
+     "artists": "Addison Rae"
+    }
+   },
+   {
+    "position": 35,
+    "title": "Close to Me",
+    "artist": "Ellie Goulding, Diplo & Swae Lee",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-35",
+     "title": "Close to Me",
+     "artists": "Ellie Goulding, Diplo, Swae Lee"
+    }
+   },
+   {
+    "position": 36,
+    "title": "my way",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-36",
+     "title": "my way",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 37,
+    "title": "stupid song",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-37",
+     "title": "stupid song",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 38,
+    "title": "the cure",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-38",
+     "title": "the cure",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 39,
+    "title": "American Girls",
+    "artist": "Harry Styles",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-39",
+     "title": "American Girls",
+     "artists": "Harry Styles"
+    }
+   },
+   {
+    "position": 40,
+    "title": "We Are the People",
+    "artist": "Empire Of The Sun",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-40",
+     "title": "We Are the People",
+     "artists": "Empire Of The Sun"
+    }
+   },
+   {
+    "position": 41,
+    "title": "Track 10",
+    "artist": "Charli xcx",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-41",
+     "title": "Track 10",
+     "artists": "Charli xcx"
+    }
+   },
+   {
+    "position": 42,
+    "title": "Suit & Tie (feat. JAŸ-Z)",
+    "artist": "Justin Timberlake",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-42",
+     "title": "Suit & Tie (feat. JAŸ-Z)",
+     "artists": "Justin Timberlake"
+    }
+   },
+   {
+    "position": 43,
+    "title": "oh yeah?",
+    "artist": "Steve Lacy",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-43",
+     "title": "oh yeah?",
+     "artists": "Steve Lacy"
+    }
+   },
+   {
+    "position": 44,
+    "title": "expectations",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-44",
+     "title": "expectations",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 45,
+    "title": "serena joy",
+    "artist": "Olivia Rodrigo",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-45",
+     "title": "serena joy",
+     "artists": "Olivia Rodrigo"
+    }
+   },
+   {
+    "position": 46,
+    "title": "Out of My League",
+    "artist": "Fitz and The Tantrums",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-46",
+     "title": "Out of My League",
+     "artists": "Fitz and The Tantrums"
+    }
+   },
+   {
+    "position": 47,
+    "title": "Time to Pretend",
+    "artist": "MGMT",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-47",
+     "title": "Time to Pretend",
+     "artists": "MGMT"
+    }
+   },
+   {
+    "position": 48,
+    "title": "Obsessica",
+    "artist": "Malcolm Todd",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-48",
+     "title": "Obsessica",
+     "artists": "Malcolm Todd"
+    }
+   },
+   {
+    "position": 49,
+    "title": "Royals",
+    "artist": "Lorde",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-49",
+     "title": "Royals",
+     "artists": "Lorde"
+    }
+   },
+   {
+    "position": 50,
+    "title": "Love Me Not",
+    "artist": "Ravyn Lenae",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-50",
+     "title": "Love Me Not",
+     "artists": "Ravyn Lenae"
+    }
+   },
+   {
+    "position": 51,
+    "title": "Let It Happen",
+    "artist": "Tame Impala",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-51",
+     "title": "Let It Happen",
+     "artists": "Tame Impala"
+    }
+   },
+   {
+    "position": 52,
+    "title": "The Heart Wants What It Wants",
+    "artist": "Selena Gomez",
+    "tier": "close",
+    "spotify": {
+     "id": "fake-52",
+     "title": "The Heart Wants What It Wants",
+     "artists": "Selena Gomez"
+    }
+   }
+  ]
+ }
+}
