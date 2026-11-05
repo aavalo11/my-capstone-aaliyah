@@ -93,3 +93,13 @@ I opened all four URLs myself in the browser. They matched the output above.
 - The check scripts are outside the repo. Move them into `tests/` when Week 9 starts it.
 - `esc()` and `stateBlock()` now exist in two files.
 - Evidence: S7 is still `Evidence: NONE` until W02 runs.
+
+## Changed 2026-11-05 (ADR 0016)
+
+R3 changed. The `Close match` label is gone. Spotify's title and artists show under a
+matched song only when its title is written differently from the Apple one. In the sample,
+that's still `On Spotify: Get You · Daniel Caesar, Kali Uchis`, now with no label
+(`tests/e2e/playlists.js`, P4). The other five checks above are unchanged. Each matched row
+also gets a **Spotify ↗** link to Spotify's search for that song, like Home's Top songs.
+The disabled **Play in Spotify** button is now hidden until there's a real playlist id.
+

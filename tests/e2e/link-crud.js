@@ -14,6 +14,8 @@ async function create(page, title, link, pass = "x") {
   await page.fill("#link", link);
   await page.fill("#passcode", pass);
   await page.click("#create-form button[type=submit]");
+  // Create plays back a recorded build before saving (ADR 0015). Field errors skip it.
+  await page.waitForFunction(() => !document.querySelector("#build-progress"));
 }
 async function myLinks(page) {
   await page.goto("about:blank");
@@ -71,13 +73,14 @@ const URL2 = "https://music.apple.com/us/playlist/study-no-words/pl.u-0zZ1";
 
   // C3: friend view + regressions
   const f1 = await friend(page, code);
-  const play = await page.$eval("button.btn", (b) => b.disabled);
+  const f1Rows = await page.$$eval("#tracks li", (l) => l.length);
+  const play = (await page.$("a.btn, button.btn")) === null; // no real Spotify playlist yet, so no Play button
   const nope = await friend(page, "nope");
   const sample = await friend(page, "sample");
   const sampleRows = await page.$$eval("#tracks li", (l) => l.length);
-  check("C3", f1.includes("late train home") && f1.includes("Saved on this device only") && play &&
+  check("C3", f1.includes("late train home") && f1.includes("saved on this device only") && f1Rows === 52 && play &&
     nope.includes("doesn't exist") && sampleRows === 6,
-    `friend="${f1.slice(0, 90)}…" play disabled=${play} | nope="${nope.slice(0, 35)}" | sample rows=${sampleRows}`);
+    `friend="${f1.slice(0, 90)}…" songs=${f1Rows} no Play button=${play} | nope="${nope.slice(0, 35)}" | sample rows=${sampleRows}`);
 
   // C4: rename keeps the code
   await myLinks(page);

@@ -176,3 +176,18 @@ hard to specify, hard for the agent to build, or only hard once you tried to bre
 - The checks are in `tests/` (unit tests for the store, plus the browser checks). S7's
   check scripts still aren't (`tests/README.md`).
 - Architecture §9's table doesn't list Your links yet.
+
+## Changed 2026-11-05 (ADR 0015, ADR 0016)
+
+Create now plays a recorded build before saving, and each link keeps the build's songs.
+Two edits to the checks, made on purpose:
+
+- **Every create waits for the build.** `link-crud.js` and `link-crud-fixes.js` wait until
+  `#build-progress` is gone before reading the result. What each check asserts didn't change.
+- **C3 asserts songs, not a disabled button.** The friend page for a local link now lists
+  its 52 songs and shows no **Play in Spotify** button, because there's no real Spotify
+  playlist yet. C3 checks for 52 rows and no button, where it used to check for a disabled
+  one. The notice reads `Sample playlist, saved on this device only.`
+- Home's `Your links` no longer has the `Saved on this device` subtitle. Tapping a name
+  opens `#/links/<code>` with its songs (`tests/e2e/playlists.js`, P2).
+

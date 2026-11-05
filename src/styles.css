@@ -261,3 +261,8 @@ a.pill { text-decoration: none; flex: none; }
 .link-row button.pill { cursor: pointer; border: 0; font-family: inherit; }
 .link-row button.pill:disabled { opacity: .45; cursor: not-allowed; }
 .btn.danger { background: var(--danger); }
+
+/* A song or link title that opens something: looks like a title, not a link. */
+a.title { display: block; color: inherit; text-decoration: none; }
+a.title:hover, a.title:focus-visible { text-decoration: underline; }
+.list li > a.row { border-bottom: 0; }

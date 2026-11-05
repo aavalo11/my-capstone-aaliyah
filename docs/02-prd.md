@@ -1,7 +1,7 @@
 # Crossfade — Product Requirements
 
 **Status:** v1 for CP-M2 · living spec, revised as the build proceeds
-**Last updated:** 2026-11-05 (R2 title normalization: NFC and whitespace)
+**Last updated:** 2026-11-05 (R2 title normalization; R3 shows Spotify's version only when different, ADR 0016)
 **Owner:** A. Avalo
 **Builds from:** `01-concept-brief.md` (problem, job) · `backlog.md` (stories S1–S11,
 MoSCoW, MVP slice) · `research/interview-01.md` (W01) · `decisions/0002–0006`
@@ -201,8 +201,10 @@ content is identical for both.
 - The headline reads `Matched X of N`, where X counts `exact` and `close` tracks.
 - Every source track is listed once, in source position, with title and artist.
   - `exact` tracks show normally.
-  - `close` tracks show a `Close match` label with the Spotify title and all its artists,
-    comma-separated, beneath, so a reader can spot a wrong one.
+  - `close` tracks show normally too. When Spotify's title isn't character-for-character
+    the Apple title, the Spotify title and all its artists, comma-separated, appear beneath
+    with no label, so a reader can spot a wrong one. *Changed 2026-11-05 (ADR 0016):* this
+    used to be a `Close match` label on every `close` track, which in v1 is every match.
   - `unmatched` tracks are greyed, with the text `Not found on Spotify (US)`.
 - **Negative — Given** 3 of 50 tracks unmatched, **when** the recipient views the page,
   **then** all 50 rows are present. None is dropped and none is shown as playable.

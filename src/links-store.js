@@ -82,12 +82,21 @@
     return list().filter(function (r) { return playlistKey(r.apple_url) === key; });
   }
 
-  function create(title, appleUrl) {
+  // report is create-link's match report ({ matched, total, tracks }), kept so the link can
+  // show its songs. TODO(W10): real data. Today it's the recorded build (ADR 0015).
+  function create(title, appleUrl, report) {
     var rows = load(), taken = {};
     rows.forEach(function (r) { taken[r.code] = true; });
     var now = new Date().toISOString();
     var link = { code: newCode(taken), title: cleanTitle(title), apple_url: String(appleUrl).trim(),
       created_at: now, updated_at: now };
+    if (report && Array.isArray(report.tracks)) {
+      link.report = { sample: !!report.sample, matched: report.matched, total: report.total,
+        tracks: report.tracks.map(function (t) {
+          return { position: t.position, title: t.title, artist: t.artist, tier: t.tier,
+            spotify: t.spotify ? { id: t.spotify.id, title: t.spotify.title, artists: t.spotify.artists } : null };
+        }) };
+    }
     rows.push(link);
     save(rows);
     return link;

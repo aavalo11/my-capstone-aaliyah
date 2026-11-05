@@ -35,8 +35,9 @@ Each phase links to what it produced. Dates are from the commit history.
 
 ### Phase 9 on screen
 
-With `?demo=build`, Create plays back one recorded `create-link` run (ADR 0015). The 52
-tracks are really from Apple Music; **every Spotify match is fake**, and the screen says so.
+Create plays back one recorded `create-link` run (ADR 0015). The 52 tracks are really from
+Apple Music; **every Spotify match is fake**, and the screen labels it as a sample. The
+screenshots below are from 2026-11-05, before the `Sample` labels were shortened.
 
 | Reading | Matching | Report, then the link |
 |---|---|---|
@@ -155,8 +156,8 @@ how similar our taste is.
 ### Seeing every state
 
 Every screen has an empty and an error state. Add `?demo=empty` or `?demo=error` before
-the `#`, for example `http://localhost:8000/?demo=error#/home`. On Create,
-`http://localhost:8000/?demo=build#/create` plays back a recorded build (ADR 0015).
+the `#`, for example `http://localhost:8000/?demo=error#/home`. Create plays back a
+recorded build before it saves a link (ADR 0015).
 
 To run `create-link` yourself against a real Apple playlist with a fake Spotify:
 `node scripts/create-link-dry-run.ts "<Apple Music playlist link>"` (Node 24).
@@ -176,14 +177,14 @@ node tests/e2e/run.js              # browser checks; first run needs Playwright,
 |---|---|
 | Home → Recently added, Your numbers | Real: reads Supabase |
 | Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
-| Home → Listening history | Locked: needs an Apple Music sign-in (ADR 0006, backlog S12) |
-| Create → Paste a link | Link, passcode and name are checked here. The link is saved **in this browser only** (ADR 0010). With `?demo=build`, a recorded build plays first: real Apple tracks, **fake** Spotify matches (ADR 0015) |
+| Create → Paste a link | Link, passcode and name are checked here. A recorded build plays first, with real Apple tracks and **fake** Spotify matches (ADR 0015). The link and its songs are saved **in this browser only** (ADR 0010) |
 | `create-link` (server) | Built and unit-tested with a **fake** Spotify and database. Not deployed; never run against real Spotify |
-| Home → Your links | Real, but local: rename and delete the links made on Create. Saved in this browser only |
-| Friend page `p.html?code=…` | Shows a link made in this browser, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009) |
-| Create → Search songs | Disabled. Would search Spotify through the server; holding pen, no evidence yet (backlog S16) |
-| Friends | Sample data only (backlog S13) |
-| Settings → Account | Placeholder until Lab 5 login (backlog S14); the theme setting works |
+| Home → Your links | Real, but local: rename and delete the links made on Create. Tap a name to see its songs; each matched song opens in Spotify's search |
+| Friend page `p.html?code=…` | Shows a link made in this browser with its songs, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009). **Play in Spotify** appears once a link has a real Spotify playlist |
+| Create → Search songs | Hidden. Would search Spotify through the server; holding pen, no evidence yet (backlog S16) |
+| Friends | Sample data only (backlog S13). Shared playlists open to their songs, each opening in Spotify's search |
+| Settings → Account | Hidden until the Lab 5 login (backlog S14). The theme setting works |
+| Home → Listening history, Fix a match, How matching works | Hidden. Not built (S12, S9), and matching isn't explained on screen (ADR 0016) |
 
 ## A note on the research
 

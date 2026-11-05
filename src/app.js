@@ -1,11 +1,11 @@
 // Crossfade front end. No framework and no build step: hash routes render into #view.
-// Add ?demo=empty or ?demo=error to the URL to see each screen's empty or error state, and
-// ?demo=build on Create to play back a recorded create-link run (ADR 0015).
+// Add ?demo=empty or ?demo=error to the URL to see each screen's empty or error state.
+// Create plays back a recorded create-link run until the real one is deployed (ADR 0015).
 (function () {
   "use strict";
 
   var view = document.getElementById("view");
-  var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | "build" | null
+  var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | null
   var CONFIG = window.CROSSFADE_CONFIG || {};
 
   // ---------- helpers ----------
@@ -71,8 +71,14 @@
     {
       id: "jordan", name: "Jordan", service: "Spotify",
       playlists: [
-        { title: "gym but make it sad", tracks: 32 },
-        { title: "sunday reset", tracks: 21 },
+        { title: "gym but make it sad", songs: [
+          { title: "Motion Sickness", artist: "Phoebe Bridgers" }, { title: "Bad Habit", artist: "Steve Lacy" },
+          { title: "Nights", artist: "Frank Ocean" }, { title: "Kill Bill", artist: "SZA" }, { title: "Dark Red", artist: "Steve Lacy" },
+        ] },
+        { title: "sunday reset", songs: [
+          { title: "Pink + White", artist: "Frank Ocean" }, { title: "Get You", artist: "Daniel Caesar" },
+          { title: "telepatía", artist: "Kali Uchis" }, { title: "Snooze", artist: "SZA" },
+        ] },
       ],
       songs: [
         { title: "Bad Habit", artist: "Steve Lacy" },
@@ -85,7 +91,11 @@
     },
     {
       id: "sam", name: "Sam", service: "Spotify",
-      playlists: [{ title: "road trip 2026", tracks: 48 }],
+      playlists: [{ title: "road trip 2026", songs: [
+        { title: "Mr. Brightside", artist: "The Killers" }, { title: "Do I Wanna Know?", artist: "Arctic Monkeys" },
+        { title: "Washing Machine Heart", artist: "Mitski" }, { title: "Sofia", artist: "Clairo" },
+        { title: "Kyoto", artist: "Phoebe Bridgers" }, { title: "When You Were Young", artist: "The Killers" },
+      ] }],
       songs: [
         { title: "Washing Machine Heart", artist: "Mitski" },
         { title: "Mr. Brightside", artist: "The Killers" },
@@ -96,9 +106,16 @@
     {
       id: "priya", name: "Priya", service: "Apple Music",
       playlists: [
-        { title: "lab hours", tracks: 15 },
-        { title: "throwbacks", tracks: 60 },
-        { title: "new finds", tracks: 12 },
+        { title: "lab hours", songs: [
+          { title: "Levitating", artist: "Dua Lipa" }, { title: "Paint The Town Red", artist: "Doja Cat" }, { title: "Satellite", artist: "Harry Styles" },
+        ] },
+        { title: "throwbacks", songs: [
+          { title: "Don't Start Now", artist: "Dua Lipa" }, { title: "Adore You", artist: "Harry Styles" },
+          { title: "See You Again", artist: "Tyler, The Creator" }, { title: "Say So", artist: "Doja Cat" },
+        ] },
+        { title: "new finds", songs: [
+          { title: "Houdini", artist: "Dua Lipa" }, { title: "Agora Hills", artist: "Doja Cat" },
+        ] },
       ],
       songs: [
         { title: "Levitating", artist: "Dua Lipa" },
@@ -125,8 +142,8 @@
     return '<span class="pill ' + cls + '">' + percent + "% match</span>";
   }
 
-  var SAMPLE_NOTICE = '<div class="notice"><b>Sample data.</b> Friends need Crossfade ' +
-    "accounts, which v1 doesn't have yet (backlog S13). None of these people are real.</div>";
+  // TODO(W10): real data.
+  var SAMPLE_NOTICE = '<div class="notice"><b>Sample friends.</b> None of these people are real.</div>';
 
   // ---------- screens ----------
 
@@ -197,14 +214,12 @@
             tile("", "⎘", "Paste from clipboard", "Skip the typing", "paste") +
             tile("", "✉", "Invite a friend", "Copy the app link", "invite") +
             tile("#/friends", "☺", "Friends", "See taste matches") +
-            tile("", "✎", "Fix a match", "Coming soon", "", true) +
-            tile("#/settings/matching", "?", "How matching works", "Exact, close, not found") +
           "</div>" +
           '<div class="small muted" id="tile-msg" role="status" style="min-height:1.2em;margin-top:6px"></div>' +
         "</section>" +
 
         '<div class="col">' +
-          '<section><div class="section-head"><h2>Your links</h2><span class="small muted">Saved on this device</span></div>' +
+          '<section><div class="section-head"><h2>Your links</h2></div>' +
             '<div id="my-links">' + stateBlock("Loading…", "") + "</div></section>" +
 
           '<section><div class="section-head"><h2>Recently added</h2><a class="small" href="#/create">Add one</a></div>' +
@@ -222,13 +237,6 @@
 
           '<section><div class="section-head"><h2>Top songs</h2><span class="small muted">Apple Music, US</span></div>' +
             '<div class="card" id="top-songs">' + stateBlock("Loading…", "") + "</div></section>" +
-
-          "<section><h2>Listening history</h2>" +
-            '<div class="card locked"><span class="lock" aria-hidden="true">🔒</span><div>' +
-              "<strong>Not available in this version</strong>" +
-              '<p class="small muted" style="margin:4px 0 0">Showing what you\'ve played means signing in to ' +
-              "Apple Music, and Crossfade doesn't ask anyone to sign in yet (ADR 0006, backlog S12).</p>" +
-            "</div></div></section>" +
         "</div>" +
       "</div>";
 
@@ -332,7 +340,7 @@
     var busy = linkMode ? " disabled" : "";
     box.innerHTML = top + '<div class="card"><ul class="list" id="my-links-list">' + rows.map(function (r) {
       var editing = linkMode && linkMode.code === r.code ? linkMode : null;
-      var head = '<div class="grow"><div class="title">' + esc(r.title) + "</div>" +
+      var head = '<div class="grow"><a class="title" href="#/links/' + esc(r.code) + '">' + esc(r.title) + "</a>" +
         '<div class="small muted">Made ' + esc(formatDate(r.created_at)) +
         (r.updated_at !== r.created_at ? " · renamed " + esc(formatDate(r.updated_at)) : "") + "</div>";
       var err = editing && editing.error ? '<div class="field-error" role="alert">' + esc(editing.error) + "</div>" : "";
@@ -351,7 +359,7 @@
           '<button class="btn quiet" type="button" data-cancel>Cancel</button></div></div></li>';
       }
       return '<li class="row link-row" data-code="' + esc(r.code) + '">' + head + "</div>" +
-        '<div class="link-actions"><a class="pill" href="' + esc(recipientUrl(r.code)) + '">Open</a>' +
+        '<div class="link-actions"><a class="pill" href="' + esc(recipientUrl(r.code)) + '">Friend\'s view</a>' +
         '<button class="pill" type="button" data-rename' + busy + ">Rename</button>" +
         '<button class="pill warn" type="button" data-delete' + busy + ">Delete</button></div></li>";
     }).join("") + "</ul></div>";
@@ -423,11 +431,6 @@
     }).catch(function (err) {
       if (!document.body.contains(box)) return;
       stats.innerHTML = '<div class="card">' + stateBlock("No numbers yet", "They come from the same database.") + "</div>";
-      if (err.message === "not-configured") {
-        box.innerHTML = '<div class="card">' + stateBlock("Supabase isn't connected yet",
-          "Add your Project URL and publishable key to src/config.js, then reload.") + "</div>";
-        return;
-      }
       box.innerHTML = '<div class="card">' + stateBlock("Couldn't load your playlists",
         "Crossfade couldn't reach its database. Nothing you sent is lost.",
         '<button class="btn quiet" type="button" id="retry">Try again</button>') + "</div>";
@@ -511,34 +514,13 @@
     return null;
   }
 
-  function renderCreate(tab) {
-    tab = tab === "search" ? "search" : "link";
+  function renderCreate() {
     view.innerHTML =
       "<h1>Create</h1>" +
       '<p class="muted">Turn an Apple Music playlist into one your friend can play in Spotify.</p>' +
-      '<div class="tabs-inline" role="tablist">' +
-        '<button type="button" role="tab" data-tab="link" aria-selected="' + (tab === "link") + '">Paste a link</button>' +
-        '<button type="button" role="tab" data-tab="search" aria-selected="' + (tab === "search") + '">Search songs</button>' +
-      "</div>" +
       '<div id="create-body"></div>';
 
-    view.querySelectorAll("[data-tab]").forEach(function (b) {
-      b.onclick = function () { renderCreate(b.getAttribute("data-tab")); };
-    });
-
     var body = document.getElementById("create-body");
-    if (tab === "search") {
-      body.innerHTML =
-        '<div class="card">' +
-          '<label for="q">Search songs</label>' +
-          '<input id="q" type="search" placeholder="Song or artist" disabled>' +
-          '<p class="small muted" style="margin-top:10px">Not built yet. Searching would use ' +
-          "Spotify's catalog, through Crossfade's server so its keys never reach this page. It " +
-          "waits until linking from Apple Music works with real Spotify (backlog S16).</p>" +
-        "</div>";
-      return;
-    }
-
     body.innerHTML =
       '<form class="card" id="create-form" novalidate>' +
         '<label for="title">Playlist name</label>' +
@@ -589,22 +571,21 @@
       }
       // Saves the link on this device (ADR 0010). reportHtml is the build report shown above it.
       var form = e.target;
-      function saveLink(reportHtml) {
+      function saveLink(report, reportHtml) {
         var made, earlier = [];
         try {
           earlier = window.CrossfadeLinks.samePlaylist(link);
-          made = window.CrossfadeLinks.create(title, link);
+          made = window.CrossfadeLinks.create(title, link, report);
         } catch (err) {
           result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
           return;
         }
         var url = recipientUrl(made.code);
-        result.innerHTML = (reportHtml || "") + '<div class="card" id="made-link"><strong>' + esc(made.title) + "</strong>" +
+        result.innerHTML = (reportHtml || "") + '<div class="card" id="made-link"><a class="title" href="#/links/' + esc(made.code) + '"><strong>' + esc(made.title) + "</strong></a>" +
           '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
           '<button class="btn quiet" type="button" id="copy-made">Copy link</button> ' +
           '<span class="small muted" id="copy-msg" role="status"></span>' +
-          '<div class="notice" style="margin-top:12px"><b>Saved on this device only.</b> It opens in this ' +
-          "browser and nowhere else, and the Spotify playlist isn't built yet (Week 9).</div>" +
+          '<div class="notice" style="margin-top:12px"><b>Sample link.</b> It opens on this device only.</div>' +
           (earlier.length ? '<div class="notice" style="margin-top:8px">You already had a link for this playlist (<b>' +
             esc(earlier[0].title) + "</b>). This is a separate one with its own code. Delete either on Home.</div>" : "") +
           "</div>";
@@ -621,68 +602,96 @@
         form.oninput = function () { submit.disabled = false; form.oninput = null; };
       }
 
-      // ?demo=build plays back a recorded create-link run before saving (ADR 0015).
-      if (DEMO === "build") {
-        submit.disabled = true;
-        playSampleBuild(result).then(function (html) { submit.disabled = false; saveLink(html); },
-          function () {
-            submit.disabled = false;
-            result.innerHTML = '<div class="notice error">Couldn\'t load the sample build. Nothing was sent. Try again.</div>';
-          });
-        return;
-      }
-      saveLink("");
+      // Plays back a recorded create-link run, then saves the link with its songs (ADR 0015).
+      submit.disabled = true;
+      playSampleBuild(result).then(function (report) {
+        submit.disabled = false;
+        saveLink(report, buildReport(report));
+      }, function () {
+        submit.disabled = false;
+        result.innerHTML = '<div class="notice error">Something failed on Crossfade\'s side. Nothing was sent. Try again.</div>';
+      });
     };
   }
 
   // ---------- recorded build (ADR 0015) ----------
   // TODO(W10): real data. Plays back src/sample/build-sample.json: Apple's tracks are real,
-  // the Spotify matches are FAKE. Progress wording is PRD R1's.
+  // the Spotify matches are FAKE. Progress wording is PRD R1's. Resolves with the report.
   function playSampleBuild(box) {
     var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
     var line = function (text) {
       box.innerHTML = '<div class="card" id="build-progress" role="status" aria-live="polite">' +
-        '<strong>' + esc(text) + "</strong>" +
-        '<p class="small muted" style="margin-top:6px">Sample build: the Spotify side is fake until Crossfade\'s ' +
-        "Spotify account is connected.</p></div>";
+        "<strong>" + esc(text) + "</strong></div>";
     };
     line("Reading playlist…");
     return Promise.all([fetchJSON("sample/build-sample.json", 8000), wait(700)]).then(function (r) {
-      var sample = r[0], total = sample.report.total, k = 0;
+      var report = r[0].report, total = report.total, k = 0;
       var step = function () {
         line("Matching " + k + " of " + total + "…");
         if (k >= total) return wait(250);
         k = Math.min(total, k + 4);
         return wait(90).then(step);
       };
-      return step().then(function () { return buildReport(sample.report); });
+      return step().then(function () {
+        return { sample: true, name: report.name, matched: report.matched, total: report.total, tracks: report.tracks };
+      });
     });
   }
 
-  // PRD R3: every source row once, in order. Close matches show Spotify's title and artists.
-  function buildReport(report) {
-    var rows = report.tracks.map(function (t) {
-      var head = '<div class="title">' + esc(t.position) + ". " + esc(t.title) + "</div>" +
-        '<div class="small muted">' + esc(t.artist) + "</div>";
-      if (t.tier === "unmatched") {
-        return '<li class="row unmatched" data-tier="unmatched"><div class="grow">' + head +
-          '<div class="small">Not found on Spotify (US)</div></div></li>';
-      }
-      var sp = t.spotify || {};
-      return '<li class="row" data-tier="' + esc(t.tier) + '"><div class="grow">' + head +
-        (t.tier === "close" ? '<div class="small" style="margin-top:4px"><span class="pill warn">Close match</span> On Spotify: ' +
-          esc(sp.title) + " · " + esc(sp.artists) + "</div>" : "") + "</div></li>";
-    }).join("");
+  // PRD R3: the headline, the misses by name, then every song (report-view.js).
+  function reportSummary(report) {
+    var R = window.CrossfadeReport;
     var missing = report.tracks.filter(function (t) { return t.tier === "unmatched"; });
-    return '<div class="card" id="build-report">' +
-      '<div class="notice" style="margin-bottom:12px"><b>Sample build, fake matches.</b> Whatever link you paste, ' +
-      "this shows <b>" + esc(report.name) + "</b>: its " + esc(report.total) + " tracks are really from Apple Music, read 2026-11-05, " +
-      "but every Spotify match is made up. No Spotify playlist was created.</div>" +
-      '<h2 style="margin:0">Matched ' + esc(report.matched) + " of " + esc(report.total) + "</h2>" +
+    return '<h2 style="margin:0" id="match-headline">Matched ' + esc(R.matched(report.tracks)) + " of " + esc(report.tracks.length) + "</h2>" +
       (missing.length ? '<p class="small muted" style="margin:4px 0 8px">Not on Spotify: ' +
-        missing.map(function (t) { return esc(t.title); }).join(", ") + "</p>" : "") +
-      '<details><summary class="small">All ' + esc(report.total) + " tracks</summary>" +
-      '<ul class="list" id="build-tracks">' + rows + "</ul></details></div>";
+        missing.map(function (t) { return esc(t.title); }).join(", ") + "</p>" : "");
+  }
+
+  function buildReport(report) {
+    return '<div class="card" id="build-report">' +
+      (report.sample ? '<div class="notice" style="margin-bottom:12px"><b>Sample playlist.</b> The Spotify matches are made up.</div>' : "") +
+      reportSummary(report) +
+      '<details><summary class="small">All ' + esc(report.tracks.length) + " songs</summary>" +
+      window.CrossfadeReport.list(report.tracks) + "</details></div>";
+  }
+
+  // A link you made: its songs, each opening in Spotify.
+  function renderLink(code) {
+    var link;
+    try { link = window.CrossfadeLinks.get(code); } catch (e) {
+      view.innerHTML = '<a class="back" href="#/home">‹ Home</a><div class="card">' + stateBlock("Couldn't open this link",
+        "Crossfade couldn't read the links saved on this device. Nothing was deleted.",
+        '<button class="btn quiet" type="button" onclick="location.reload()">Try again</button>') + "</div>";
+      return;
+    }
+    if (!link || link.deleted_at) {
+      view.innerHTML = '<a class="back" href="#/home">‹ Home</a><div class="card">' + stateBlock(
+        link ? "You deleted this link" : "That link isn't here", link ? "Anyone you sent it to sees it was removed." : "It may have been made on another device.",
+        '<a class="btn quiet" href="#/create">Make a link</a>') + "</div>";
+      return;
+    }
+    var url = recipientUrl(link.code);
+    var report = link.report;
+    var play = report && window.CrossfadeReport.playlistUrl(report.spotify_playlist_id);
+    view.innerHTML = '<a class="back" href="#/home">‹ Home</a>' +
+      "<h1>" + esc(link.title) + "</h1>" +
+      (report && report.sample ? '<div class="notice"><b>Sample playlist.</b> The Spotify matches are made up.</div>' : "") +
+      (play ? '<a class="btn block" href="' + esc(play) + '" target="_blank" rel="noopener">Play in Spotify</a>' : "") +
+      '<div class="card">' + (report && report.tracks.length
+        ? reportSummary(report) + window.CrossfadeReport.list(report.tracks)
+        : stateBlock("No songs in this link", "Make a new link to send this playlist with its songs.",
+            '<a class="btn quiet" href="#/create">Make a link</a>')) + "</div>" +
+      '<div class="card"><p class="small" style="margin:0 0 8px">Your friend opens</p>' +
+        '<p class="small" style="margin:0 0 10px"><a id="link-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
+        '<button class="btn quiet" type="button" id="copy-link">Copy link</button> ' +
+        '<span class="small muted" id="copy-msg" role="status"></span></div>';
+    document.getElementById("copy-link").onclick = function () {
+      var msg = document.getElementById("copy-msg");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
+          function () { msg.textContent = "Copy the link above instead."; });
+      } else { msg.textContent = "Copy the link above instead."; }
+    };
   }
 
   function renderFriends() {
@@ -695,7 +704,7 @@
         '<button class="btn quiet" type="button" onclick="location.reload()">Try again</button>') + "</div>";
     } else if (!list.length) {
       html += '<div class="card">' + stateBlock("No friends yet",
-        "When accounts exist, you'll add a friend by sending them your Crossfade link.") + "</div>";
+        "Friends you add show up here.") + "</div>";
     } else {
       html += '<div class="friend-grid">' + list.map(function (f) {
         var m = tasteMatch(f);
@@ -712,7 +721,7 @@
     view.innerHTML = html;
   }
 
-  function renderFriend(id, tab) {
+  function renderFriend(id, tab, playlistIndex) {
     var f = FRIENDS.filter(function (x) { return x.id === id; })[0];
     if (!f) {
       view.innerHTML = '<a class="back" href="#/friends">‹ Friends</a>' +
@@ -720,17 +729,15 @@
           "They may have been removed, or the link is wrong.") + "</div>";
       return;
     }
+    if (playlistIndex != null) return renderFriendPlaylist(f, playlistIndex);
     tab = tab === "songs" ? "songs" : "playlists";
     var m = tasteMatch(f);
 
     var items = tab === "songs"
-      ? f.songs.map(function (s) {
-          return '<li class="row"><div class="grow"><div class="title">' + esc(s.title) +
-            '</div><div class="small muted">' + esc(s.artist) + "</div></div></li>";
-        })
-      : f.playlists.map(function (p) {
-          return '<li class="row"><div class="grow"><div class="title">' + esc(p.title) +
-            '</div><div class="small muted">' + p.tracks + " songs</div></div></li>";
+      ? f.songs.map(window.CrossfadeReport.songRow)
+      : f.playlists.map(function (p, i) {
+          return '<li><a class="row" href="#/friends/' + esc(f.id) + "/playlists/" + i + '"><div class="grow"><div class="title">' + esc(p.title) +
+            '</div><div class="small muted">' + p.songs.length + (p.songs.length === 1 ? " song" : " songs") + '</div></div><span class="muted" aria-hidden="true">›</span></a></li>';
         });
 
     view.innerHTML =
@@ -750,7 +757,6 @@
             ? "You both listen to <b>" + m.shared.map(esc).join(", ") + "</b>."
             : "You don't share any artists yet. Something new to send them.") +
         "</p>" +
-        '<p class="small muted" style="margin:0">Artists you both play, out of every artist either of you plays.</p>' +
       "</div>" +
 
       '<div class="tabs-inline" role="tablist">' +
@@ -766,26 +772,28 @@
     });
   }
 
+  function renderFriendPlaylist(f, i) {
+    var p = f.playlists[+i];
+    var back = '<a class="back" href="#/friends/' + esc(f.id) + '">‹ ' + esc(f.name) + "</a>";
+    if (!p) {
+      view.innerHTML = back + '<div class="card">' + stateBlock("That playlist isn't here",
+        f.name + " may have removed it.") + "</div>";
+      return;
+    }
+    view.innerHTML = back + "<h1>" + esc(p.title) + "</h1>" +
+      '<p class="muted">Shared by ' + esc(f.name) + " · " + p.songs.length + (p.songs.length === 1 ? " song" : " songs") + "</p>" +
+      SAMPLE_NOTICE +
+      '<div class="card">' + (p.songs.length
+        ? '<ol class="list" id="tracks">' + p.songs.map(window.CrossfadeReport.songRow).join("") + "</ol>"
+        : stateBlock("This playlist is empty", "There's nothing here to play.")) + "</div>";
+  }
+
   function renderSettings() {
     var theme = storage("crossfade-theme") || "system";
     view.innerHTML =
       "<h1>Settings</h1>" +
 
-      '<div class="two-col"><section><h2>Account</h2>' +
-      '<div class="card">' +
-        '<div class="notice">Accounts arrive with the Lab 5 login (backlog S14). Until then ' +
-        "these are placeholders and nothing here is saved.</div>" +
-        '<label for="email">Email</label>' +
-        '<input id="email" type="email" placeholder="you@example.com" disabled>' +
-        '<label for="pw">Password</label>' +
-        '<input id="pw" type="password" value="placeholder" disabled>' +
-        '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">' +
-          '<button class="btn quiet" type="button" disabled>Change password</button>' +
-          '<button class="btn quiet" type="button" disabled>Sign out</button>' +
-        "</div>" +
-      "</div>" +
-
-      "</section><section><h2>Sending</h2>" +
+      '<div class="two-col"><section><h2>Sending</h2>' +
       '<div class="card"><dl class="kv">' +
         "<div><dt>Passcode</dt><dd>Asked each time. Never saved on this device.</dd></div>" +
         "<div><dt>Region</dt><dd>US Apple Music and US Spotify only</dd></div>" +
@@ -801,13 +809,6 @@
         }).join("") +
       "</div></div>" +
 
-      '</section><section><h2 id="matching">How matching works</h2>' +
-      '<div class="card"><dl class="kv">' +
-        '<div><dt><span class="pill good">Exact</span></dt><dd>Same recording, found by its ID code (ISRC)</dd></div>' +
-        '<div><dt><span class="pill">Close</span></dt><dd>Same title and artist. Shown with Spotify\'s version so you can check it.</dd></div>' +
-        '<div><dt><span class="pill warn">Not found</span></dt><dd>Left out and listed by name. Never swapped for a different song.</dd></div>' +
-      "</dl></div>" +
-
       "</section><section><h2>What Crossfade can't do</h2>" +
       '<div class="card"><ul class="small" style="margin:0;padding-left:18px">' +
         "<li>Move audio or downloaded songs between apps. Songs are locked to each person's own subscription.</li>" +
@@ -818,7 +819,6 @@
 
       "</section><section><h2>About</h2>" +
       '<div class="card"><dl class="kv"><div><dt>Version</dt><dd>0.1.0 (local)</dd></div>' +
-        "<div><dt>Database</dt><dd>" + (supabaseConfigured() ? "Supabase connected" : "Not connected") + "</dd></div>" +
         "<div><dt>Charts</dt><dd>Apple Music's public US chart</dd></div>" +
       "</dl></div></section></div>";
 
@@ -856,7 +856,8 @@
 
     if (page === "home") renderHome();
     else if (page === "create") renderCreate();
-    else if (page === "friends" && parts[1]) renderFriend(parts[1]);
+    else if (page === "links" && parts[1]) renderLink(parts[1]);
+    else if (page === "friends" && parts[1]) renderFriend(parts[1], null, parts[2] === "playlists" ? parts[3] : null);
     else if (page === "friends") renderFriends();
     else if (page === "settings") {
       renderSettings();

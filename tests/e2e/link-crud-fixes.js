@@ -15,6 +15,7 @@ async function fill(page, title, link, pass = "x") {
 async function make(page, title, link = URL1) {
   await fill(page, title, link);
   await page.click("#create-form button[type=submit]");
+  await built(page);
   return (await page.textContent("#made-url")).match(/code=(\w+)/)[1];
 }
 async function home(page) {
@@ -26,6 +27,8 @@ async function friendText(page, code) {
   return txt(await page.textContent("#view"));
 }
 const row = (code) => `.link-row[data-code="${code}"]`;
+// Create plays back a recorded build before saving (ADR 0015). Field errors skip it.
+const built = (page) => page.waitForFunction(() => !document.querySelector("#build-progress"));
 
 (async () => {
   const browser = await chromium.launch();
@@ -35,12 +38,14 @@ const row = (code) => `.link-row[data-code="${code}"]`;
   // C-1 double tap
   await fill(p, "late train home", URL1);
   await p.dblclick("#create-form button[type=submit]");
+  await built(p);
   check("F-C1", (await store(p)).length === 1 && !!(await p.$("#made-url")) && (await p.textContent("#pass-error")) === "",
     `records=${(await store(p)).length}, link still shown=${!!(await p.$("#made-url"))}, pass error="${await p.textContent("#pass-error")}"`);
 
   // C-2 duplicate playlist (share-sheet variant of the same URL)
   await fill(p, "late train home again", URL1 + "?ls=1&app=music");
   await p.click("#create-form button[type=submit]");
+  await built(p);
   const dupNote = txt(await p.textContent("#create-result"));
   check("F-C2", dupNote.includes("You already had a link for this playlist (late train home)") && (await store(p)).length === 2,
     `"${dupNote.slice(dupNote.indexOf("You already"), dupNote.indexOf("You already") + 70)}…" records=${(await store(p)).length}`);
@@ -145,6 +150,7 @@ const row = (code) => `.link-row[data-code="${code}"]`;
   await p.evaluate(() => localStorage.setItem("crossfade-links-v1", "{not json"));
   await fill(p, "after corruption", URL1);
   await p.click("#create-form button[type=submit]");
+  await built(p);
   const r4 = txt(await p.textContent("#create-result"));
   check("F-R4", r4 === "Couldn't read the links saved on this device, so nothing was saved.", `"${r4}"`);
 

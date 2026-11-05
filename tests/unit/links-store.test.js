@@ -134,3 +134,29 @@ test("?demo=empty and ?demo=error give the screens their states", () => {
   assert.deepEqual(plain(load({ search: "?demo=empty" }).store.list()), []);
   assert.equal(errorName(() => load({ search: "?demo=error" }).store.list()), "read-failed");
 });
+
+test("create keeps a match report's songs with the link, and rename keeps them", () => {
+  const { store, rows } = load();
+  const report = { sample: true, matched: 1, total: 2, tracks: [
+    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, extra: "dropped" },
+    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null },
+  ] };
+  const made = store.create("70 degrees out", URL1, report);
+  store.rename(made.code, "renamed");
+  const saved = rows()[0];
+  assert.deepEqual(saved.report, { sample: true, matched: 1, total: 2, tracks: [
+    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" } },
+    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null },
+  ] });
+  assert.equal(saved.title, "renamed");
+});
+
+test("create without a report saves no report, and delete drops it", () => {
+  const { store, rows } = load();
+  const made = store.create("no songs", URL1);
+  assert.equal("report" in rows()[0], false);
+  store.create("with songs", URL1, { matched: 0, total: 0, tracks: [] });
+  store.remove(made.code);
+  assert.deepEqual(Object.keys(rows()[0]).sort(), ["code", "deleted_at"]);
+});
+
