@@ -181,7 +181,7 @@ node tests/e2e/run.js              # browser checks; first run needs Playwright,
 | `create-link` (server) | Built and unit-tested with a **fake** Spotify and database. Not deployed; never run against real Spotify |
 | Home → Your links | Real, but local: rename and delete the links made on Create. Saved in this browser only |
 | Friend page `p.html?code=…` | Shows a link made in this browser, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009) |
-| Create → Search songs | Disabled: needs a server-side Apple key |
+| Create → Search songs | Disabled. Would search Spotify through the server; holding pen, no evidence yet (backlog S16) |
 | Friends | Sample data only (backlog S13) |
 | Settings → Account | Placeholder until Lab 5 login (backlog S14); the theme setting works |
 

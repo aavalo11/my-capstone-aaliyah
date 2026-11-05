@@ -1,8 +1,9 @@
 # Lab 3 Backlog — Crossfade
 
 **Status:** draft, provisional pending W02/W03
-**Last updated:** 2026-09-27. S6, S7, S8, the MoSCoW board, and the MVP slice were brought
-in line with `02-prd.md` (§11) and ADR 0006.
+**Last updated:** 2026-11-05. S16 (search Spotify to build a playlist) added to the holding
+pen, with a W02/W03 question. Before that, 2026-09-27: S6, S7, S8, the MoSCoW board, and the
+MVP slice were brought in line with `02-prd.md` (§11) and ADR 0006.
 
 Every story below carries a pointer back to evidence. Stories with no evidence are
 kept in a holding pen and are not eligible for MUST until evidence exists.
@@ -384,6 +385,41 @@ Keep the paste box first on Home.
 
 ---
 
+**S16.** As a sender, I want to search Spotify's catalog and pick songs one by one, so that
+I can build a playlist for a friend on Spotify without making it in Apple Music first.
+
+Added 2026-11-05, at the founder's request. *Create → Search songs* already exists in `src/`
+as a disabled tab.
+
+**Acceptance criteria**
+
+- [ ] **Given** I've entered the passcode, **when** I search a title or artist, **then** I
+  see up to 10 Spotify results, each with title, all artists, album and length, so I can
+  tell versions apart.
+- [ ] **Given** I've picked songs, **when** I tap **Create link**, **then** the Spotify
+  playlist has exactly those recordings, in the order I picked them. No matching step
+  runs, so there's no `Not found on Spotify (US)` row.
+- [ ] **Negative — Given** a search fails (Spotify error, timeout, or rate limit), **when**
+  I search, **then** I see `Couldn't search Spotify. Try again.`, and the songs I'd
+  already picked are kept.
+- [ ] **Negative — Given** a search finds nothing, **when** results load, **then** I see
+  `No songs found for "<query>"`, not an empty list, and nothing is added.
+
+**Evidence.** **NONE.** Founder request. Two risks to log:
+
+- **It's a different job from J5.** J5 is sharing a playlist that already exists. Picking
+  songs one by one is the retyping chore Crossfade exists to remove, now done by the
+  sender. Test it with the W02/W03 question in §6 before building.
+- **It competes with the five-second send,** as S15 does. Paste stays the default on Create.
+
+**Build notes, if it leaves the pen.** The browser never calls Spotify, so search runs in a
+passcode-protected server function, not in `src/`. That stops anyone else from using up the
+Crossfade account's quota. `searchTrack` in `create-link/spotify.ts` already does the call
+with the app keys alone (no Apple key, ADR 0012). Build it only after `create-link` runs
+against real Spotify (ADR 0014).
+
+---
+
 ## 4. MoSCoW board
 
 | MUST | SHOULD | COULD | WON'T (+ why not) |
@@ -393,7 +429,7 @@ Keep the paste box first on Home.
 | ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
-| | | | S12–S15 — Home history, Friends, Account, Discover *(holding pen, Evidence: NONE; shell only)* |
+| | | | S12–S16 — Home history, Friends, Account, Discover, Search to build *(holding pen, Evidence: NONE; shell only)* |
 
 **MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
 product. Without S8, the first person who opens a link and finds junk in their library
@@ -476,6 +512,8 @@ collaboration, downloads, DJ export, buy links, remembered corrections.
    - Did anything get saved to your library that you didn't want? (S8)
    - Has a song ever come through as the wrong version? What did you do? (S9)
    - How many of the people you share music with are on a different service?
+   - Have you ever made a playlist *for* someone, song by song? What was it for, and how
+     long did it take? (S16)
 
    Do not ask "would you use an app that bridges playlists?" That returns "yeah, nice,"
    which is exactly what W01 said, and it is worth nothing.

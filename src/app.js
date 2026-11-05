@@ -532,9 +532,9 @@
         '<div class="card">' +
           '<label for="q">Search songs</label>' +
           '<input id="q" type="search" placeholder="Song or artist" disabled>' +
-          '<p class="small muted" style="margin-top:10px">Searching Apple Music needs a developer ' +
-          "key that has to stay on a server, so it can't run in this page. It arrives with the " +
-          "Supabase Edge Function in Week 9.</p>" +
+          '<p class="small muted" style="margin-top:10px">Not built yet. Searching would use ' +
+          "Spotify's catalog, through Crossfade's server so its keys never reach this page. It " +
+          "waits until linking from Apple Music works with real Spotify (backlog S16).</p>" +
         "</div>";
       return;
     }
