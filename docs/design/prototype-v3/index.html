@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Crossfade Phone Prototype</title>
 <meta name="description" content="Clickable phone prototype of Crossfade: send a playlist link from Apple Music, open it in Spotify, fix matches, and try every error state.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -405,7 +406,8 @@ canvas.qr { width: 200px; height: 200px; background: #fff; border-radius: 12px; 
       offline: false, fixed: {}, filter: "all", query: "",
       fixFor: null, fixPick: null, fixQuery: "", fixSearched: false, playFrom: 0,
       service: null, ttab: "playlists", pick: SHAREABLE.playlists[0], queue: [], added: {}, maya: false,
-      vote: null, themeMode: "system"
+      vote: null, themeMode: "system",
+      direction: "am-sp" // "sp-am" is an interview probe only (ADR 0002): it never builds anything
     };
   }
   S = fresh();
@@ -456,8 +458,22 @@ canvas.qr { width: 200px; height: 200px; background: #fff; border-radius: 12px; 
       var e = S.err, inv = function (f) { return e && e.field === f ? ' aria-invalid="true" aria-describedby="err-' + f + '"' : ""; };
       var errHtml = function (f) { return e && e.field === f ? '<p class="err" id="err-' + f + '">' + e.msg + "</p>" : ""; };
       var probs = [["wrongcode", "Wrong passcode"], ["badlink", "Not a playlist link"], ["nonus", "UK store link"], ["toolong", "140 songs"], ["zero", "No songs match"]];
+      var toggle = '<div class="seg" role="tablist" aria-label="Which way">' + [["am-sp", "Apple Music → Spotify"], ["sp-am", "Spotify → Apple Music"]].map(function (o) {
+        return '<button type="button" role="tab" data-direction="' + o[0] + '" aria-selected="' + (S.direction === o[0]) + '">' + o[1] + "</button>";
+      }).join("") + "</div>";
+      if (S.direction === "sp-am") {
+        return {
+          body: top("", '<span class="pill">Sender</span>') + toggle +
+            "<h1>Send a playlist to Apple Music</h1>" +
+            '<div class="notice"><b>Not available yet.</b> Crossfade only works from Apple Music to Spotify for now.</div>' +
+            '<p class="small">Two things stand in the way. Spotify only lets an app read a playlist’s songs if the app’s own account made it, so Crossfade can’t read your friend’s. And Apple Music can’t make a playlist someone opens without signing in.</p>',
+          actions: '<button type="button" class="btn btn-primary" data-direction="am-sp">Send from Apple Music instead</button>' +
+            '<p class="small">Nothing was sent.</p>',
+          note: { name: "Other direction (interview probe)", stories: ["ADR 0002", "PRD D2"], text: "Not part of v1. This screen is here to see who reaches for it in W02/W03. ADR 0002 flips the direction only if most participants are on Apple Music.", open: "Ask: which way do you usually share? Of the people you send music to, how many use Apple Music? Note who taps this before you ask." }
+        };
+      }
       return {
-        body: top("", '<span class="pill">Sender</span>') +
+        body: top("", '<span class="pill">Sender</span>') + toggle +
           "<h1>Send a playlist to Spotify</h1>" +
           '<p class="lede">In Apple Music, open a playlist, tap Share, then Copy Link. Paste it below.</p>' +
           '<label for="url">Apple Music link</label>' +
@@ -880,6 +896,7 @@ canvas.qr { width: 200px; height: 200px; background: #fff; border-radius: 12px; 
     if (current() === "send") readFields();
 
     if (d.tab) { switchTab(d.tab); return; }
+    if (d.direction) { S.direction = d.direction; S.err = null; paint(true); return; }
     if (el.hasAttribute("data-back")) { closeSheet(); back(); return; }
     if (d.go) { closeSheet(); go(d.go); return; }
     if (el.hasAttribute("data-close")) { closeSheet(); return; }
