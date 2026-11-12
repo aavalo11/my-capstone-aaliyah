@@ -6,12 +6,14 @@ itself as a real, playable playlist in whatever service your friend already uses
 The thing it replaces is a screenshot of a tracklist that the other person has to retype
 song by song. Most of the time, they don't — so the playlist never actually gets shared.
 
-**Status (2026-11-12):** 🚧 Building the bridge. The app runs locally, and `create-link`
-(Apple link in, Spotify playlist and report out) runs end to end against a **fake**
-Spotify. It isn't deployed yet: the Crossfade Spotify account and the database migration
-come next. Solo capstone for IST300, Syracuse University, Fall 2026. See *Phases* below.
+**Status (2026-11-12):** 🚧 Building the bridge. The front end is live on Netlify, and
+`create-link` (Apple link in, Spotify playlist and report out) runs end to end against a
+**fake** Spotify. `create-link` isn't deployed yet: the Crossfade Spotify account and the
+database migration come next. Solo capstone for IST300, Syracuse University, Fall 2026. See *Phases* below.
 
-**Live URL:** not deployed yet.
+**Live URL:** https://crossfademusic.netlify.app. Every push to `main` deploys it
+(`netlify.toml`, ADR 0008). Links made there are still saved in that browser only
+(ADR 0010), so a friend can't open them yet. `/p/sample` works for anyone.
 
 ## Run it
 
