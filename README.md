@@ -6,7 +6,7 @@ itself as a real, playable playlist in whatever service your friend already uses
 The thing it replaces is a screenshot of a tracklist that the other person has to retype
 song by song. Most of the time, they don't — so the playlist never actually gets shared.
 
-**Status (2026-11-05):** 🚧 Building the bridge. The app runs locally, and `create-link`
+**Status (2026-11-12):** 🚧 Building the bridge. The app runs locally, and `create-link`
 (Apple link in, Spotify playlist and report out) runs end to end against a **fake**
 Spotify. It isn't deployed yet: the Crossfade Spotify account and the database migration
 come next. Solo capstone for IST300, Syracuse University, Fall 2026. See *Phases* below.
@@ -63,7 +63,7 @@ Each phase links to what it produced. Dates are from the commit history.
 | 6 | **Architecture and stack** | Oct 8–16 | `docs/03-architecture.md` (CP-M3); Supabase + plain HTML (ADR 0007), Netlify (ADR 0008) | Done |
 | 7 | **Front end** | Oct 8–26 | `src/`: Home, Create, link CRUD (ADR 0010), the friend's match report (ADR 0009); `tests/` | Done, on sample data |
 | 8 | **Outside services** | Oct 29–Nov 3 | Read Apple's public share page, no key (ADR 0012); first outside call (ADR 0013); pay for Spotify Premium (ADR 0014) | Done |
-| 9 | **The bridge: `create-link`** | Nov 5 → | Apple reader, R2 matching, steps 1–9 with retries and cleanup, 83 unit tests, a dry run against a real playlist, and Create playing it back (ADR 0015) | **In progress**, fake Spotify |
+| 9 | **The bridge: `create-link`** | Nov 5 → | Apple reader, R2 matching, steps 1–9 with retries and cleanup, 85 unit tests, a dry run against a real playlist, and Create playing it back (ADR 0015) | **In progress**, fake Spotify |
 | 10 | **Deploy and go live** | next | Crossfade's Spotify credentials, database migration, Edge Function, Create calls it for real, then the demo test | Not started |
 | 11 | **Benchmark and demo** | after 10 | Match-rate benchmark (PRD §8) on 5 playlists, then the six-shot screen recording | Not started |
 
