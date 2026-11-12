@@ -56,8 +56,8 @@ Apple or Spotify code (§9).
 | Database | Postgres with row-level security | Supabase |
 
 The browser never talks to Apple or Spotify, so secrets never reach a phone (PRD R6,
-requirements lines 8–9). The one exception is the "Play in Spotify" button, which is a
-plain link.
+requirements lines 8–9). There are two exceptions. The "Play in Spotify" button is a
+plain link, and Home reads Apple's keyless public chart feed (ADR 0017).
 
 ---
 

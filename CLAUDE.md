@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Don't over-read field notes. If one is ambiguous, ask (ADR 0004: an over-read note cost S3 its evidence).
 - Every story has a failure-path AC. Every feature has an empty state and an error state.
 - Fake data is labelled on screen and marked `TODO(W10): real data`.
-- The browser never calls Apple or Spotify. Only the publishable key goes in `src/`. Use `esc()` on every interpolated string.
+- The browser never calls Apple or Spotify, except Home's keyless chart feed (ADR 0017). Only the publishable key goes in `src/`. Use `esc()` on every interpolated string.
 - A decision that could have gone another way gets a five-line ADR in `docs/decisions/` first. No new dependency without saying why.
 
 ## Never propose
