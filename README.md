@@ -13,6 +13,40 @@ come next. Solo capstone for IST300, Syracuse University, Fall 2026. See *Phases
 
 **Live URL:** not deployed yet.
 
+## Run it
+
+**You need:** Python 3 (macOS ships with one, so 3.9 or newer is fine) and Node 24 for the
+tests. You don't need npm to run the app.
+
+```bash
+git clone https://github.com/aavalo11/my-capstone-aaliyah.git
+cd my-capstone-aaliyah
+cp .env.example .env        # optional for now, see Secrets below
+python3 -m http.server 8000 --bind 127.0.0.1 --directory src
+```
+
+Open http://localhost:8000. Stop it with `Ctrl+C`.
+
+**Pass signal:** Home → *Recently added* lists rows from Supabase. If it says *Couldn't
+load your playlists*, the free Supabase project is probably paused (see *Things that went
+wrong* below).
+
+**Secrets:** the app itself needs no `.env`. Its Supabase URL and **publishable** key are
+public by design and already in `src/config.js`. The `.env` is only for the terminal
+scripts in `scripts/`. `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` come from the
+Crossfade Spotify developer app (developer.spotify.com → Dashboard → the app → Settings).
+`SPOTIFY_REFRESH_TOKEN` and `SENDER_PASSCODE` aren't used by anything yet.
+`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` can be copied from `src/config.js`. There's
+no login, so there's nothing to sign in to (backlog S14).
+
+**Tests:**
+
+```bash
+node --test tests/unit/*.test.js                               # no install
+cd tests && npm install && npx playwright install chromium && cd ..   # first time only
+node tests/e2e/run.js
+```
+
 ---
 
 ## Phases
@@ -116,8 +150,9 @@ arrive in Week 9 with Edge Functions.
 
 ### Start it
 
+From the repo folder:
+
 ```sh
-cd ~/my-capstone-aaliyah
 python3 -m http.server 8000 --bind 127.0.0.1 --directory src
 ```
 
