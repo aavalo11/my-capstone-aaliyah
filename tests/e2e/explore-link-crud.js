@@ -8,7 +8,7 @@ const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
 const log = (id, what, happened) => console.log(`\n[${id}] ${what}\n   → ${happened}`);
 const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
-const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1") || "[]"));
+const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1:test-user") || "[]"));
 
 async function fill(page, title, link, pass = "x") {
   await page.goto("about:blank"); await page.goto(BASE + "/#/create");
@@ -86,7 +86,7 @@ async function make(page, title, link = URL1) {
   const after = (await tabA.$$(".link-row")).length;
   log("R-3", "Home open in tab A, new link made in tab B", `tab A rows before=${before}, after (no reload)=${after}`);
 
-  await p.evaluate(() => localStorage.setItem("crossfade-links-v1", "{not json"));
+  await p.evaluate(() => localStorage.setItem("crossfade-links-v1:test-user", "{not json"));
   await home(p);
   const corrupt = txt(await p.textContent("#my-links"));
   await fill(p, "after corruption", URL1);

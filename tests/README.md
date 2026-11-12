@@ -20,7 +20,7 @@ cd ..
 `run.js` starts `python3 -m http.server` on port 8123, runs `link-crud.js` and then
 `link-crud-fixes.js`, and stops the server. Any failing check makes it exit with 1.
 
-**Pass signal:** `9/9 passed`, `13/13 passed`, then `10/10 passed`, `9/9 passed`, `8/8 passed`, and `All browser checks passed`.
+**Pass signal:** `9/9 passed`, `13/13 passed`, then `12/12 passed`, `9/9 passed`, `8/8 passed`, and `All browser checks passed`.
 
 ## Not a test
 

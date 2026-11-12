@@ -29,9 +29,10 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory src
 
 Open http://localhost:8000. Stop it with `Ctrl+C`.
 
-**Pass signal:** Home → *Recently added* lists rows from Supabase. If it says *Couldn't
-load your playlists*, the free Supabase project is probably paused (see *Things that went
-wrong* below).
+**Pass signal:** Home shows *Nothing added yet* and the *Top songs* chart. Then tap the
+profile icon (top left) → **Sign in with Google**, and you land on *Account*, which reads
+Supabase. If Account says *Couldn't load your profile*, the free Supabase project is
+probably paused (see *Things that went wrong* below).
 
 **Secrets:** the app itself needs no `.env`. Its Supabase URL and **publishable** key are
 public by design and already in `src/config.js`. The `.env` is only for the terminal
@@ -160,7 +161,8 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory src
 
 Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
 
-**Pass signal:** Home → *Recently added* lists the rows from the Supabase `links` table.
+**Pass signal:** Home shows *Nothing added yet* and *Top songs*, and signing in reaches
+*Account* (ADR 0021: Home shows only your own links).
 
 ### Connect Supabase (once per project)
 
@@ -181,7 +183,7 @@ Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
 |---|---|
 | `syntax error at or near "supabase"` in the SQL Editor | I pasted the file name. Paste the SQL *inside* `supabase/schema.sql`. |
 | `Could not find the table 'public.links'` | The SQL never ran. Run it again, or run `notify pgrst, 'reload schema';`. |
-| Home says *Couldn't load your playlists* after a break | Free Supabase projects pause after about a week of no use. Dashboard → **Restore project**, wait a few minutes. |
+| Account says *Couldn't load your profile* after a break | Free Supabase projects pause after about a week of no use. Dashboard → **Restore project**, wait a few minutes. |
 | `Address already in use` when starting the server | An old server is still running. Close that terminal, or use port `8001`. |
 
 ### What changed from the first draft
@@ -213,7 +215,7 @@ node tests/e2e/run.js              # browser checks; first run needs Playwright,
 
 | Screen | State |
 |---|---|
-| Home → Recently added, Your numbers | Real: reads Supabase |
+| Home → Recently added, Your numbers | Real, but local: only the signed-in account's own links. Someone new, or signed out, sees *Nothing added yet* (ADR 0021) |
 | Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
 | Create → Paste a link | Sign-in, link and name are checked here. A recorded build plays first, with real Apple tracks and **fake** Spotify matches (ADR 0015). The link and its songs are saved **in this browser only** (ADR 0010) |
 | `create-link` (server) | Built and unit-tested with a **fake** Spotify and database. Not deployed; never run against real Spotify |

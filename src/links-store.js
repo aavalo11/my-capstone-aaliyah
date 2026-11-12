@@ -4,7 +4,16 @@
 (function () {
   "use strict";
 
-  var KEY = "crossfade-links-v1";
+  // Each Google account keeps its own links on this device (ADR 0021). Signed out, the
+  // plain key is used; nothing signed out can make links, so it stays empty for new visitors.
+  var BASE_KEY = "crossfade-links-v1";
+  function account() {
+    try {
+      var s = JSON.parse(localStorage.getItem("crossfade-session-v1") || "null");
+      return s && s.user && s.user.id ? String(s.user.id) : "";
+    } catch (e) { return ""; }
+  }
+  function scoped(base) { var id = account(); return id ? base + ":" + id : base; }
   var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | null
   var CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   var MAX_TITLE = 100;
@@ -16,7 +25,7 @@
     if (DEMO === "error") throw fail("read-failed");
     if (DEMO === "empty") return [];
     var raw;
-    try { raw = localStorage.getItem(KEY); } catch (e) { throw fail("read-failed"); }
+    try { raw = localStorage.getItem(scoped(BASE_KEY)); } catch (e) { throw fail("read-failed"); }
     if (!raw) return [];
     try {
       var rows = JSON.parse(raw);
@@ -26,7 +35,7 @@
 
   function save(rows) {
     if (DEMO === "error") throw fail("write-failed");
-    try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
+    try { localStorage.setItem(scoped(BASE_KEY), JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
   }
 
   // Architecture §6: 10 random characters from [A-Za-z0-9].
@@ -124,19 +133,21 @@
 
   window.CrossfadeLinks = {
     list: list, get: get, create: create, rename: rename, remove: remove,
-    checkTitle: checkTitle, samePlaylist: samePlaylist, KEY: KEY, MAX_TITLE: MAX_TITLE,
+    checkTitle: checkTitle, samePlaylist: samePlaylist, MAX_TITLE: MAX_TITLE,
   };
+  // The key for whoever is signed in right now, for screens listening to "storage" events.
+  Object.defineProperty(window.CrossfadeLinks, "KEY", { get: function () { return scoped(BASE_KEY); } });
 
   // Friends' links this browser has opened at p.html (ADR 0018, S17). One row per code,
   // { code, title, track_count, matched, sample, opened_at }, newest first.
   // TODO(W10): real data. Moves to the database with sender sign-in.
-  var RECEIVED_KEY = "crossfade-received-v1";
+  var RECEIVED_KEY = "crossfade-received-v1"; // per account too (ADR 0021)
 
   function loadReceived() {
     if (DEMO === "error") throw fail("read-failed");
     if (DEMO === "empty") return [];
     var raw;
-    try { raw = localStorage.getItem(RECEIVED_KEY); } catch (e) { throw fail("read-failed"); }
+    try { raw = localStorage.getItem(scoped(RECEIVED_KEY)); } catch (e) { throw fail("read-failed"); }
     if (!raw) return [];
     try {
       var rows = JSON.parse(raw);
@@ -153,8 +164,9 @@
     var rows = loadReceived().filter(function (r) { return r.code !== row.code; });
     rows.push({ code: String(row.code), title: String(row.title || ""), track_count: row.track_count | 0,
       matched: row.matched | 0, sample: !!row.sample, opened_at: new Date().toISOString() });
-    try { localStorage.setItem(RECEIVED_KEY, JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
+    try { localStorage.setItem(scoped(RECEIVED_KEY), JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
   }
 
-  window.CrossfadeReceived = { list: listReceived, add: addReceived, KEY: RECEIVED_KEY };
+  window.CrossfadeReceived = { list: listReceived, add: addReceived };
+  Object.defineProperty(window.CrossfadeReceived, "KEY", { get: function () { return scoped(RECEIVED_KEY); } });
 })();

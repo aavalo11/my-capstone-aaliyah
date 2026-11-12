@@ -70,7 +70,7 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   check("P6f", nope.includes("That link isn't here"), `"${nope.slice(0, 50)}"`);
 
   // P8 (S17, ADR 0018): a friend's link you opened is under Sent to me; your own link isn't.
-  await p.evaluate(() => localStorage.removeItem("crossfade-received-v1")); // P4 already opened sample
+  await p.evaluate(() => localStorage.removeItem("crossfade-received-v1:test-user")); // P4 already opened sample
   await p.goto(BASE + "/#/playlists/received");
   const before = txt(await p.textContent("#received"));
   await p.goto(BASE + "/p.html?code=sample"); await p.waitForSelector("#tracks");
@@ -88,6 +88,33 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   const current = await p.$$eval('.nav [aria-current="page"]', (a) => a.map((x) => x.textContent.trim()));
   check("P8f", errText.includes("Couldn't read your playlists") && JSON.stringify(current) === JSON.stringify(["♫Playlists", "Made by me"]),
     `error="${errText.slice(0, 40)}", menu marks ${JSON.stringify(current)}`);
+
+  // P9 (ADR 0021): Home shows my own links; another account on this browser starts empty.
+  await p.goto(BASE + "/#/home"); await p.waitForSelector("#recent .card");
+  const mine = txt(await p.textContent("#recent")), myStats = txt(await p.textContent("#stats"));
+  await p.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem("crossfade-session-v1"));
+    s.user = { id: "someone-else", email: "other@example.com", name: "Someone Else", avatar_url: "" };
+    localStorage.setItem("crossfade-session-v1", JSON.stringify(s));
+  });
+  await p.goto(BASE + "/#/playlists/made"); await p.waitForSelector("#my-links .card");
+  const theirLinks = txt(await p.textContent("#my-links"));
+  await p.goto(BASE + "/#/home"); await p.waitForSelector("#recent .card");
+  const theirs = txt(await p.textContent("#recent")), theirStats = txt(await p.textContent("#stats"));
+  check("P9", mine.includes("70 degrees out") && myStats.includes("48") && theirs.startsWith("Nothing added yet") &&
+    theirStats.startsWith("No numbers yet") && theirLinks.startsWith("No links yet"),
+    `mine="${mine.slice(0, 30)}", stats="${myStats.slice(0, 20)}", other account sees "${theirs.slice(0, 20)}" / "${theirLinks.slice(0, 15)}"`);
+
+  // P9f: signed out, Home has nothing of anyone's, and Made by me asks you to sign in.
+  const out = await (await browser.newContext()).newPage();
+  await out.goto(BASE + "/#/home"); await out.waitForSelector("#recent .card");
+  const outHome = txt(await out.textContent("#recent"));
+  await out.goto(BASE + "/#/playlists/made"); await out.waitForSelector("#made-signin");
+  const sharedTable = await out.evaluate(() => performance.getEntriesByType("resource").some((e) => e.name.includes("/rest/v1/links")));
+  check("P9f", outHome.startsWith("Nothing added yet") && !sharedTable &&
+    txt(await out.textContent("#made-signin")).startsWith("Sign in to see playlists you made"),
+    `home="${outHome.slice(0, 20)}", read shared links table=${sharedTable}`);
+  await out.close();
 
   // P7: nothing unbuilt or explanatory is on screen.
   const screens = {};

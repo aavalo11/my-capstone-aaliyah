@@ -6,7 +6,6 @@
 
   var view = document.getElementById("view");
   var DEMO = new URLSearchParams(location.search).get("demo"); // "empty" | "error" | null
-  var CONFIG = window.CROSSFADE_CONFIG || {};
 
   // ---------- helpers ----------
 
@@ -36,32 +35,6 @@
 
   // ---------- Supabase (REST, no client library) ----------
 
-  function supabaseConfigured() {
-    return CONFIG.supabaseUrl && CONFIG.supabaseKey &&
-      CONFIG.supabaseUrl.indexOf("PASTE_") !== 0 && CONFIG.supabaseKey.indexOf("PASTE_") !== 0;
-  }
-
-  function fetchRecentLinks() {
-    if (DEMO === "empty") return Promise.resolve([]);
-    if (DEMO === "error") return Promise.reject(new Error("demo"));
-    if (!supabaseConfigured()) return Promise.reject(new Error("not-configured"));
-
-    var headers = { apikey: CONFIG.supabaseKey };
-    // Legacy anon keys are JWTs and also need a bearer header; publishable keys don't.
-    if (CONFIG.supabaseKey.indexOf("eyJ") === 0) headers.Authorization = "Bearer " + CONFIG.supabaseKey;
-
-    var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, 8000);
-    var url = CONFIG.supabaseUrl.replace(/\/$/, "") +
-      "/rest/v1/links?select=code,title,track_count,matched_count,created_at&order=created_at.desc&limit=20";
-
-    return fetch(url, { headers: headers, signal: controller.signal })
-      .then(function (res) {
-        if (!res.ok) throw new Error("http-" + res.status);
-        return res.json();
-      })
-      .finally(function () { clearTimeout(timer); });
-  }
 
   // ---------- sample data (Friends only; clearly labelled on screen) ----------
 
@@ -402,36 +375,44 @@
     if (e.key === window.CrossfadeLinks.KEY && !linkMode) loadMyLinks();
   });
 
+  // Recently added and Your numbers: only the signed-in account's own links (ADR 0021).
+  // Someone new, or signed out, sees the empty states. TODO(W10): real data. Phase 10 reads
+  // the sender's own rows from the database instead, so they show on every device.
   function loadRecent() {
     var box = document.getElementById("recent");
     var stats = document.getElementById("stats");
-    box.innerHTML = stateBlock("Loading…", "");
-
-    fetchRecentLinks().then(function (rows) {
-      if (!document.body.contains(box)) return; // user navigated away
-      renderStats(stats, rows);
-      if (!rows.length) {
-        box.innerHTML = '<div class="card">' + stateBlock("Nothing added yet",
-          "Paste an Apple Music playlist link and it shows up here.",
-          '<a class="btn quiet" href="#/create">Send your first playlist</a>') + "</div>";
-        return;
-      }
-      box.innerHTML = '<div class="grid-cards">' + rows.slice(0, 6).map(function (r) {
-        var complete = r.matched_count === r.track_count;
-        return '<div class="card playlist-card">' + art("", r.title) +
-          '<div class="grow"><div class="title">' + esc(r.title) + "</div>" +
-          '<div class="small muted">Added ' + esc(formatDate(r.created_at)) + " · " + esc(r.track_count) + " songs</div>" +
-          '<span class="pill ' + (complete ? "good" : "warn") + '" style="margin-top:6px">Matched ' +
-          esc(r.matched_count) + " of " + esc(r.track_count) + "</span></div></div>";
-      }).join("") + "</div>";
-    }).catch(function (err) {
-      if (!document.body.contains(box)) return;
-      stats.innerHTML = '<div class="card">' + stateBlock("No numbers yet", "They come from the same database.") + "</div>";
+    var rows;
+    try {
+      rows = window.CrossfadeAuth.user() ? window.CrossfadeLinks.list() : [];
+    } catch (err) {
+      stats.innerHTML = '<div class="card">' + stateBlock("No numbers yet", "They come from your saved playlists.") + "</div>";
       box.innerHTML = '<div class="card">' + stateBlock("Couldn't load your playlists",
-        "Crossfade couldn't reach its database. Nothing you sent is lost.",
+        "This browser wouldn't open your saved playlists. Nothing was deleted.",
         '<button class="btn quiet" type="button" id="retry">Try again</button>') + "</div>";
       document.getElementById("retry").onclick = loadRecent;
+      return;
+    }
+    rows = rows.map(function (r) {
+      var t = (r.report && r.report.tracks) || [];
+      return { code: r.code, title: r.title, created_at: r.created_at, track_count: t.length,
+        matched_count: t.filter(function (x) { return x.tier !== "unmatched"; }).length };
     });
+    if (!rows.length) {
+      stats.innerHTML = '<div class="card">' + stateBlock("No numbers yet", "Send a playlist and they show up here.") + "</div>";
+      box.innerHTML = '<div class="card">' + stateBlock("Nothing added yet",
+        "Paste an Apple Music playlist link and it shows up here.",
+        '<a class="btn quiet" href="#/create">Send your first playlist</a>') + "</div>";
+      return;
+    }
+    renderStats(stats, rows);
+    box.innerHTML = '<div class="grid-cards">' + rows.slice(0, 6).map(function (r) {
+      var complete = r.matched_count === r.track_count;
+      return '<a class="card playlist-card" href="#/links/' + esc(r.code) + '">' + art("", r.title) +
+        '<div class="grow"><div class="title">' + esc(r.title) + "</div>" +
+        '<div class="small muted">Added ' + esc(formatDate(r.created_at)) + " · " + esc(r.track_count) + " songs</div>" +
+        '<span class="pill ' + (complete ? "good" : "warn") + '" style="margin-top:6px">Matched ' +
+        esc(r.matched_count) + " of " + esc(r.track_count) + "</span></div></a>";
+    }).join("") + "</div>";
   }
 
   function renderStats(box, rows) {
@@ -725,7 +706,13 @@
     view.querySelectorAll("[data-go]").forEach(function (b) {
       b.onclick = function () { location.hash = b.getAttribute("data-go"); };
     });
-    if (made) loadMyLinks(); else loadReceived();
+    // Signed out there's no account to have made anything (ADR 0021).
+    if (made && !window.CrossfadeAuth.user()) {
+      var box = document.getElementById("my-links");
+      box.innerHTML = '<div class="card" id="made-signin">' + stateBlock("Sign in to see playlists you made",
+        "Your friends never need to sign in.", signInButton()) + "</div>";
+      wireSignIn(box);
+    } else if (made) loadMyLinks(); else loadReceived();
   }
 
   function loadReceived() {

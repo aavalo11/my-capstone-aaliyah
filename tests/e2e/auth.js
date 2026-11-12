@@ -105,12 +105,12 @@ const TOKEN_REPLY = {
   await p.goto(BASE + "/#/create"); await p.waitForSelector("#create-form");
   await p.evaluate(() => {
     const now = new Date().toISOString();
-    localStorage.setItem("crossfade-links-v1", JSON.stringify(Array.from({ length: 10 }, (_, i) =>
+    localStorage.setItem("crossfade-links-v1:test-user", JSON.stringify(Array.from({ length: 10 }, (_, i) =>
       ({ code: "c" + i, title: "t" + i, apple_url: "x", created_at: now, updated_at: now }))));
   });
   await p.fill("#title", "one more"); await p.fill("#link", URL1);
   await p.click("#create-form button[type=submit]"); await p.waitForSelector("#limit-error");
-  const count = await p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1")).length);
+  const count = await p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1:test-user")).length);
   check("A8f", txt(await p.textContent("#limit-error")).startsWith("You've made 10 links today") && count === 10,
     `"${txt(await p.textContent("#limit-error"))}", links saved=${count}`);
   await c.close();

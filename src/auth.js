@@ -46,8 +46,8 @@
     return session;
   }
 
+  // ?demo=error doesn't sign you out here: each screen shows its own error state instead.
   function stored() {
-    if (DEMO === "error") return null;
     var raw = read(KEY);
     if (!raw) return null;
     try { var s = JSON.parse(raw); return s && s.access_token && s.user ? s : null; } catch (e) { return null; }

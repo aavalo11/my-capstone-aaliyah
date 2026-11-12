@@ -7,7 +7,7 @@ const URL1 = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
 const results = [];
 const check = (id, ok, detail) => { results.push(ok); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
 const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
-const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1") || "[]"));
+const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1:test-user") || "[]"));
 
 async function fill(page, title, link) {
   await page.goto("about:blank"); await page.goto(BASE + "/#/create");
@@ -148,7 +148,7 @@ const built = (page) => page.waitForFunction(() => !document.querySelector("#bui
   check("F-D3", d3.startsWith("That link was already deleted"), `second tab shows "${d3.slice(0, 60)}…"`);
 
   // R-4 corrupted data: Create says why
-  await p.evaluate(() => localStorage.setItem("crossfade-links-v1", "{not json"));
+  await p.evaluate(() => localStorage.setItem("crossfade-links-v1:test-user", "{not json"));
   await fill(p, "after corruption", URL1);
   await p.click("#create-form button[type=submit]");
   await built(p);

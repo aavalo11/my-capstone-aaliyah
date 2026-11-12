@@ -7,7 +7,7 @@ const results = [];
 const check = (id, ok, detail) => { results.push([id, ok]); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
 
 async function store(page) {
-  return page.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1") || "[]"));
+  return page.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1:test-user") || "[]"));
 }
 async function create(page, title, link) {
   await page.goto(BASE + "/#/create");
