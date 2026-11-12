@@ -1,0 +1,3 @@
+# Netlify serves src/ as it is: no build step (ADR 0007, ADR 0008).
+[build]
+  publish = "src"
