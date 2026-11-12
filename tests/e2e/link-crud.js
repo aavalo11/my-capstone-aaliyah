@@ -1,6 +1,7 @@
 // Link CRUD checks C1–C5 (docs/features/link-crud.md). Run all checks with node tests/e2e/run.js,
 // or this file alone against a running server: node tests/e2e/link-crud.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
+const { signedIn } = require("./signed-in");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const results = [];
 const check = (id, ok, detail) => { results.push([id, ok]); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
@@ -8,11 +9,10 @@ const check = (id, ok, detail) => { results.push([id, ok]); console.log((ok ? "P
 async function store(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1") || "[]"));
 }
-async function create(page, title, link, pass = "x") {
+async function create(page, title, link) {
   await page.goto(BASE + "/#/create");
   await page.fill("#title", title);
   await page.fill("#link", link);
-  await page.fill("#passcode", pass);
   await page.click("#create-form button[type=submit]");
   // Create plays back a recorded build before saving (ADR 0015). Field errors skip it.
   await page.waitForFunction(() => !document.querySelector("#build-progress"));
@@ -34,7 +34,7 @@ const URL2 = "https://music.apple.com/us/playlist/study-no-words/pl.u-0zZ1";
 
 (async () => {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext();
+  const ctx = await signedIn(await browser.newContext());
   const page = await ctx.newPage();
 
   // C1f: bad link and empty name save nothing

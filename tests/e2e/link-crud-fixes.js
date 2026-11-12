@@ -1,6 +1,7 @@
 // One check per break-it bug that was fixed (docs/features/link-crud.md). Run all checks with node tests/e2e/run.js,
 // or this file alone against a running server: node tests/e2e/link-crud-fixes.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
+const { signedIn } = require("./signed-in");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
 const results = [];
@@ -8,9 +9,9 @@ const check = (id, ok, detail) => { results.push(ok); console.log((ok ? "PASS " 
 const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
 const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade-links-v1") || "[]"));
 
-async function fill(page, title, link, pass = "x") {
+async function fill(page, title, link) {
   await page.goto("about:blank"); await page.goto(BASE + "/#/create");
-  await page.fill("#title", title); await page.fill("#link", link); await page.fill("#passcode", pass);
+  await page.fill("#title", title); await page.fill("#link", link);
 }
 async function make(page, title, link = URL1) {
   await fill(page, title, link);
@@ -32,15 +33,15 @@ const built = (page) => page.waitForFunction(() => !document.querySelector("#bui
 
 (async () => {
   const browser = await chromium.launch();
-  const fresh = async () => { const c = await browser.newContext(); return { c, p: await c.newPage() }; };
+  const fresh = async () => { const c = await signedIn(await browser.newContext()); return { c, p: await c.newPage() }; };
   let { c, p } = await fresh();
 
   // C-1 double tap
   await fill(p, "late train home", URL1);
   await p.dblclick("#create-form button[type=submit]");
   await built(p);
-  check("F-C1", (await store(p)).length === 1 && !!(await p.$("#made-url")) && (await p.textContent("#pass-error")) === "",
-    `records=${(await store(p)).length}, link still shown=${!!(await p.$("#made-url"))}, pass error="${await p.textContent("#pass-error")}"`);
+  check("F-C1", (await store(p)).length === 1 && !!(await p.$("#made-url")),
+    `records=${(await store(p)).length}, link still shown=${!!(await p.$("#made-url"))}`);
 
   // C-2 duplicate playlist (share-sheet variant of the same URL)
   await fill(p, "late train home again", URL1 + "?ls=1&app=music");
@@ -58,11 +59,11 @@ const built = (page) => page.waitForFunction(() => !document.querySelector("#bui
     `field kept ${kept} chars, error="${await p.textContent("#title-error")}", records=${(await store(p)).length}`);
 
   // C-6 every field error at once
-  await fill(p, "  ", "https://music.apple.com/gb/playlist/x/pl.u-1", "");
+  await fill(p, "  ", "https://music.apple.com/gb/playlist/x/pl.u-1");
   await p.click("#create-form button[type=submit]");
-  const errs = [await p.textContent("#pass-error"), await p.textContent("#link-error"), await p.textContent("#title-error")];
+  const errs = [await p.textContent("#link-error"), await p.textContent("#title-error")];
   const focused = await p.evaluate(() => document.activeElement.id);
-  check("F-C6", errs.every(Boolean) && focused === "passcode", `errors=${JSON.stringify(errs)}, focus=#${focused}`);
+  check("F-C6", errs.every(Boolean) && focused === "link", `errors=${JSON.stringify(errs)}, focus=#${focused}`);
   await c.close();
 
   // R-2 junk after the code

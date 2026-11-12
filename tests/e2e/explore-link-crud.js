@@ -3,6 +3,7 @@
 // so it isn't part of run.js. Start the server first, then:
 //   node tests/e2e/explore-link-crud.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
+const { signedIn } = require("./signed-in");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
 const log = (id, what, happened) => console.log(`\n[${id}] ${what}\n   → ${happened}`);
@@ -11,7 +12,7 @@ const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("crossfade
 
 async function fill(page, title, link, pass = "x") {
   await page.goto("about:blank"); await page.goto(BASE + "/#/create");
-  await page.fill("#title", title); await page.fill("#link", link); await page.fill("#passcode", pass);
+  await page.fill("#title", title); await page.fill("#link", link);
 }
 async function home(page) {
   await page.goto("about:blank"); await page.goto(BASE + "/#/playlists/made"); await page.waitForSelector("#my-links .card");
@@ -29,7 +30,7 @@ async function make(page, title, link = URL1) {
 
 (async () => {
   const browser = await chromium.launch();
-  const fresh = async () => { const c = await browser.newContext(); return { c, p: await c.newPage() }; };
+  const fresh = async () => { const c = await signedIn(await browser.newContext()); return { c, p: await c.newPage() }; };
   let dialogs = [];
 
   let c, p;
@@ -39,7 +40,7 @@ async function make(page, title, link = URL1) {
   p.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss(); });
   await fill(p, "late train home", URL1);
   await p.dblclick("#create-form button[type=submit]");
-  log("C-1", "Double-tap Create", `records=${(await store(p)).length}; pass error="${await p.textContent("#pass-error")}"; result shown=${!!(await p.$("#made-url"))}`);
+  log("C-1", "Double-tap Create", `records=${(await store(p)).length}; result shown=${!!(await p.$("#made-url"))}`);
 
   await fill(p, "late train home", URL1);
   await p.click("#create-form button[type=submit]");

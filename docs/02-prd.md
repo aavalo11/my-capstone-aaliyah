@@ -52,7 +52,7 @@ match-rate benchmark (§8) answers the concept brief's biggest unknown with numb
 The flow, end to end:
 
 1. I share a playlist in Apple Music (Share → Copy Link) and paste the link into
-   Crossfade on my phone, along with the sender passcode.
+   Crossfade on my phone, signed in with Google (ADR 0019).
 2. Crossfade reads the tracks, finds each one on Spotify, and builds a public Spotify
    playlist **on Crossfade's own Spotify account**.
 3. I see `Matched 23 of 25`, with the two misses listed by name, and a Copy Link button.
@@ -74,7 +74,7 @@ re-decide them.
 | D4 | **Unmatched tracks are left out of the Spotify playlist and shown on the Crossfade page in their original position.** | A Spotify playlist can't hold a placeholder. The Crossfade page is where the honest report lives. | Substituting the closest search result: the lie this product exists to avoid. |
 | D5 | **US storefront and US Spotify market only.** | One region to test. "Not available" then means one thing. | Detecting the recipient's region: needs recipient data I've chosen not to collect. |
 | D6 | **1–100 tracks per playlist.** | One page of Apple's API and one Spotify add-items call. Covers every playlist I actually send. | Unlimited: pagination and partial-failure handling for a case I don't have. |
-| D7 | **Sender access is one passcode.** | Stops strangers from filling Crossfade's Spotify account. No user system to build. | Sender accounts: a login system for one user. |
+| D7 | **Senders sign in with Google; anyone can.** *(Was one passcode, until ADR 0019, 2026-11-12.)* | 10 links a day per account stops strangers from filling Crossfade's Spotify account. | One shared passcode, which anyone holding it could use up. |
 | D8 | **Target device is an iPhone browser at 390 px wide**, including the browser that opens from Messages. Other browsers are best effort. | That's where the link gets opened. | Desktop-first. |
 
 ## 6. Requirements
@@ -84,9 +84,10 @@ as written. Where an AC names exact text, that text is the requirement.
 
 ### R1 — Create a link (sender) · from S7
 
-**The page.** One form with two fields, **Apple Music link** and **Passcode**, and a
-**Create link** button. That's the empty state. Nothing is remembered between visits,
-though the browser may autofill.
+**The page.** Signed out, Create shows **Sign in with Google** in place of the form
+(ADR 0019). Signed in, it's one form with two fields, **Playlist name** and **Apple Music
+link**, and a **Create link** button. That's the empty state. Nothing is remembered
+between visits, though the browser may autofill.
 
 **What counts as a valid link.** `http` or `https`, host `music.apple.com`, path
 `/us/playlist/<any-slug>/<id>`, where `<id>` starts with `pl.`. That covers both user
@@ -94,9 +95,10 @@ playlists (`pl.u-…`) and Apple's editorial ones. A trailing slash and any quer
 (`?l=en`, `?ls`) are ignored.
 
 **Check order.** On submit, these run in order, and the first one that fails shows its
-message: (1) passcode, (2) link format, (3) rate limit (R6). Then Crossfade calls Apple.
+message: (1) signed in, (2) link format, (3) 10 links a day for this account, (4) rate
+limit (R6). Then Crossfade calls Apple.
 
-- **Given** the correct passcode and a valid link to a playlist with 1–100 items,
+- **Given** I'm signed in and paste a valid link to a playlist with 1–100 items,
   **when** I tap **Create link**, **then** I see the match report (R3) and a link of the
   form `https://<host>/p/<code>`, shown as selectable text, with a **Copy link** button.
 - **Given** a 25-track playlist, **when** I tap **Create link**, **then** the link
@@ -110,8 +112,10 @@ message: (1) passcode, (2) link format, (3) rate limit (R6). Then Crossfade call
   the playlist.
 - Submitting the same link twice creates two separate links and two separate Spotify
   playlists. v1 doesn't de-duplicate.
-- **Negative — Given** a wrong or empty passcode, **when** I submit, **then** I see
-  `Wrong passcode.` and no Apple or Spotify call is made.
+- **Negative — Given** I'm signed out, or my sign-in has expired, **when** I submit,
+  **then** I see **Sign in with Google** and no Apple or Spotify call is made.
+- **Negative — Given** I've made 10 links today, **when** I submit, **then** I see
+  `You've made 10 links today. You can make more tomorrow.` and nothing is built.
 - **Negative — Given** an empty link, or a link that isn't a valid link as defined above
   (a Spotify link, an Apple Music album link), **when** I submit, **then** I see
   `That isn't an Apple Music playlist link.` and nothing is created.
@@ -246,13 +250,13 @@ content is identical for both.
 
 ### R6 — Guardrails
 
-- There's one passcode, and it comes from the `SENDER_PASSCODE` environment variable.
-  It's sent with each Create link submission, and it's never logged, never stored, and
-  never sent back to the browser.
+- Senders sign in with Google through Supabase Auth (ADR 0019). Each Create link
+  submission carries the sender's Supabase access token, which `create-link` checks
+  before anything else and never logs. Each account can make 10 links a day.
 - Spotify credentials (client secret, the Crossfade account's refresh token) live only
   on the server. There are no Apple credentials (ADR 0012).
 - **Rate limit:** at most 20 builds per rolling hour, in total. A build counts once it
-  passes the passcode and format checks and reaches Apple, whether or not it succeeds.
+  passes the sign-in and format checks and reaches Apple, whether or not it succeeds.
   Past the limit, the sender sees `Crossfade is rate-limited. Try again in N minutes.`,
   where N is rounded up with a minimum of 1, and no API calls are made.
 - Stored per link: code, source URL, playlist name, Spotify playlist id, per-track

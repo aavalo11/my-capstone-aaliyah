@@ -14,7 +14,10 @@
 <body>
   <div class="shell">
     <nav class="nav" aria-label="Main">
-      <a class="brand" href="#/home">Crossfade</a>
+      <div class="nav-top">
+        <a class="account-link" id="account-link" href="#/account" aria-label="Sign in"><span class="avatar small-avatar">&#9786;</span></a>
+        <a class="brand" href="#/home">Crossfade</a>
+      </div>
       <a class="tab" href="#/home" data-route="home"><span class="ico" aria-hidden="true">⌂</span>Home</a>
       <a class="tab" href="#/playlists" data-route="playlists"><span class="ico" aria-hidden="true">♫</span>Playlists</a>
       <a class="subtab" href="#/playlists/made" data-sub="made">Made by me</a>
@@ -28,6 +31,7 @@
   <script src="config.js"></script>
   <script src="links-store.js"></script>
   <script src="report-view.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

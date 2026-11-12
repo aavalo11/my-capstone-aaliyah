@@ -69,7 +69,7 @@ poll progress (§5).
 
 | # | Step | On failure (PRD R1 wording) | Calls made so far |
 |---|---|---|---|
-| 1 | Compare the passcode with `SENDER_PASSCODE`, in constant time | `Wrong passcode.` | none |
+| 1 | Compare the passcode with `SENDER_PASSCODE`, in constant time. **To change (ADR 0019):** check the Supabase access token, then that this account has made fewer than 10 links today | `Wrong passcode.` → `Sign in with Google` / the daily-limit message | none |
 | 2 | Validate the link: `music.apple.com`, `/us/`, `/playlist/` | `That isn't an Apple Music playlist link.` / `Crossfade only handles US Apple Music links.` | none |
 | 3 | Rate limit: count `builds` rows in the last hour. If there are 20 or more, stop. | `Crossfade is rate-limited. Try again in N minutes.` | none |
 | 4 | Insert the `builds` row. From here on it counts toward the limit (R6). | — | — |

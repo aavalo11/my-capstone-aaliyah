@@ -66,6 +66,20 @@ p { margin: 0 0 .75rem; }
 }
 .tab .ico { font-size: 1.3rem; line-height: 1; }
 .tab[aria-current="page"] { color: var(--signal); }
+/* The profile icon sits top left: fixed over the page on a phone, at the top of the side menu on a laptop. */
+.nav-top { display: contents; }
+.account-link { position: fixed; top: 12px; left: 12px; z-index: 11; text-decoration: none; border-radius: 999px; }
+.account-link[aria-current="page"] .avatar { box-shadow: 0 0 0 2px var(--signal); }
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex: none;
+  border-radius: 999px; background: var(--note); color: var(--ink); font-weight: 800;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.small-avatar { width: 36px; height: 36px; font-size: 1rem; }
+.big-avatar { width: 64px; height: 64px; font-size: 1.6rem; }
+.profile { display: flex; align-items: center; gap: 16px; }
+.g-mark { font-weight: 800; margin-right: 8px; }
+@media (max-width: 899px) { .view { padding-top: 60px; } }
 /* On a phone the bottom bar has no room for sub-tabs, so Playlists shows them on the page. */
 .subtab { display: none; }
 
@@ -76,9 +90,11 @@ p { margin: 0 0 .75rem; }
     flex-direction: column; gap: 4px;
     border-top: 0; border-right: 1px solid var(--line);
   }
+  .nav-top { display: flex; align-items: center; gap: 10px; padding: 0 12px 20px; }
+  .account-link { position: static; }
   .brand {
     display: block; font-weight: 800; font-size: 1.25rem; color: var(--ink);
-    text-decoration: none; padding: 0 12px 20px;
+    text-decoration: none;
   }
   .tab {
     flex: none; flex-direction: row; justify-content: flex-start; gap: 12px;

@@ -510,6 +510,14 @@
     return null;
   }
 
+  // Links made today in this browser. Deleted links don't count here; on the server they will.
+  function linksToday() {
+    var today = new Date().toDateString();
+    try {
+      return window.CrossfadeLinks.list().filter(function (r) { return new Date(r.created_at).toDateString() === today; }).length;
+    } catch (e) { return 0; }
+  }
+
   function renderCreate() {
     view.innerHTML =
       "<h1>Create</h1>" +
@@ -517,6 +525,12 @@
       '<div id="create-body"></div>';
 
     var body = document.getElementById("create-body");
+    if (!window.CrossfadeAuth.user()) {
+      body.innerHTML = '<div class="card" id="create-signin">' + stateBlock("Sign in to make a link",
+        "Your friend won't need to sign in to play it.", signInButton()) + "</div>";
+      wireSignIn(body);
+      return;
+    }
     body.innerHTML =
       '<form class="card" id="create-form" novalidate>' +
         '<label for="title">Playlist name</label>' +
@@ -525,9 +539,6 @@
         '<label for="link">Apple Music link</label>' +
         '<input id="link" type="url" inputmode="url" autocomplete="off" placeholder="https://music.apple.com/us/playlist/…">' +
         '<div class="field-error" id="link-error" role="alert"></div>' +
-        '<label for="passcode">Passcode</label>' +
-        '<input id="passcode" type="password" autocomplete="current-password">' +
-        '<div class="field-error" id="pass-error" role="alert"></div>' +
         '<div style="margin-top:18px"><button class="btn block" type="submit">Create link</button></div>' +
         '<p class="small muted" style="margin-top:12px">In Apple Music: open the playlist, tap ' +
         "Share, then Copy Link.</p>" +
@@ -541,24 +552,32 @@
       e.preventDefault();
       var title = document.getElementById("title").value;
       var link = document.getElementById("link").value;
-      var pass = document.getElementById("passcode").value;
       var titleErr = document.getElementById("title-error");
       var linkErr = document.getElementById("link-error");
-      var passErr = document.getElementById("pass-error");
       var result = document.getElementById("create-result");
       var submit = e.target.querySelector("button[type=submit]");
-      titleErr.textContent = linkErr.textContent = passErr.textContent = result.innerHTML = "";
+      titleErr.textContent = linkErr.textContent = result.innerHTML = "";
+
+      // Signed out in another tab since this form opened: back to the sign-in card.
+      if (!window.CrossfadeAuth.user()) { renderCreate(); return; }
 
       // Every field error shows at once. Focus goes to the first in PRD R1 order:
-      // passcode, then link format, then the name.
+      // link format, then the name. Sign-in replaced the passcode (ADR 0019).
       var titleProblem = window.CrossfadeLinks.checkTitle(title);
       var problems = [
-        [!pass && "Enter the passcode.", passErr, "passcode"],
         [checkAppleLink(link), linkErr, "link"],
         [titleProblem && linkError({ name: titleProblem }), titleErr, "title"],
       ].filter(function (p) { return p[0]; });
       problems.forEach(function (p) { p[1].textContent = p[0]; });
       if (problems.length) { document.getElementById(problems[0][2]).focus(); return; }
+
+      // ADR 0019: 10 links a day per account. TODO(W10): real data. create-link counts
+      // them on the server; until it deploys, this counts the links saved in this browser.
+      if (linksToday() >= window.CrossfadeAuth.DAILY_LIMIT) {
+        result.innerHTML = '<div class="notice error" id="limit-error">You\'ve made ' + window.CrossfadeAuth.DAILY_LIMIT +
+          " links today. You can make more tomorrow.</div>";
+        return;
+      }
 
       if (DEMO === "error") {
         result.innerHTML = '<div class="notice error">Something failed on Apple Music\'s side. ' +
@@ -839,7 +858,8 @@
 
       '<div class="two-col"><section><h2>Sending</h2>' +
       '<div class="card"><dl class="kv">' +
-        "<div><dt>Passcode</dt><dd>Asked each time. Never saved on this device.</dd></div>" +
+        "<div><dt>Signing in</dt><dd>With Google, to make links. Your friends never sign in.</dd></div>" +
+        "<div><dt>Daily limit</dt><dd>" + window.CrossfadeAuth.DAILY_LIMIT + " links a day</dd></div>" +
         "<div><dt>Region</dt><dd>US Apple Music and US Spotify only</dd></div>" +
         "<div><dt>Playlist size</dt><dd>1 to 100 songs</dd></div>" +
         "<div><dt>Stored on</dt><dd>Crossfade's own Spotify account. Never yours, never your friend's.</dd></div>" +
@@ -876,6 +896,91 @@
     });
   }
 
+  // ---------- account (ADR 0019) ----------
+
+  var authError = null; // set when the trip to Google comes back with a failure
+
+  var AUTH_ERRORS = {
+    cancelled: "You cancelled signing in with Google. Nothing changed.",
+    "not-configured": "Sign-in isn't set up on this copy of Crossfade.",
+  };
+
+  function signInButton() {
+    return '<button class="btn" type="button" data-sign-in><span class="g-mark" aria-hidden="true">G</span>Sign in with Google</button>';
+  }
+
+  function wireSignIn(root) {
+    root.querySelectorAll("[data-sign-in]").forEach(function (b) {
+      b.onclick = function () {
+        b.disabled = true;
+        window.CrossfadeAuth.signIn().catch(function (err) {
+          authError = err;
+          if (location.hash === "#/account") renderAccount(); else location.hash = "#/account";
+        });
+      };
+    });
+  }
+
+  function avatar(user, cls) {
+    var initial = esc(((user && (user.name || user.email)) || "?").charAt(0).toUpperCase());
+    if (user && user.avatar_url) {
+      return '<span class="' + cls + '"><img src="' + esc(user.avatar_url) + '" alt="" referrerpolicy="no-referrer" data-initial="' + initial + '"></span>';
+    }
+    return '<span class="' + cls + '">' + (user ? initial : "&#9786;") + "</span>";
+  }
+
+  // A Google photo that won't load falls back to the first letter of the name.
+  function fixAvatars(root) {
+    root.querySelectorAll("img[data-initial]").forEach(function (img) {
+      img.onerror = function () { img.parentNode.textContent = img.getAttribute("data-initial"); };
+    });
+  }
+
+  function updateAccountIcon() {
+    var link = document.getElementById("account-link");
+    if (!link) return;
+    var user = window.CrossfadeAuth.user();
+    link.innerHTML = avatar(user, "avatar small-avatar");
+    link.setAttribute("aria-label", user ? "Account: " + (user.name || user.email) : "Sign in");
+    fixAvatars(link);
+  }
+
+  function renderAccount() {
+    var user = window.CrossfadeAuth.user();
+    var err = authError;
+    authError = null;
+    if (err) {
+      view.innerHTML = "<h1>Account</h1>" + '<div class="card" id="account-error">' + stateBlock("Couldn't sign in with Google",
+        AUTH_ERRORS[err.name] || "Google or Crossfade didn't answer. Nothing changed. Try again.", signInButton()) + "</div>";
+      wireSignIn(view);
+      return;
+    }
+    if (!user) {
+      view.innerHTML = "<h1>Account</h1>" + '<div class="card" id="account-signed-out">' + stateBlock("You're not signed in",
+        "Sign in to make links. Your friends never need to.", signInButton()) + "</div>";
+      wireSignIn(view);
+      return;
+    }
+    view.innerHTML = "<h1>Account</h1>" +
+      '<div class="card profile" id="account-profile">' + avatar(user, "avatar big-avatar") +
+        '<div class="grow"><div class="title" id="account-name">' + esc(user.name || user.email) + "</div>" +
+        '<div class="small muted" id="account-email">' + esc(user.email) + "</div>" +
+        '<div class="small muted">Signed in with Google</div></div></div>' +
+      '<button class="btn quiet" type="button" id="sign-out">Sign out</button>';
+    fixAvatars(view);
+    document.getElementById("sign-out").onclick = function () {
+      window.CrossfadeAuth.signOut().then(function () { updateAccountIcon(); renderAccount(); });
+    };
+  }
+
+  // Signed in or out in another tab.
+  window.addEventListener("storage", function (e) {
+    if (e.key !== window.CrossfadeAuth.KEY) return;
+    updateAccountIcon();
+    var page = (location.hash.replace(/^#\/?/, "") || "home").split("/")[0];
+    if (page === "account" || page === "create") route();
+  });
+
   function renderNotFound() {
     view.innerHTML = '<div class="card">' + stateBlock("This page doesn't exist",
       "The link may be wrong.", '<a class="btn quiet" href="#/home">Go home</a>') + "</div>";
@@ -895,6 +1000,9 @@
 
     // A link's own page sits under Playlists. Sub-tabs are marked by renderPlaylists.
     var navPage = page === "links" ? "playlists" : page;
+    updateAccountIcon();
+    var acct = document.getElementById("account-link");
+    if (acct) { if (page === "account") acct.setAttribute("aria-current", "page"); else acct.removeAttribute("aria-current"); }
     document.querySelectorAll(".subtab").forEach(function (a) { a.removeAttribute("aria-current"); });
     document.querySelectorAll(".tab").forEach(function (a) {
       if (a.getAttribute("data-route") === navPage) a.setAttribute("aria-current", "page");
@@ -903,6 +1011,7 @@
 
     if (page === "home") renderHome();
     else if (page === "playlists") renderPlaylists(parts[1]);
+    else if (page === "account") renderAccount();
     else if (page === "create") renderCreate();
     else if (page === "links" && parts[1]) renderLink(parts[1]);
     else if (page === "friends" && parts[1]) renderFriend(parts[1], null, parts[2] === "playlists" ? parts[3] : null);
@@ -922,5 +1031,12 @@
 
   applyTheme();
   window.addEventListener("hashchange", route);
-  route();
+  // Coming back from Google: finish signing in before the first screen draws.
+  // Otherwise refresh an old session, so the icon shows who's signed in.
+  // A slow network can't hold the first screen back for more than 5 seconds.
+  view.innerHTML = stateBlock("Loading…", "");
+  Promise.race([
+    window.CrossfadeAuth.finishSignIn().then(function (s) { return s || window.CrossfadeAuth.current(); }),
+    new Promise(function (resolve) { setTimeout(resolve, 5000); }),
+  ]).catch(function (err) { authError = err; }).then(route);
 })();

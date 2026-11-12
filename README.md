@@ -214,14 +214,14 @@ node tests/e2e/run.js              # browser checks; first run needs Playwright,
 |---|---|
 | Home → Recently added, Your numbers | Real: reads Supabase |
 | Home → New this week, Top songs, Top albums | Real: Apple's free public US chart (no key). *Find on Spotify* opens Spotify's own search |
-| Create → Paste a link | Link, passcode and name are checked here. A recorded build plays first, with real Apple tracks and **fake** Spotify matches (ADR 0015). The link and its songs are saved **in this browser only** (ADR 0010) |
+| Create → Paste a link | Sign-in, link and name are checked here. A recorded build plays first, with real Apple tracks and **fake** Spotify matches (ADR 0015). The link and its songs are saved **in this browser only** (ADR 0010) |
 | `create-link` (server) | Built and unit-tested with a **fake** Spotify and database. Not deployed; never run against real Spotify |
 | Playlists → Made by me | Real, but local: rename and delete the links made on Create. Tap a name to see its songs; each matched song opens in Spotify's search |
 | Playlists → Sent to me | Real, but local: friends' links this browser has opened, newest first (ADR 0018, backlog S17, holding pen) |
 | Friend page `p.html?code=…` | Shows a link made in this browser with its songs, or *removed* after a delete. `code=sample` is a sample playlist (ADR 0009). **Play in Spotify** appears once a link has a real Spotify playlist |
 | Create → Search songs | Hidden. Would search Spotify through the server; holding pen, no evidence yet (backlog S16) |
 | Friends | Sample data only (backlog S13). Shared playlists open to their songs, each opening in Spotify's search |
-| Settings → Account | Hidden until the Lab 5 login (backlog S14). The theme setting works |
+| Profile icon → Account | Real: sign in with Google through Supabase Auth, see your name, email and photo, sign out (ADR 0019, S14). Create needs sign-in, and allows 10 links a day, counted in this browser until `create-link` deploys |
 | Home → Listening history, Fix a match, How matching works | Hidden. Not built (S12, S9), and matching isn't explained on screen (ADR 0016) |
 
 ## A note on the research

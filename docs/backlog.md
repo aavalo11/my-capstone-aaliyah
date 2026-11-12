@@ -226,8 +226,8 @@ retyping it from a screenshot.
 
 **Acceptance criteria**
 
-- [ ] **Given** a shared US Apple Music playlist link with 25 tracks and the sender
-  passcode, **when** I tap **Create link**, **then** I get a Crossfade link within 15
+- [ ] **Given** a shared US Apple Music playlist link with 25 tracks, and I'm signed in
+  (ADR 0019), **when** I tap **Create link**, **then** I get a Crossfade link within 15
   seconds, with progress visible while it builds. (PRD R1)
 - [ ] **Given** that link, **when** my friend opens it and taps **Play in Spotify**,
   **then** playback starts within 3 taps of opening the text, and they're never asked to
@@ -350,18 +350,26 @@ first sketched in `docs/design/prototype-v2/`.
 
 ---
 
-**S14.** As a sender, I want a Settings screen with my account details, so that I can
-change my email or password and sign out.
+**S14.** As a sender, I want to sign in with Google and see my account, so that the
+links I make are mine and I can sign out on a shared phone.
+
+Revised 2026-11-12 (ADR 0019): Google holds the password, so there's no password to change.
+Built as the profile icon (top left) and *Account*. Linking a Spotify or Apple Music
+account stays out (ADR 0006).
 
 **Acceptance criteria**
 
-- [ ] **Given** I'm signed in, **when** I open Settings, **then** I see my email and can
-  change my password or sign out.
-- [ ] **Negative — Given** I enter the wrong current password, **when** I try to change
-  it, **then** I see `That password isn't right.` and nothing changes.
+- [ ] **Given** I'm signed out, **when** I tap the profile icon or open Create, **then**
+  I see **Sign in with Google**, and Create doesn't show its form.
+- [ ] **Given** I signed in with Google, **when** I open *Account*, **then** I see my
+  name, email and Google photo, and a **Sign out** button.
+- [ ] **Given** I tap **Sign out**, **when** it finishes, **then** this browser is signed
+  out even if Crossfade's server can't be reached.
+- [ ] **Negative — Given** I cancel at Google, or Supabase refuses the sign-in, **when**
+  I come back, **then** I see `Couldn't sign in with Google` and I'm still signed out.
 
-**Evidence.** **NONE.** It depends on Lab 5. If that lab's login is for the sender only,
-replacing the D7 passcode, this story fits v1 without breaking ADR 0006.
+**Evidence.** **NONE.** Founder request, and Workshop 5 (auth). Sender-only, so it fits
+v1 without breaking ADR 0006.
 
 ---
 

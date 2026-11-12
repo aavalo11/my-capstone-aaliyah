@@ -2,6 +2,7 @@
 // in Spotify, a friend's shared playlist opens to its songs, and nothing unbuilt is on screen.
 // Run all checks with node tests/e2e/run.js, or: node tests/e2e/playlists.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
+const { signedIn } = require("./signed-in");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D";
 const results = [];
@@ -10,13 +11,13 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
 
 (async () => {
   const browser = await chromium.launch();
-  const p = await (await browser.newContext()).newPage();
+  const p = await (await signedIn(await browser.newContext())).newPage();
   const errors = [];
   p.on("pageerror", (e) => errors.push(String(e)));
 
   // P1: Create shows progress, then the report, then the link.
   await p.goto(BASE + "/#/create");
-  await p.fill("#title", "70 degrees out"); await p.fill("#link", URL1); await p.fill("#passcode", "x");
+  await p.fill("#title", "70 degrees out"); await p.fill("#link", URL1);
   await p.click("#create-form button[type=submit]");
   const progress = txt(await p.textContent("#build-progress"));
   const disabled = await p.$eval("#create-form button[type=submit]", (b) => b.disabled);
