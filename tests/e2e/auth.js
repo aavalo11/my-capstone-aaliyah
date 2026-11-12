@@ -17,7 +17,12 @@ const TOKEN_REPLY = {
 
 (async () => {
   const browser = await chromium.launch();
-  const fresh = async () => { const c = await browser.newContext(); return { c, p: await c.newPage() }; };
+  // Account also loads the profile (ADR 0020). These checks are about signing in, so nobody has one yet.
+  const fresh = async () => {
+    const c = await browser.newContext();
+    await c.route("**/rest/v1/profiles**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
+    return { c, p: await c.newPage() };
+  };
 
   // A1: signed out, the icon says Sign in, and Create asks you to sign in before showing the form.
   let { c, p } = await fresh();
@@ -47,8 +52,8 @@ const TOKEN_REPLY = {
     tokenBody = JSON.parse(r.request().postData());
     r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(TOKEN_REPLY) });
   });
-  await p.goto(BASE + "/?code=abc123"); await p.waitForSelector("#account-profile");
-  const name = txt(await p.textContent("#account-name"));
+  await p.goto(BASE + "/?code=abc123"); await p.waitForSelector("#profile-form");
+  const name = await p.inputValue("#p-name"); // first sign-in: pick a username, Google name filled in
   const icon = await p.getAttribute("#account-link", "aria-label");
   check("A3", name === "Ari Lane" && icon === "Account: Ari Lane" && tokenBody && tokenBody.auth_code === "abc123" &&
     tokenBody.code_verifier === verifier && !p.url().includes("code=") && new URL(p.url()).hash === "#/account",

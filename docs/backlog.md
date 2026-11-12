@@ -453,6 +453,35 @@ playlist once. Nothing in `docs/research/` says recipients want to come back to 
 
 ---
 
+**S18.** As a sender, I want a username and a profile link, so that I can send people my
+profile the way I send them a playlist.
+
+Added 2026-11-12, at the founder's request (ADR 0020).
+
+**Acceptance criteria**
+
+- [ ] **Given** I've just signed in for the first time, **when** I open Account, **then**
+  I'm asked for a username before anything else, with my Google name filled in as the
+  display name.
+- [ ] **Given** I've saved a profile, **when** I tap **Share profile**, **then** I get a
+  link `/u/<username>` that anyone can open without signing in, showing my photo, display
+  name, username and bio, and never my email.
+- [ ] **Given** I edit my profile, **when** I save, **then** the profile link shows the
+  change. A new username gives a new link, and the old one shows `No one has that username`.
+- [ ] **Negative — Given** the username is taken (in any capitalization), **when** I save,
+  **then** I see `That username is taken.` and nothing changes.
+- [ ] **Negative — Given** the username isn't 3–20 letters, numbers or `_`, or the bio is
+  over 160 characters, **when** I save, **then** I see which field is wrong and nothing
+  is saved.
+- [ ] **Negative — Given** Crossfade can't reach its database, **when** I save or someone
+  opens my profile, **then** they see `Couldn't load this profile` (or `Couldn't save`)
+  with Try again, and nothing half-saved.
+
+**Evidence.** **NONE.** Founder request. Moves Crossfade away from the five-second send.
+For W02/W03: "Have you ever sent someone your profile on a music app? What happened?"
+
+---
+
 ## 4. MoSCoW board
 
 | MUST | SHOULD | COULD | WON'T (+ why not) |
@@ -462,7 +491,7 @@ playlist once. Nothing in `docs/research/` says recipients want to come back to 
 | ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
-| | | | S12–S17 — Home history, Friends, Account, Discover, Search to build, Sent to me *(holding pen, Evidence: NONE; shell only)* |
+| | | | S12–S18 — Home history, Friends, Account, Discover, Search to build, Sent to me, Profiles *(holding pen, Evidence: NONE; shell only)* |
 
 **MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
 product. Without S8, the first person who opens a link and finds junk in their library

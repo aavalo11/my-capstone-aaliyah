@@ -961,15 +961,132 @@
       wireSignIn(view);
       return;
     }
-    view.innerHTML = "<h1>Account</h1>" +
-      '<div class="card profile" id="account-profile">' + avatar(user, "avatar big-avatar") +
-        '<div class="grow"><div class="title" id="account-name">' + esc(user.name || user.email) + "</div>" +
-        '<div class="small muted" id="account-email">' + esc(user.email) + "</div>" +
-        '<div class="small muted">Signed in with Google</div></div></div>' +
-      '<button class="btn quiet" type="button" id="sign-out">Sign out</button>';
-    fixAvatars(view);
-    document.getElementById("sign-out").onclick = function () {
+    view.innerHTML = "<h1>Account</h1>" + '<div id="account-body">' + stateBlock("Loading…", "") + "</div>";
+    var box = document.getElementById("account-body");
+    window.CrossfadeAuth.current().then(function (session) {
+      if (!session) { renderAccount(); return null; }
+      return window.CrossfadeProfiles.mine(session).then(function (profile) {
+        if (!document.body.contains(box)) return;
+        if (profile) showProfile(box, session, profile);
+        else profileForm(box, session, null);
+      });
+    }).catch(function (err) {
+      if (!document.body.contains(box)) return;
+      if (err && err.name === "signed-out") { window.CrossfadeAuth.signOut().then(function () { updateAccountIcon(); renderAccount(); }); return; }
+      box.innerHTML = '<div class="card" id="profile-load-error">' + stateBlock("Couldn't load your profile",
+        "Crossfade couldn't reach its database. Nothing changed.",
+        '<button class="btn quiet" type="button" id="profile-retry">Try again</button>') + "</div>" + signOutButton();
+      document.getElementById("profile-retry").onclick = renderAccount;
+      wireSignOut(box);
+    });
+  }
+
+  function signOutButton() { return '<button class="btn quiet" type="button" id="sign-out">Sign out</button>'; }
+  function wireSignOut(root) {
+    var b = root.querySelector("#sign-out");
+    if (b) b.onclick = function () {
       window.CrossfadeAuth.signOut().then(function () { updateAccountIcon(); renderAccount(); });
+    };
+  }
+
+  // On Netlify a profile is /u/<username> (src/_redirects). The local server has no rewrites.
+  function profileUrl(username) {
+    var local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+    return location.origin + (local ? "/u.html?name=" : "/u/") + encodeURIComponent(username);
+  }
+
+  function showProfile(box, session, p) {
+    var url = profileUrl(p.username);
+    var face = { name: p.display_name || p.username, avatar_url: p.avatar_url || session.user.avatar_url };
+    box.innerHTML =
+      '<div class="card profile" id="account-profile">' + avatar(face, "avatar big-avatar") +
+        '<div class="grow"><div class="title" id="account-name">' + esc(face.name) + "</div>" +
+        '<div class="muted" id="account-username">@' + esc(p.username) + "</div>" +
+        (p.bio ? '<p class="small" id="account-bio" style="margin:6px 0 0">' + esc(p.bio) + "</p>" : "") + "</div></div>" +
+      '<div class="card"><p class="small" style="margin:0 0 8px">Your profile link</p>' +
+        '<p class="small" style="margin:0 0 10px"><a id="profile-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
+        '<button class="btn" type="button" id="share-profile">Share profile</button> ' +
+        '<button class="btn quiet" type="button" id="edit-profile">Edit profile</button> ' +
+        '<span class="small muted" id="share-msg" role="status"></span></div>' +
+      '<p class="small muted" id="account-email">Signed in with Google as ' + esc(session.user.email) + ". Only you see this.</p>" +
+      signOutButton();
+    fixAvatars(box);
+    wireSignOut(box);
+    document.getElementById("edit-profile").onclick = function () { profileForm(box, session, p); };
+    document.getElementById("share-profile").onclick = function () {
+      var msg = document.getElementById("share-msg");
+      if (navigator.share) {
+        navigator.share({ title: face.name + " on Crossfade", url: url }).catch(function () { /* closed the share sheet */ });
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
+          function () { msg.textContent = "Copy the link above instead."; });
+      } else { msg.textContent = "Copy the link above instead."; }
+    };
+  }
+
+  var PROFILE_ERRORS = {
+    "username-empty": "Pick a username.",
+    "username-format": "Use 3 to 20 letters, numbers or _.",
+    "name-too-long": "Keep the name to 50 characters or fewer.",
+    "bio-too-long": "Keep the bio to 160 characters or fewer.",
+    taken: "That username is taken.",
+    network: "Couldn't save. Crossfade couldn't reach its database. Nothing changed.",
+  };
+
+  // existing is null the first time: then it's the "pick a username" step.
+  function profileForm(box, session, existing) {
+    var p = existing || { username: "", display_name: session.user.name || "", bio: "" };
+    box.innerHTML =
+      '<form class="card" id="profile-form" novalidate>' +
+        (existing ? "<h2 style=\"margin-top:0\">Edit profile</h2>" :
+          '<h2 style="margin-top:0">Pick a username</h2><p class="small muted" style="margin-top:0">It\'s in your profile link, so people can find you.</p>') +
+        '<label for="p-username">Username</label>' +
+        '<input id="p-username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" value="' + esc(p.username) + '">' +
+        '<div class="field-error" id="p-username-error" role="alert"></div>' +
+        '<label for="p-name">Display name</label>' +
+        '<input id="p-name" type="text" autocomplete="name" value="' + esc(p.display_name) + '">' +
+        '<div class="field-error" id="p-name-error" role="alert"></div>' +
+        '<label for="p-bio">Bio <span class="small muted" id="p-bio-count"></span></label>' +
+        '<textarea id="p-bio" rows="3">' + esc(p.bio) + "</textarea>" +
+        '<div class="field-error" id="p-bio-error" role="alert"></div>' +
+        '<div class="field-error" id="p-error" role="alert"></div>' +
+        '<div style="margin-top:16px"><button class="btn" type="submit">Save</button>' +
+        (existing ? ' <button class="btn quiet" type="button" id="p-cancel">Cancel</button>' : "") + "</div>" +
+      "</form>" + (existing ? "" : signOutButton());
+    wireSignOut(box);
+    var bio = document.getElementById("p-bio");
+    var count = function () { document.getElementById("p-bio-count").textContent = bio.value.trim().length + "/" + window.CrossfadeProfiles.MAX_BIO; };
+    bio.oninput = count; count();
+    if (existing) document.getElementById("p-cancel").onclick = function () { showProfile(box, session, existing); };
+    document.getElementById("profile-form").onsubmit = function (e) {
+      e.preventDefault();
+      var submit = e.target.querySelector("button[type=submit]");
+      ["p-username-error", "p-name-error", "p-bio-error", "p-error"].forEach(function (id) { document.getElementById(id).textContent = ""; });
+      var fields = { username: document.getElementById("p-username").value,
+        display_name: document.getElementById("p-name").value, bio: bio.value };
+      submit.disabled = true;
+      window.CrossfadeProfiles.save(session, fields, existing).then(function (saved) {
+        showProfile(box, session, saved);
+      }).catch(function (err) {
+        submit.disabled = false;
+        if (err.fields) {
+          var map = { username: "p-username", display_name: "p-name", bio: "p-bio" };
+          var firstField = null;
+          Object.keys(map).forEach(function (k) {
+            if (!err.fields[k]) return;
+            document.getElementById(map[k] + "-error").textContent = PROFILE_ERRORS[err.fields[k]];
+            if (!firstField) firstField = map[k];
+          });
+          document.getElementById(firstField).focus();
+        } else if (err.name === "taken") {
+          document.getElementById("p-username-error").textContent = PROFILE_ERRORS.taken;
+          document.getElementById("p-username").focus();
+        } else if (err.name === "signed-out") {
+          window.CrossfadeAuth.signOut().then(function () { updateAccountIcon(); renderAccount(); });
+        } else {
+          document.getElementById("p-error").textContent = PROFILE_ERRORS.network;
+        }
+      });
     };
   }
 

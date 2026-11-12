@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- At /u/<username>, relative paths would look inside /u/. This keeps them at the site root. -->
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crossfade</title>
+  <meta name="description" content="A Crossfade profile.">
+  <meta name="theme-color" content="#1C1A33">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- A sender's public profile (ADR 0020). Like p.html: no nav, no sign-in, nothing written. -->
+  <main id="view" class="view" tabindex="-1"></main>
+  <script src="config.js"></script>
+  <script src="profiles-store.js"></script>
+  <script src="u.js"></script>
+</body>
+</html>

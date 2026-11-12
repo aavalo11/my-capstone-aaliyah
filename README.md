@@ -166,7 +166,8 @@ Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
 
 1. Copy the SQL inside the file (`pbcopy < supabase/schema.sql`), paste it into
    Supabase → **SQL Editor**, and run it. Paste the SQL itself, not the file name.
-   It creates the `links` table, read-only to the public key, and it's safe to run twice.
+   It creates the `links` table, read-only to the public key, and the `profiles` table,
+   which signed-in senders can write only their own row of. It's safe to run again.
 2. **Project Settings → API Keys**: copy the Project URL and the **publishable** key
    into `src/config.js`. The Project URL is **not** the address in your browser bar:
    - Wrong: `https://supabase.com/dashboard/project/irzqwrznqvtjrrmkddzw`
@@ -222,6 +223,7 @@ node tests/e2e/run.js              # browser checks; first run needs Playwright,
 | Create → Search songs | Hidden. Would search Spotify through the server; holding pen, no evidence yet (backlog S16) |
 | Friends | Sample data only (backlog S13). Shared playlists open to their songs, each opening in Spotify's search |
 | Profile icon → Account | Real: sign in with Google through Supabase Auth, see your name, email and photo, sign out (ADR 0019, S14). Create needs sign-in, and allows 10 links a day, counted in this browser until `create-link` deploys |
+| Account → profile, `/u/<username>` | Real: pick a username, edit your display name and bio, share a profile link anyone can open (ADR 0020, S18, holding pen). Stored in Supabase's `profiles` table. Your playlists aren't on it yet |
 | Home → Listening history, Fix a match, How matching works | Hidden. Not built (S12, S9), and matching isn't explained on screen (ADR 0016) |
 
 ## A note on the research

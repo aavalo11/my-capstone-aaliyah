@@ -1,2 +1,4 @@
 # A friend's link /p/<code> shows p.html with a 200, keeping /p/<code> in the address bar (ADR 0008).
 /p/*  /p.html  200
+# A profile link /u/<username> shows u.html the same way (ADR 0020).
+/u/*  /u.html  200

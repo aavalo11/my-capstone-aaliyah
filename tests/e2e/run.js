@@ -6,7 +6,7 @@ const path = require("node:path");
 const PORT = 8123;
 const BASE = "http://127.0.0.1:" + PORT;
 const ROOT = path.join(__dirname, "../..");
-const CHECKS = ["link-crud.js", "link-crud-fixes.js", "playlists.js", "auth.js"];
+const CHECKS = ["link-crud.js", "link-crud-fixes.js", "playlists.js", "auth.js", "profile.js"];
 
 const server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1", "--directory", "src"],
   { cwd: ROOT, stdio: "ignore" });
