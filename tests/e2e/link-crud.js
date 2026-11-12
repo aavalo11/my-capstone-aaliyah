@@ -19,7 +19,7 @@ async function create(page, title, link, pass = "x") {
 }
 async function myLinks(page) {
   await page.goto("about:blank");
-  await page.goto(BASE + "/#/home");
+  await page.goto(BASE + "/#/playlists/made");
   await page.waitForSelector("#my-links .card");
   return page.$$eval("#my-links .link-row", (rows) => rows.map((r) => ({
     code: r.getAttribute("data-code"), text: r.innerText.replace(/\s+/g, " ").trim() })));
@@ -47,8 +47,8 @@ const URL2 = "https://music.apple.com/us/playlist/study-no-words/pl.u-0zZ1";
     `link error="${e1}" | name error="${e2}" | records=${s0.length}`);
 
   // C2e: empty and error
-  const empty = await page.goto(BASE + "/#/home").then(() => page.waitForSelector("#my-links .card")).then(() => page.textContent("#my-links"));
-  await page.goto(BASE + "/?demo=error#/home"); await page.waitForSelector("#my-links .card");
+  const empty = await page.goto(BASE + "/#/playlists/made").then(() => page.waitForSelector("#my-links .card")).then(() => page.textContent("#my-links"));
+  await page.goto(BASE + "/?demo=error#/playlists/made"); await page.waitForSelector("#my-links .card");
   const errText = await page.textContent("#my-links");
   const errRows = await page.$$("#my-links .link-row");
   check("C2e", empty.includes("No links yet") && errText.includes("Couldn't read your links") && errRows.length === 0,

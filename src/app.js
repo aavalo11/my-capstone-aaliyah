@@ -219,9 +219,6 @@
         "</section>" +
 
         '<div class="col">' +
-          '<section><div class="section-head"><h2>Your links</h2></div>' +
-            '<div id="my-links">' + stateBlock("Loading…", "") + "</div></section>" +
-
           '<section><div class="section-head"><h2>Recently added</h2><a class="small" href="#/create">Add one</a></div>' +
             '<div id="recent">' + stateBlock("Loading…", "") + "</div></section>" +
 
@@ -249,7 +246,6 @@
       location.hash = "#/create";
     };
     wireTiles();
-    loadMyLinks();
     loadRecent();
     loadCharts();
   }
@@ -342,6 +338,7 @@
       var editing = linkMode && linkMode.code === r.code ? linkMode : null;
       var head = '<div class="grow"><a class="title" href="#/links/' + esc(r.code) + '">' + esc(r.title) + "</a>" +
         '<div class="small muted">Made ' + esc(formatDate(r.created_at)) +
+        (r.report && r.report.tracks ? " · " + esc(r.report.tracks.length) + " songs" : "") +
         (r.updated_at !== r.created_at ? " · renamed " + esc(formatDate(r.updated_at)) : "") + "</div>";
       var err = editing && editing.error ? '<div class="field-error" role="alert">' + esc(editing.error) + "</div>" : "";
 
@@ -359,8 +356,7 @@
           '<button class="btn quiet" type="button" data-cancel>Cancel</button></div></div></li>';
       }
       return '<li class="row link-row" data-code="' + esc(r.code) + '">' + head + "</div>" +
-        '<div class="link-actions"><a class="pill" href="' + esc(recipientUrl(r.code)) + '">Friend\'s view</a>' +
-        '<button class="pill" type="button" data-rename' + busy + ">Rename</button>" +
+        '<div class="link-actions"><button class="pill" type="button" data-rename' + busy + ">Rename</button>" +
         '<button class="pill warn" type="button" data-delete' + busy + ">Delete</button></div></li>";
     }).join("") + "</ul></div>";
 
@@ -659,13 +655,13 @@
   function renderLink(code) {
     var link;
     try { link = window.CrossfadeLinks.get(code); } catch (e) {
-      view.innerHTML = '<a class="back" href="#/home">‹ Home</a><div class="card">' + stateBlock("Couldn't open this link",
+      view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a><div class="card">' + stateBlock("Couldn't open this link",
         "Crossfade couldn't read the links saved on this device. Nothing was deleted.",
         '<button class="btn quiet" type="button" onclick="location.reload()">Try again</button>') + "</div>";
       return;
     }
     if (!link || link.deleted_at) {
-      view.innerHTML = '<a class="back" href="#/home">‹ Home</a><div class="card">' + stateBlock(
+      view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a><div class="card">' + stateBlock(
         link ? "You deleted this link" : "That link isn't here", link ? "Anyone you sent it to sees it was removed." : "It may have been made on another device.",
         '<a class="btn quiet" href="#/create">Make a link</a>') + "</div>";
       return;
@@ -673,7 +669,7 @@
     var url = recipientUrl(link.code);
     var report = link.report;
     var play = report && window.CrossfadeReport.playlistUrl(report.spotify_playlist_id);
-    view.innerHTML = '<a class="back" href="#/home">‹ Home</a>' +
+    view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a>' +
       "<h1>" + esc(link.title) + "</h1>" +
       (report && report.sample ? '<div class="notice"><b>Sample playlist.</b> The Spotify matches are made up.</div>' : "") +
       (play ? '<a class="btn block" href="' + esc(play) + '" target="_blank" rel="noopener">Play in Spotify</a>' : "") +
@@ -693,6 +689,54 @@
       } else { msg.textContent = "Copy the link above instead."; }
     };
   }
+
+  // Playlists (ADR 0018): links I made, and friends' links this browser has opened.
+  function renderPlaylists(which) {
+    var made = which !== "received";
+    document.querySelectorAll(".subtab").forEach(function (a) {
+      if (a.getAttribute("data-sub") === (made ? "made" : "received")) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+    view.innerHTML = "<h1>Playlists</h1>" +
+      '<div class="tabs-inline playlist-tabs" role="tablist">' +
+        '<button type="button" role="tab" aria-selected="' + made + '" data-go="#/playlists/made">Made by me</button>' +
+        '<button type="button" role="tab" aria-selected="' + !made + '" data-go="#/playlists/received">Sent to me</button>' +
+      "</div>" +
+      (made ? '<div id="my-links">' : '<div id="received">') + stateBlock("Loading…", "") + "</div>";
+    view.querySelectorAll("[data-go]").forEach(function (b) {
+      b.onclick = function () { location.hash = b.getAttribute("data-go"); };
+    });
+    if (made) loadMyLinks(); else loadReceived();
+  }
+
+  function loadReceived() {
+    var box = document.getElementById("received");
+    if (!box) return;
+    var rows;
+    try { rows = window.CrossfadeReceived.list(); } catch (e) {
+      box.innerHTML = '<div class="card">' + stateBlock("Couldn't read your playlists",
+        "This browser wouldn't open Crossfade's saved playlists. Nothing was deleted.",
+        '<button class="btn quiet" type="button" id="received-retry">Try again</button>') + "</div>";
+      document.getElementById("received-retry").onclick = loadReceived;
+      return;
+    }
+    if (!rows.length) {
+      box.innerHTML = '<div class="card">' + stateBlock("Nothing sent to you yet",
+        "Playlists friends send you show up here once you open them.") + "</div>";
+      return;
+    }
+    box.innerHTML = '<div class="card"><ul class="list" id="received-list">' + rows.map(function (r) {
+      return '<li class="row received-row" data-code="' + esc(r.code) + '"><div class="grow">' +
+        '<a class="title" href="' + esc(recipientUrl(r.code)) + '">' + esc(r.title) + "</a>" +
+        '<div class="small muted">' + (r.sample ? "Sample · " : "") + "Opened " + esc(formatDate(r.opened_at)) + " · " + esc(r.track_count) + " songs</div></div>" +
+        '<span class="pill ' + (r.matched === r.track_count ? "good" : "warn") + '">Matched ' +
+        esc(r.matched) + " of " + esc(r.track_count) + "</span></li>";
+    }).join("") + "</ul></div>";
+  }
+
+  window.addEventListener("storage", function (e) {
+    if (e.key === window.CrossfadeReceived.KEY) loadReceived();
+  });
 
   function renderFriends() {
     var list = DEMO === "empty" ? [] : FRIENDS;
@@ -849,12 +893,16 @@
     var parts = (location.hash.replace(/^#\/?/, "") || "home").split("/");
     var page = parts[0];
 
+    // A link's own page sits under Playlists. Sub-tabs are marked by renderPlaylists.
+    var navPage = page === "links" ? "playlists" : page;
+    document.querySelectorAll(".subtab").forEach(function (a) { a.removeAttribute("aria-current"); });
     document.querySelectorAll(".tab").forEach(function (a) {
-      if (a.getAttribute("data-route") === page) a.setAttribute("aria-current", "page");
+      if (a.getAttribute("data-route") === navPage) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
 
     if (page === "home") renderHome();
+    else if (page === "playlists") renderPlaylists(parts[1]);
     else if (page === "create") renderCreate();
     else if (page === "links" && parts[1]) renderLink(parts[1]);
     else if (page === "friends" && parts[1]) renderFriend(parts[1], null, parts[2] === "playlists" ? parts[3] : null);

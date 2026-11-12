@@ -420,6 +420,31 @@ against real Spotify (ADR 0014).
 
 ---
 
+**S17.** As someone friends send playlists to, I want a list of the Crossfade links I've
+opened, kept apart from the ones I made, so that I can find a friend's playlist again
+without digging through our messages.
+
+Added 2026-11-12, at the founder's request (ADR 0018). Built as *Playlists → Sent to me*,
+saved in this browser only.
+
+**Acceptance criteria**
+
+- [ ] **Given** I opened a friend's Crossfade link in this browser, **when** I open
+  *Sent to me*, **then** I see it by name and song count, newest first, and tapping it
+  opens its songs.
+- [ ] **Given** I opened a link I made myself, **when** I open *Sent to me*, **then** it
+  isn't there. It's under *Made by me*.
+- [ ] **Given** I've opened no friend's link, **when** I open *Sent to me*, **then** I see
+  `Nothing sent to you yet`, not a blank list.
+- [ ] **Negative — Given** this browser won't read its saved data, **when** I open *Sent
+  to me*, **then** I see `Couldn't read your playlists` with a Try again button, and
+  nothing is deleted.
+
+**Evidence.** **NONE.** Founder request. The recipient side of J5 is about hearing the
+playlist once. Nothing in `docs/research/` says recipients want to come back to it.
+
+---
+
 ## 4. MoSCoW board
 
 | MUST | SHOULD | COULD | WON'T (+ why not) |
@@ -429,7 +454,7 @@ against real Spotify (ADR 0014).
 | ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
-| | | | S12–S16 — Home history, Friends, Account, Discover, Search to build *(holding pen, Evidence: NONE; shell only)* |
+| | | | S12–S17 — Home history, Friends, Account, Discover, Search to build, Sent to me *(holding pen, Evidence: NONE; shell only)* |
 
 **MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
 product. Without S8, the first person who opens a link and finds junk in their library

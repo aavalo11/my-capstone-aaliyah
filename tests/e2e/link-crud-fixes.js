@@ -19,7 +19,7 @@ async function make(page, title, link = URL1) {
   return (await page.textContent("#made-url")).match(/code=(\w+)/)[1];
 }
 async function home(page) {
-  await page.goto("about:blank"); await page.goto(BASE + "/#/home"); await page.waitForSelector("#my-links .card");
+  await page.goto("about:blank"); await page.goto(BASE + "/#/playlists/made"); await page.waitForSelector("#my-links .card");
 }
 async function friendText(page, code) {
   await page.goto(BASE + "/p.html?code=" + encodeURIComponent(code));

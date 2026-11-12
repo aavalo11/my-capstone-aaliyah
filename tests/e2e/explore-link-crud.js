@@ -14,7 +14,7 @@ async function fill(page, title, link, pass = "x") {
   await page.fill("#title", title); await page.fill("#link", link); await page.fill("#passcode", pass);
 }
 async function home(page) {
-  await page.goto("about:blank"); await page.goto(BASE + "/#/home"); await page.waitForSelector("#my-links .card");
+  await page.goto("about:blank"); await page.goto(BASE + "/#/playlists/made"); await page.waitForSelector("#my-links .card");
 }
 async function friendText(page, code) {
   await page.goto(BASE + "/p.html?code=" + encodeURIComponent(code));
@@ -141,7 +141,7 @@ async function make(page, title, link = URL1) {
   ({ c, p } = await fresh());
   const d = await make(p, "sent to the wrong person");
   await friendText(p, d);
-  await p.goto(BASE + "/#/home"); await p.waitForSelector("#my-links .card"); // real navigation, so Back has somewhere to go
+  await p.goto(BASE + "/#/playlists/made"); await p.waitForSelector("#my-links .card"); // real navigation, so Back has somewhere to go
   await p.click(`.link-row[data-code="${d}"] [data-delete]`);
   await p.click(`.link-row[data-code="${d}"] [data-confirm-delete]`);
   await p.goBack(); await p.waitForTimeout(300);

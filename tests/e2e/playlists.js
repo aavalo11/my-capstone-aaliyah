@@ -26,8 +26,8 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   check("P1", progress.startsWith("Reading playlist") && disabled && headline === "Matched 48 of 52",
     `first line="${progress}", Create disabled while building=${disabled}, headline="${headline}"`);
 
-  // P2: the link's name on Home opens its songs.
-  await p.goto(BASE + "/#/home"); await p.waitForSelector("#my-links .link-row");
+  // P2: the link's name on Playlists → Made by me opens its songs.
+  await p.goto(BASE + "/#/playlists/made"); await p.waitForSelector("#my-links .link-row");
   await p.click(`.link-row[data-code="${code}"] a.title`);
   await p.waitForSelector("#tracks");
   const rows = await p.$$eval("#tracks li", (l) => l.length);
@@ -68,9 +68,29 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   const nope = txt(await p.textContent("#view"));
   check("P6f", nope.includes("That link isn't here"), `"${nope.slice(0, 50)}"`);
 
+  // P8 (S17, ADR 0018): a friend's link you opened is under Sent to me; your own link isn't.
+  await p.evaluate(() => localStorage.removeItem("crossfade-received-v1")); // P4 already opened sample
+  await p.goto(BASE + "/#/playlists/received");
+  const before = txt(await p.textContent("#received"));
+  await p.goto(BASE + "/p.html?code=sample"); await p.waitForSelector("#tracks");
+  await p.goto(BASE + "/p.html?code=" + code); await p.waitForSelector("#tracks");
+  await p.goto(BASE + "/#/playlists/received"); await p.waitForSelector("#received-list");
+  const got = await p.$$eval("#received-list .received-row", (l) => l.map((r) => ({ code: r.dataset.code, href: r.querySelector("a.title").href })));
+  check("P8", before.includes("Nothing sent to you yet") && got.length === 1 && got[0].code === "sample" && got[0].href.endsWith("p.html?code=sample"),
+    `empty first=${before.includes("Nothing sent to you yet")}, rows=${JSON.stringify(got)}`);
+
+  // P8f: Sent to me has an error state, and the side menu marks the sub-tab you're on.
+  await p.goto(BASE + "/?demo=error#/playlists/received"); await p.waitForSelector("#received-retry");
+  const errText = txt(await p.textContent("#received"));
+  await p.setViewportSize({ width: 1200, height: 800 });
+  await p.goto(BASE + "/#/playlists/made"); await p.waitForSelector("#my-links .link-row");
+  const current = await p.$$eval('.nav [aria-current="page"]', (a) => a.map((x) => x.textContent.trim()));
+  check("P8f", errText.includes("Couldn't read your playlists") && JSON.stringify(current) === JSON.stringify(["♫Playlists", "Made by me"]),
+    `error="${errText.slice(0, 40)}", menu marks ${JSON.stringify(current)}`);
+
   // P7: nothing unbuilt or explanatory is on screen.
   const screens = {};
-  for (const r of ["home", "create", "settings", "friends"]) {
+  for (const r of ["home", "playlists/made", "playlists/received", "create", "settings", "friends"]) {
     await p.goto(BASE + "/#/" + r); await p.waitForTimeout(300);
     screens[r] = txt(await p.textContent("#view"));
   }

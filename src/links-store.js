@@ -126,4 +126,35 @@
     list: list, get: get, create: create, rename: rename, remove: remove,
     checkTitle: checkTitle, samePlaylist: samePlaylist, KEY: KEY, MAX_TITLE: MAX_TITLE,
   };
+
+  // Friends' links this browser has opened at p.html (ADR 0018, S17). One row per code,
+  // { code, title, track_count, matched, sample, opened_at }, newest first.
+  // TODO(W10): real data. Moves to the database with sender sign-in.
+  var RECEIVED_KEY = "crossfade-received-v1";
+
+  function loadReceived() {
+    if (DEMO === "error") throw fail("read-failed");
+    if (DEMO === "empty") return [];
+    var raw;
+    try { raw = localStorage.getItem(RECEIVED_KEY); } catch (e) { throw fail("read-failed"); }
+    if (!raw) return [];
+    try {
+      var rows = JSON.parse(raw);
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { throw fail("read-failed"); }
+  }
+
+  function listReceived() {
+    return loadReceived().slice().sort(function (a, b) { return a.opened_at < b.opened_at ? 1 : -1; });
+  }
+
+  // Opening the same link again moves it to the top and keeps its newest name.
+  function addReceived(row) {
+    var rows = loadReceived().filter(function (r) { return r.code !== row.code; });
+    rows.push({ code: String(row.code), title: String(row.title || ""), track_count: row.track_count | 0,
+      matched: row.matched | 0, sample: !!row.sample, opened_at: new Date().toISOString() });
+    try { localStorage.setItem(RECEIVED_KEY, JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
+  }
+
+  window.CrossfadeReceived = { list: listReceived, add: addReceived, KEY: RECEIVED_KEY };
 })();

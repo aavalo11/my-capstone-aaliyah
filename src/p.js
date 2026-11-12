@@ -65,6 +65,12 @@
         return;
       }
       var R = window.CrossfadeReport;
+      // Remember a friend's link for Playlists → Sent to me (ADR 0018). Your own links stay
+      // under Made by me. If this browser won't save, the page still shows the playlist.
+      if (!link.local && !DEMO) {
+        try { window.CrossfadeReceived.add({ code: CODE, title: link.name, track_count: link.tracks.length, matched: R.matched(link.tracks), sample: !!link.sample }); }
+        catch (e) { /* nothing to show: the playlist is what the friend came for */ }
+      }
       var play = R.playlistUrl(link.spotify_playlist_id);
       var notice = link.local
         ? '<div class="notice"><b>Sample playlist, saved on this device only.</b> The Spotify matches are made up.</div>'
