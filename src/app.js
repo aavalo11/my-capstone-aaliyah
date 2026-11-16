@@ -33,90 +33,6 @@
     return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
-  // ---------- Supabase (REST, no client library) ----------
-
-
-  // ---------- sample data (Friends only; clearly labelled on screen) ----------
-
-  var MY_ARTISTS = ["Frank Ocean", "SZA", "Steve Lacy", "Mitski", "Clairo", "Daniel Caesar", "Kali Uchis", "Tyler, The Creator"];
-
-  var FRIENDS = [
-    {
-      id: "jordan", name: "Jordan", service: "Spotify",
-      playlists: [
-        { title: "gym but make it sad", songs: [
-          { title: "Motion Sickness", artist: "Phoebe Bridgers" }, { title: "Bad Habit", artist: "Steve Lacy" },
-          { title: "Nights", artist: "Frank Ocean" }, { title: "Kill Bill", artist: "SZA" }, { title: "Dark Red", artist: "Steve Lacy" },
-        ] },
-        { title: "sunday reset", songs: [
-          { title: "Pink + White", artist: "Frank Ocean" }, { title: "Get You", artist: "Daniel Caesar" },
-          { title: "telepatía", artist: "Kali Uchis" }, { title: "Snooze", artist: "SZA" },
-        ] },
-      ],
-      songs: [
-        { title: "Bad Habit", artist: "Steve Lacy" },
-        { title: "Kill Bill", artist: "SZA" },
-        { title: "Pink + White", artist: "Frank Ocean" },
-        { title: "telepatía", artist: "Kali Uchis" },
-        { title: "Get You", artist: "Daniel Caesar" },
-      ],
-      artists: ["Steve Lacy", "SZA", "Frank Ocean", "Kali Uchis", "Daniel Caesar", "Drake"],
-    },
-    {
-      id: "sam", name: "Sam", service: "Spotify",
-      playlists: [{ title: "road trip 2026", songs: [
-        { title: "Mr. Brightside", artist: "The Killers" }, { title: "Do I Wanna Know?", artist: "Arctic Monkeys" },
-        { title: "Washing Machine Heart", artist: "Mitski" }, { title: "Sofia", artist: "Clairo" },
-        { title: "Kyoto", artist: "Phoebe Bridgers" }, { title: "When You Were Young", artist: "The Killers" },
-      ] }],
-      songs: [
-        { title: "Washing Machine Heart", artist: "Mitski" },
-        { title: "Mr. Brightside", artist: "The Killers" },
-        { title: "Sofia", artist: "Clairo" },
-      ],
-      artists: ["Mitski", "Clairo", "The Killers", "Arctic Monkeys", "Phoebe Bridgers"],
-    },
-    {
-      id: "priya", name: "Priya", service: "Apple Music",
-      playlists: [
-        { title: "lab hours", songs: [
-          { title: "Levitating", artist: "Dua Lipa" }, { title: "Paint The Town Red", artist: "Doja Cat" }, { title: "Satellite", artist: "Harry Styles" },
-        ] },
-        { title: "throwbacks", songs: [
-          { title: "Don't Start Now", artist: "Dua Lipa" }, { title: "Adore You", artist: "Harry Styles" },
-          { title: "See You Again", artist: "Tyler, The Creator" }, { title: "Say So", artist: "Doja Cat" },
-        ] },
-        { title: "new finds", songs: [
-          { title: "Houdini", artist: "Dua Lipa" }, { title: "Agora Hills", artist: "Doja Cat" },
-        ] },
-      ],
-      songs: [
-        { title: "Levitating", artist: "Dua Lipa" },
-        { title: "As It Was", artist: "Harry Styles" },
-      ],
-      artists: ["Dua Lipa", "Harry Styles", "Tyler, The Creator", "Doja Cat"],
-    },
-  ];
-
-  // Share of artists in common, out of all artists either of you plays (Jaccard).
-  function tasteMatch(friend) {
-    var mine = {}, all = {}, shared = [];
-    MY_ARTISTS.forEach(function (a) { mine[a] = true; all[a] = true; });
-    friend.artists.forEach(function (a) {
-      if (mine[a]) shared.push(a);
-      all[a] = true;
-    });
-    var total = Object.keys(all).length;
-    return { percent: total ? Math.round((shared.length / total) * 100) : 0, shared: shared };
-  }
-
-  function matchPill(percent) {
-    var cls = percent >= 50 ? "good" : percent >= 20 ? "" : "warn";
-    return '<span class="pill ' + cls + '">' + percent + "% match</span>";
-  }
-
-  // TODO(W10): real data.
-  var SAMPLE_NOTICE = '<div class="notice"><b>Sample friends.</b> None of these people are real.</div>';
 
   // ---------- screens ----------
 
@@ -186,7 +102,7 @@
             tile("#/create", "＋", "New playlist link", "Paste and send") +
             tile("", "⎘", "Paste from clipboard", "Skip the typing", "paste") +
             tile("", "✉", "Invite a friend", "Copy the app link", "invite") +
-            tile("#/friends", "☺", "Friends", "See taste matches") +
+            tile("#/friends", "☺", "Friends", "Who you share with") +
           "</div>" +
           '<div class="small muted" id="tile-msg" role="status" style="min-height:1.2em;margin-top:6px"></div>' +
         "</section>" +
@@ -438,25 +354,27 @@
       box.querySelector("[data-retry]").onclick = loadCharts;
     };
 
-    fetchChart("topsongs", 25).then(function (songs) {
+    // The top 100, so New this week finds more than the handful of new songs in the top 25.
+    // Top songs still shows only the first 10.
+    fetchChart("topsongs", 100).then(function (songs) {
       if (!document.body.contains(songBox)) return;
       var cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
       var fresh = songs.filter(function (s) { return new Date(s.released).getTime() >= cutoff; });
 
       newBox.innerHTML = fresh.length
         ? '<div class="hscroll">' + fresh.slice(0, 12).map(function (s) {
-            return '<div class="song-card">' + art(s.art, s.title) +
-              '<div class="title">' + esc(s.title) + '</div><div class="small muted ellipsis">' + esc(s.artist) + "</div>" +
-              '<a class="small" href="' + esc(spotifySearchUrl(s)) + '" target="_blank" rel="noopener">Find on Spotify</a></div>';
+            return '<a class="song-card" href="' + esc(spotifySearchUrl(s)) + '" target="_blank" rel="noopener" aria-label="' +
+              esc(s.title) + ", " + esc(s.artist) + ', open in Spotify">' + art(s.art, s.title) +
+              '<div class="title">' + esc(s.title) + '</div><div class="small muted ellipsis">' + esc(s.artist) + "</div></a>";
           }).join("") + "</div>"
         : '<div class="card">' + stateBlock("Nothing new in this week's chart",
             "None of the top songs came out in the last 14 days.") + "</div>";
 
       songBox.innerHTML = songs.length
         ? '<ol class="list ranked">' + songs.slice(0, 10).map(function (s, i) {
-            return '<li class="row"><span class="rank">' + (i + 1) + "</span>" + art(s.art, s.title) +
-              '<div class="grow"><div class="title">' + esc(s.title) + '</div><div class="small muted ellipsis">' + esc(s.artist) + "</div></div>" +
-              '<a class="pill" href="' + esc(spotifySearchUrl(s)) + '" target="_blank" rel="noopener" aria-label="Find ' + esc(s.title) + ' on Spotify">Spotify ↗</a></li>';
+            return '<li class="song"><a class="row song-link" href="' + esc(spotifySearchUrl(s)) + '" target="_blank" rel="noopener" aria-label="' +
+              esc(s.title) + ", " + esc(s.artist) + ', open in Spotify"><span class="rank">' + (i + 1) + "</span>" + art(s.art, s.title) +
+              '<div class="grow"><div class="title">' + esc(s.title) + '</div><div class="small muted ellipsis">' + esc(s.artist) + "</div></div></a></li>";
           }).join("") + "</ol>"
         : stateBlock("The chart is empty", "Apple didn't return any songs this time.");
     }).catch(function () {
@@ -469,7 +387,9 @@
       if (!document.body.contains(albumBox)) return;
       albumBox.innerHTML = albums.length
         ? '<div class="hscroll">' + albums.map(function (a) {
-            return '<a class="song-card" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + art(a.art, a.title) +
+            // ADR 0022: albums open Spotify's search too, like songs, not Apple Music.
+            return '<a class="song-card" href="' + esc(spotifySearchUrl(a)) + '" target="_blank" rel="noopener" aria-label="' +
+              esc(a.title) + ", " + esc(a.artist) + ', open in Spotify">' + art(a.art, a.title) +
               '<div class="title">' + esc(a.title) + '</div><div class="small muted ellipsis">' + esc(a.artist) + "</div></a>";
           }).join("") + "</div>"
         : '<div class="card">' + stateBlock("No albums right now", "Apple didn't return any albums this time.") + "</div>";
@@ -744,98 +664,19 @@
     if (e.key === window.CrossfadeReceived.KEY) loadReceived();
   });
 
+  // Friends starts empty (ADR 0022). There are no sample friends, and no way yet to add one.
+  // TODO(W10): real data. Friends would come from the database once S13 has evidence.
   function renderFriends() {
-    var list = DEMO === "empty" ? [] : FRIENDS;
-    var html = "<h1>Friends</h1>" + SAMPLE_NOTICE;
-
+    var html = "<h1>Friends</h1>";
     if (DEMO === "error") {
-      html += '<div class="card">' + stateBlock("Couldn't load your friends",
+      html += '<div class="card" id="friends-error">' + stateBlock("Couldn't load your friends",
         "Crossfade couldn't reach its database. Try again in a moment.",
         '<button class="btn quiet" type="button" onclick="location.reload()">Try again</button>') + "</div>";
-    } else if (!list.length) {
-      html += '<div class="card">' + stateBlock("No friends yet",
-        "Friends you add show up here.") + "</div>";
     } else {
-      html += '<div class="friend-grid">' + list.map(function (f) {
-        var m = tasteMatch(f);
-        return '<a class="card friend-card" href="#/friends/' + esc(f.id) + '">' +
-          '<div class="row" style="padding:0;border:0"><span class="avatar">' + esc(f.name[0]) + "</span>" +
-          '<div class="grow"><div class="title">' + esc(f.name) + "</div>" +
-          '<div class="small muted">' + esc(f.service) + " · " + f.playlists.length + (f.playlists.length === 1 ? " playlist" : " playlists") + "</div></div>" +
-          matchPill(m.percent) + "</div>" +
-          '<div class="meter" style="margin:14px 0 8px"><span style="width:' + m.percent + '%"></span></div>' +
-          '<div class="small muted ellipsis">' + (m.shared.length ? "Both play " + m.shared.slice(0, 3).map(esc).join(", ") : "No shared artists yet") + "</div>" +
-          '<div class="small muted ellipsis" style="margin-top:4px">Latest: ' + esc(f.songs[0].title) + " · " + esc(f.songs[0].artist) + "</div></a>";
-      }).join("") + "</div>";
+      html += '<div class="card" id="friends-empty">' + stateBlock("No friends yet",
+        "Friends you share playlists with will show up here.") + "</div>";
     }
     view.innerHTML = html;
-  }
-
-  function renderFriend(id, tab, playlistIndex) {
-    var f = FRIENDS.filter(function (x) { return x.id === id; })[0];
-    if (!f) {
-      view.innerHTML = '<a class="back" href="#/friends">‹ Friends</a>' +
-        '<div class="card">' + stateBlock("That friend isn't here",
-          "They may have been removed, or the link is wrong.") + "</div>";
-      return;
-    }
-    if (playlistIndex != null) return renderFriendPlaylist(f, playlistIndex);
-    tab = tab === "songs" ? "songs" : "playlists";
-    var m = tasteMatch(f);
-
-    var items = tab === "songs"
-      ? f.songs.map(window.CrossfadeReport.songRow)
-      : f.playlists.map(function (p, i) {
-          return '<li><a class="row" href="#/friends/' + esc(f.id) + "/playlists/" + i + '"><div class="grow"><div class="title">' + esc(p.title) +
-            '</div><div class="small muted">' + p.songs.length + (p.songs.length === 1 ? " song" : " songs") + '</div></div><span class="muted" aria-hidden="true">›</span></a></li>';
-        });
-
-    view.innerHTML =
-      '<a class="back" href="#/friends">‹ Friends</a>' +
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
-        '<span class="avatar">' + esc(f.name[0]) + "</span>" +
-        '<div><h1 style="margin:0">' + esc(f.name) + '</h1><div class="small muted">On ' + esc(f.service) + "</div></div>" +
-      "</div>" +
-      SAMPLE_NOTICE +
-
-      '<div class="card">' +
-        '<div class="small muted">How similar your music is</div>' +
-        '<div class="big-number" style="margin:6px 0 10px">' + m.percent + "%</div>" +
-        '<div class="meter" role="img" aria-label="' + m.percent + ' percent taste match"><span style="width:' + m.percent + '%"></span></div>' +
-        '<p class="small" style="margin-top:12px">' +
-          (m.shared.length
-            ? "You both listen to <b>" + m.shared.map(esc).join(", ") + "</b>."
-            : "You don't share any artists yet. Something new to send them.") +
-        "</p>" +
-      "</div>" +
-
-      '<div class="tabs-inline" role="tablist">' +
-        '<button type="button" role="tab" data-tab="playlists" aria-selected="' + (tab === "playlists") + '">Playlists</button>' +
-        '<button type="button" role="tab" data-tab="songs" aria-selected="' + (tab === "songs") + '">Songs</button>' +
-      "</div>" +
-      '<div class="card">' + (items.length
-        ? '<ul class="list">' + items.join("") + "</ul>"
-        : stateBlock("Nothing here yet", f.name + " hasn't shared any " + tab + ".")) + "</div>";
-
-    view.querySelectorAll("[data-tab]").forEach(function (b) {
-      b.onclick = function () { renderFriend(id, b.getAttribute("data-tab")); };
-    });
-  }
-
-  function renderFriendPlaylist(f, i) {
-    var p = f.playlists[+i];
-    var back = '<a class="back" href="#/friends/' + esc(f.id) + '">‹ ' + esc(f.name) + "</a>";
-    if (!p) {
-      view.innerHTML = back + '<div class="card">' + stateBlock("That playlist isn't here",
-        f.name + " may have removed it.") + "</div>";
-      return;
-    }
-    view.innerHTML = back + "<h1>" + esc(p.title) + "</h1>" +
-      '<p class="muted">Shared by ' + esc(f.name) + " · " + p.songs.length + (p.songs.length === 1 ? " song" : " songs") + "</p>" +
-      SAMPLE_NOTICE +
-      '<div class="card">' + (p.songs.length
-        ? '<ol class="list" id="tracks">' + p.songs.map(window.CrossfadeReport.songRow).join("") + "</ol>"
-        : stateBlock("This playlist is empty", "There's nothing here to play.")) + "</div>";
   }
 
   function renderSettings() {
@@ -1118,7 +959,6 @@
     else if (page === "account") renderAccount();
     else if (page === "create") renderCreate();
     else if (page === "links" && parts[1]) renderLink(parts[1]);
-    else if (page === "friends" && parts[1]) renderFriend(parts[1], null, parts[2] === "playlists" ? parts[3] : null);
     else if (page === "friends") renderFriends();
     else if (page === "settings") {
       renderSettings();

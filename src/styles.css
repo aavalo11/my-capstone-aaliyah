@@ -275,10 +275,7 @@ a.pill { text-decoration: none; flex: none; }
 @media (min-width: 900px) {
   .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; align-items: start; }
   .two-col .span-all { grid-column: 1 / -1; }
-  .friend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 }
-.friend-card { display: block; color: inherit; text-decoration: none; }
-.friend-card:hover { border-color: var(--signal); }
 @media (max-width: 520px) {
   .hero-form { flex-direction: column; }
 }
@@ -295,3 +292,8 @@ a.title { display: block; color: inherit; text-decoration: none; }
 a.title:hover, a.title:focus-visible { text-decoration: underline; }
 .list li > a.row { border-bottom: 0; }
 a.playlist-card { color: inherit; text-decoration: none; }
+/* ADR 0022: a song row is one link to Spotify. The li carries the divider so the link can fill it. */
+.list li.song { border-bottom: 1px solid var(--line); }
+.list li.song:last-child { border-bottom: 0; }
+a.song-link { cursor: pointer; }
+a.song-link:hover .title, a.song-link:focus-visible .title, a.song-card:hover .title { text-decoration: underline; }

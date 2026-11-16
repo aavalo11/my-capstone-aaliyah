@@ -346,7 +346,8 @@ and how similar our taste is, so that I know what to send whom.
 **Evidence.** **NONE.** It needs Crossfade accounts, plus read access to friends'
 libraries. On Spotify that means recipient OAuth, which the 5-user dev-mode cap limits
 (ADR 0006). The closest research is S10, which is itself unevidenced. Taste match was
-first sketched in `docs/design/prototype-v2/`.
+first sketched in `docs/design/prototype-v2/`. The sample friends came out of the app on
+2026-11-12 (ADR 0022). Friends now shows only its empty state.
 
 ---
 

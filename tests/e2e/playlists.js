@@ -32,7 +32,7 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   await p.click(`.link-row[data-code="${code}"] a.title`);
   await p.waitForSelector("#tracks");
   const rows = await p.$$eval("#tracks li", (l) => l.length);
-  const hrefs = await p.$$eval("#tracks li a.pill", (a) => a.map((x) => x.href));
+  const hrefs = await p.$$eval("#tracks li a.song-link", (a) => a.map((x) => x.href)); // ADR 0022: the row is the link
   const unmatchedLinks = await p.$$eval("#tracks li.unmatched a", (a) => a.length);
   check("P2", location(p).startsWith("#/links/" + code) && rows === 52 && hrefs.length === 48 && unmatchedLinks === 0,
     `at ${location(p)}, songs=${rows}, Spotify links=${hrefs.length}, links on misses=${unmatchedLinks}`);
@@ -49,20 +49,33 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   check("P4", versions.length === 1 && versions[0] === "On Spotify: Get You · Daniel Caesar, Kali Uchis" && !label,
     `versions shown=${JSON.stringify(versions)}, "Close match" label=${label}`);
 
-  // P5: a friend's shared playlist opens to its songs, each opening in Spotify.
-  await p.goto(BASE + "/#/friends/jordan");
-  await p.click('a.row[href="#/friends/jordan/playlists/0"]');
-  await p.waitForSelector("#tracks");
-  const h1 = txt(await p.textContent("h1"));
-  const fRows = await p.$$eval("#tracks li a.pill", (a) => a.map((x) => x.href));
-  const sampleLabel = txt(await p.textContent(".notice"));
-  check("P5", h1 === "gym but make it sad" && fRows.length === 5 && fRows.every((h) => h.startsWith("https://open.spotify.com/search/")) && sampleLabel.startsWith("Sample friends"),
-    `h1="${h1}", songs with Spotify links=${fRows.length}, label="${sampleLabel}"`);
+  // P5 (ADR 0022): Friends has no sample people, only its empty state, even at an old friend's address.
+  await p.goto(BASE + "/#/friends"); await p.waitForSelector("#friends-empty");
+  const friends = txt(await p.textContent("#view"));
+  await p.goto(BASE + "/#/friends/jordan/playlists/0"); await p.waitForSelector("#friends-empty");
+  check("P5", friends.includes("No friends yet") && !/Sample|match|Jordan/i.test(friends) && !(await p.$(".friend-card")),
+    `"${friends}"`);
 
-  // P5f: a playlist that isn't there says so.
-  await p.goto(BASE + "/#/friends/jordan/playlists/9");
-  const missing = txt(await p.textContent("#view"));
-  check("P5f", missing.includes("That playlist isn't here"), `"${missing.slice(0, 50)}"`);
+  // P5f: Friends has an error state.
+  await p.goto(BASE + "/?demo=error#/friends"); await p.waitForSelector("#friends-error");
+  check("P5f", txt(await p.textContent("#friends-error")).startsWith("Couldn't load your friends"), "error state shown");
+
+  // P10 (ADR 0022): a Top songs row is one link to Spotify with no button on the side, albums
+  // open Spotify too, and New this week looks through the top 100.
+  const chartUrls = [];
+  await p.route("**/itunes.apple.com/**", (r) => chartUrls.push(r.request().url()) && r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ feed: { entry: [
+    { "im:name": { label: "Good Days" }, "im:artist": { label: "SZA" }, "im:image": [{ label: "" }], id: { label: "https://music.apple.com/x" }, "im:releaseDate": { label: new Date().toISOString() } },
+  ] } }) }));
+  await p.goto(BASE + "/#/home"); await p.waitForSelector("#top-songs a.song-link");
+  const top = await p.$$eval("#top-songs li", (l) => l.map((li) => ({ href: (li.querySelector("a.song-link") || {}).href, pills: li.querySelectorAll(".pill").length })));
+  const fresh = await p.$$eval("#new-songs a.song-card", (a) => a.map((x) => x.href));
+  await p.waitForSelector("#top-albums a.song-card");
+  const album = await p.$eval("#top-albums a.song-card", (a) => a.href);
+  const asked100 = chartUrls.some((u) => u.includes("/topsongs/limit=100/"));
+  check("P10", top.length === 1 && top[0].href === "https://open.spotify.com/search/Good%20Days%20SZA" && top[0].pills === 0 &&
+    fresh[0] === top[0].href && album === top[0].href && asked100,
+    `top=${JSON.stringify(top)}, new this week card=${fresh[0]}, album=${album}, top 100 asked=${asked100}`);
+  await p.unroute("**/itunes.apple.com/**");
 
   // P6f: a link code that isn't on this device says so, and a deleted one says it was deleted.
   await p.goto(BASE + "/#/links/nope");

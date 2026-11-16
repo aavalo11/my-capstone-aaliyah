@@ -1,5 +1,5 @@
 // A playlist's song rows (PRD R3, ADR 0016), shared by the sender's pages (app.js) and the
-// friend's page (p.js). Each matched song opens in Spotify, like Home's Top songs. Nothing
+// friend's page (p.js). Tapping a matched song opens it in Spotify, like Home's Top songs. Nothing
 // here calls Spotify: a link either goes to the track's own Spotify page, when there's a
 // real track id, or to Spotify's search for that song.
 (function () {
@@ -33,19 +33,12 @@
         '<div class="small">Not found on Spotify (US)</div></div></li>';
     }
     // ADR 0016: Spotify's version is shown only when its title is written differently.
+    // ADR 0022: the whole row is the link to Spotify, with no separate button.
     var differs = t.spotify.title != null && t.spotify.title !== t.title;
-    return '<li class="row" data-tier="' + esc(t.tier) + '"><div class="grow">' + head +
+    return '<li class="song" data-tier="' + esc(t.tier) + '"><a class="row song-link" href="' + esc(songUrl(t)) +
+      '" target="_blank" rel="noopener" aria-label="' + esc(t.title) + ", " + esc(t.artist) + ', open in Spotify"><div class="grow">' + head +
       (differs ? '<div class="small muted" data-spotify-version style="margin-top:4px">On Spotify: ' +
-        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + "</div>" +
-      '<a class="pill" href="' + esc(songUrl(t)) + '" target="_blank" rel="noopener" aria-label="Open ' +
-        esc(t.title) + ' in Spotify">Spotify ↗</a></li>';
-  }
-
-  // A plain song with no match data (a friend's sample songs): always Spotify search.
-  function songRow(s) {
-    return '<li class="row"><div class="grow"><div class="title">' + esc(s.title) + '</div><div class="small muted">' +
-      esc(s.artist) + '</div></div><a class="pill" href="' + esc(searchUrl(s.title, s.artist)) +
-      '" target="_blank" rel="noopener" aria-label="Find ' + esc(s.title) + ' on Spotify">Spotify ↗</a></li>';
+        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + "</div></a></li>";
   }
 
   function list(tracks) {
@@ -62,5 +55,5 @@
     return /^[A-Za-z0-9]{22}$/.test(spotifyPlaylistId || "") ? "https://open.spotify.com/playlist/" + spotifyPlaylistId : null;
   }
 
-  window.CrossfadeReport = { esc: esc, row: row, songRow: songRow, list: list, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
+  window.CrossfadeReport = { esc: esc, row: row, list: list, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
 })();
