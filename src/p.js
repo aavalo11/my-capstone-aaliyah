@@ -9,17 +9,7 @@
   // Codes are only [A-Za-z0-9], so anything else is junk a messaging app added (a trailing "." or ")").
   var CODE = (params.get("code") || location.pathname.split("/p/")[1] || "").replace(/[^A-Za-z0-9]/g, "");
 
-  // Copied from app.js. Loading app.js here would start the sender's router.
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-
-  function stateBlock(title, body, action) {
-    return '<div class="state"><strong>' + esc(title) + "</strong>" + esc(body) +
-      (action ? '<div style="margin-top:14px">' + action + "</div>" : "") + "</div>";
-  }
+  var esc = window.CrossfadeUI.esc, stateBlock = window.CrossfadeUI.stateBlock; // ui.js (ADR 0023)
 
   // TODO(W10): real data. Replace with POST /rest/v1/rpc/get_link { p_code } (architecture §3).
   function fetchLink(code) {

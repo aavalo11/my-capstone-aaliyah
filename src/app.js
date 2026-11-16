@@ -9,16 +9,7 @@
 
   // ---------- helpers ----------
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-
-  function stateBlock(title, body, action) {
-    return '<div class="state"><strong>' + esc(title) + "</strong>" + esc(body) +
-      (action ? '<div style="margin-top:14px">' + action + "</div>" : "") + "</div>";
-  }
+  var esc = window.CrossfadeUI.esc, stateBlock = window.CrossfadeUI.stateBlock; // ui.js (ADR 0023)
 
   function storage(key, value) {
     try {

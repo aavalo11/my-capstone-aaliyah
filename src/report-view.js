@@ -5,11 +5,7 @@
 (function () {
   "use strict";
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.CrossfadeUI.esc; // ui.js (ADR 0023)
 
   // Spotify search for a title and artist. Home's charts use the same URL.
   function searchUrl(title, artist) {

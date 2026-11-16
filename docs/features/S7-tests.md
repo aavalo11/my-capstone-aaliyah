@@ -66,3 +66,54 @@ only looks at the headline and the names line. AC4 caught it, on the recipient's
   create-link (Apple page + Spotify search) isn't in this test (`TODO(W10)`).
 - **"Never substituted" (PRD R2)** is decided by `match.ts`, which `tests/unit/match.test.js`
   covers. AC4 only checks that the recipient's page never shows a Spotify song for a miss.
+
+## 5 · Cleanup with the tests running (ADR 0023)
+
+**What bothered me.** `esc()` was written four times (`app.js`, `p.js`, `u.js`,
+`report-view.js`) and `stateBlock()` three times (`app.js`, `p.js`, `u.js`). `esc()` is the
+function that keeps every interpolated string safe, and a fix to one copy would miss the others.
+
+"Tests after" is the same every time: unit `90/90`; browser `9/9`, `13/13`, `13/13`, `9/9`,
+`8/8`, then `s7.js` `3/4` (only AC2, the known failure).
+
+| Step | What changed | Tests after |
+|---|---|---|
+| 1 | New `src/ui.js` with one `esc()` and `stateBlock()`; loaded first on `index.html`, `p.html`, `u.html`. Nothing uses it yet | Same as baseline |
+| 2 | `report-view.js`: its `esc()` copy → `window.CrossfadeUI.esc` | Same |
+| 3 | `p.js`: both copies (and the "Copied from app.js" comment) → one alias line | Same |
+| 4 | `u.js`: both copies → one alias line | Same |
+| 5 | `app.js`: both copies → one alias line. No call site changed in any file | Same |
+
+37 lines removed, 7 added, plus `ui.js`.
+
+## 6 · What got through
+
+**Using it myself** (local server, signed in with the test session): I made a link titled
+`Mix <b>loud</b> & "quiet"`. Create showed `Matched 48 of 52` and the 4 misses by name. The
+title showed as plain text, not bold, on Create and on the friend's page. That page had 52 rows,
+and the 4 misses were greyed with `Not found on Spotify (US)`. `p.html?code=nope`,
+`?demo=error` and an unknown `/u/` username showed their states through the shared
+`stateBlock()`. Nothing broke.
+
+**What the tests would and wouldn't have caught.** I broke the result on purpose (each one undone):
+
+| Break | Tests after |
+|---|---|
+| `ui.js` tag missing from `index.html` | `6 of 6 check files failed` |
+| `ui.js` tag missing from `p.html` | link-crud C3–C5 fail |
+| `ui.js` tag missing from `u.html` | `profile.js` fails |
+| **`esc()` stops escaping** (returns the string as is) | **Every test passes** (unit 90/90, browser same as baseline) |
+
+**The answer.** The tests protected *that the helpers are wired up*: a page that forgets
+`ui.js` fails loudly. They didn't protect *what `esc()` does*. No test puts a `<` or a `"` in a
+title or song name. This refactor put every page's escaping in one function, so one bad edit
+there is now an HTML injection on every page, and the suite stays green. The manual
+`Mix <b>loud</b>` check is the only evidence it still works.
+
+**Can't be caught here.** The Netlify paths `/p/<code>` and `/u/<name>` load `ui.js` through
+`<base href="/">`. Locally the tests use `p.html?code=`, so a wrong path would only show on
+the deployed site.
+
+**One more test.** Make a link whose title and a song name hold `<b>x</b> & "q"`, then check
+that Create, Made by me, Home and the friend's page show it as text and create no `<b>`
+element. It would have failed the `esc()` break above.
