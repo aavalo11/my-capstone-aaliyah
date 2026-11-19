@@ -309,7 +309,18 @@ a.song-link:hover .title, a.song-link:focus-visible .title, a.song-card:hover .t
 .pl-meta h1 { font-size: 1.9rem; overflow-wrap: anywhere; }
 .pl-sub { margin: 2px 0 0; }
 .pl-meta #match-headline { margin: 10px 0 0; }
-.pl-play { margin-top: 16px; align-self: flex-start; min-width: 200px; }
+.pl-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.pl-play { min-width: 200px; }
+.pl-share { min-width: 120px; }
+.pl-actions + .pl-sub, .pl-actions ~ .pl-sub { margin-top: 8px; }
+
+/* ADR 0028: a playlist row, like a music app's library: cover, name, Playlist · owner. */
+.pl-row { gap: 14px; }
+.pl-row .row-art { width: 56px; height: 56px; border-radius: 8px; }
+.pl-row .title { font-size: 1.05rem; }
+.pl-row .link-actions { display: flex; gap: 6px; }
+.pl-row button.pill { background: transparent; }
+.pl-row button.pill:hover, .pl-row button.pill:focus-visible { background: var(--note); }
 @media (min-width: 640px) {
   .pl-head { flex-direction: row; align-items: stretch; gap: 28px; }
   .pl-cover { width: 240px; }

@@ -143,7 +143,8 @@
   Object.defineProperty(window.CrossfadeLinks, "KEY", { get: function () { return scoped(BASE_KEY); } });
 
   // Friends' links this browser has opened at p.html (ADR 0018, S17). One row per code,
-  // { code, title, track_count, matched, sample, opened_at }, newest first.
+  // { code, title, track_count, matched, sample, artwork, owner, opened_at }, newest first.
+  // artwork and owner draw the row's cover and Playlist · owner line (ADR 0028).
   // TODO(W10): real data. Moves to the database with sender sign-in.
   var RECEIVED_KEY = "crossfade-received-v1"; // per account too (ADR 0021)
 
@@ -167,7 +168,9 @@
   function addReceived(row) {
     var rows = loadReceived().filter(function (r) { return r.code !== row.code; });
     rows.push({ code: String(row.code), title: String(row.title || ""), track_count: row.track_count | 0,
-      matched: row.matched | 0, sample: !!row.sample, opened_at: new Date().toISOString() });
+      matched: row.matched | 0, sample: !!row.sample,
+      artwork: typeof row.artwork === "string" ? row.artwork : null, owner: typeof row.owner === "string" ? row.owner : null,
+      opened_at: new Date().toISOString() });
     try { localStorage.setItem(scoped(RECEIVED_KEY), JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
   }
 

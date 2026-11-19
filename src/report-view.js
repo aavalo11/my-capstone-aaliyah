@@ -69,16 +69,20 @@
       '<ol class="list" id="tracks">' + tracks.map(row).join("") + "</ol>";
   }
 
-  // ADR 0025: the top of a playlist page. p is { name, owner, artwork, playUrl, extra, after }.
-  // extra (above the button) and after (below it) are trusted HTML the caller built.
+  // ADR 0025: the top of a playlist page. p is { name, owner, artwork, playUrl, share, extra, after }.
+  // share: true adds a Share button (#share-link, ADR 0028); the caller wires it.
+  // extra (above the buttons) and after (below them) are trusted HTML the caller built.
   function header(p) {
     return '<header class="pl-head">' + cover(p.artwork, "pl-cover") +
       '<div class="pl-meta"><h1>' + esc(p.name) + "</h1>" +
       '<p class="muted pl-sub">Playlist transferred with Crossfade</p>' +
       (p.owner ? '<p class="small muted pl-sub" id="pl-owner">Made by ' + esc(p.owner) + " on Apple Music</p>" : "") +
       (p.extra || "") +
-      (p.playUrl ? '<a class="btn pl-play" href="' + esc(p.playUrl) + '" target="_blank" rel="noopener" id="play-spotify">' +
-        '<span aria-hidden="true">▶</span>&nbsp;Play in Spotify</a>' : "") +
+      (p.playUrl || p.share ? '<div class="pl-actions">' +
+        (p.playUrl ? '<a class="btn pl-play" href="' + esc(p.playUrl) + '" target="_blank" rel="noopener" id="play-spotify">' +
+          '<span aria-hidden="true">▶</span>&nbsp;Play in Spotify</a>' : "") +
+        (p.share ? '<button class="btn quiet pl-share" type="button" id="share-link">' +
+          '<span aria-hidden="true">↗</span>&nbsp;Share</button>' : "") + "</div>" : "") +
       (p.after || "") + "</div></header>";
   }
 
@@ -92,5 +96,5 @@
     return /^[A-Za-z0-9]{22}$/.test(spotifyPlaylistId || "") ? "https://open.spotify.com/playlist/" + spotifyPlaylistId : null;
   }
 
-  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, time: time, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
+  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, cover: cover, time: time, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
 })();

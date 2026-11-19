@@ -62,7 +62,8 @@
       // Remember a friend's link for Playlists → Sent to me (ADR 0018). Your own links stay
       // under Made by me. If this browser won't save, the page still shows the playlist.
       if (!link.local && !DEMO) {
-        try { window.CrossfadeReceived.add({ code: CODE, title: link.name, track_count: link.tracks.length, matched: R.matched(link.tracks), sample: !!link.sample }); }
+        try { window.CrossfadeReceived.add({ code: CODE, title: link.name, track_count: link.tracks.length, matched: R.matched(link.tracks), sample: !!link.sample,
+          artwork: link.artwork || null, owner: link.owner || null }); }
         catch (e) { /* nothing to show: the playlist is what the friend came for */ }
       }
       var play = R.playlistUrl(link.spotify_playlist_id);

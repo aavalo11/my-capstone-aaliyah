@@ -216,10 +216,12 @@
     var busy = linkMode ? " disabled" : "";
     box.innerHTML = top + '<div class="card"><ul class="list" id="my-links-list">' + rows.map(function (r) {
       var editing = linkMode && linkMode.code === r.code ? linkMode : null;
-      var head = '<div class="grow"><a class="title" href="#/links/' + esc(r.code) + '">' + esc(r.title) + "</a>" +
-        '<div class="small muted">Made ' + esc(formatDate(r.created_at)) +
-        (r.report && r.report.tracks ? " · " + esc(r.report.tracks.length) + " songs" : "") +
-        (r.updated_at !== r.created_at ? " · renamed " + esc(formatDate(r.updated_at)) : "") + "</div>";
+      // ADR 0028: cover, name, Playlist · owner, like a music app's library row.
+      var owner = (r.report && r.report.owner) || "";
+      var head = window.CrossfadeReport.cover(r.report && r.report.artwork, "row-art") +
+        '<div class="grow"><a class="title" href="#/links/' + esc(r.code) + '">' + esc(r.title) + "</a>" +
+        '<div class="small muted">Playlist' + (owner ? " · " + esc(owner) : "") +
+        " · Made " + esc(formatDate(r.created_at)) + "</div>";
       var err = editing && editing.error ? '<div class="field-error" role="alert">' + esc(editing.error) + "</div>" : "";
 
       if (editing && editing.kind === "rename") {
@@ -235,7 +237,7 @@
           '<div class="link-actions"><button class="btn danger" type="button" data-confirm-delete>Delete</button>' +
           '<button class="btn quiet" type="button" data-cancel>Cancel</button></div></div></li>';
       }
-      return '<li class="row link-row" data-code="' + esc(r.code) + '">' + head + "</div>" +
+      return '<li class="row link-row pl-row" data-code="' + esc(r.code) + '">' + head + "</div>" +
         '<div class="link-actions"><button class="pill" type="button" data-rename' + busy + ">Rename</button>" +
         '<button class="pill warn" type="button" data-delete' + busy + ">Delete</button></div></li>";
     }).join("") + "</ul></div>";
@@ -490,19 +492,13 @@
         var url = recipientUrl(made.code);
         result.innerHTML = (reportHtml || "") + '<div class="card" id="made-link"><a class="title" href="#/links/' + esc(made.code) + '"><strong>' + esc(made.title) + "</strong></a>" +
           '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
-          '<button class="btn quiet" type="button" id="copy-made">Copy link</button> ' +
+          '<button class="btn quiet" type="button" id="share-made"><span aria-hidden="true">↗</span>&nbsp;Share</button> ' +
           '<span class="small muted" id="copy-msg" role="status"></span>' +
           '<div class="notice" style="margin-top:12px"><b>Sample link.</b> It opens on this device only.</div>' +
           (earlier.length ? '<div class="notice" style="margin-top:8px">You already had a link for this playlist (<b>' +
             esc(earlier[0].title) + "</b>). This is a separate one with its own code. Delete either on Home.</div>" : "") +
           "</div>";
-        document.getElementById("copy-made").onclick = function () {
-          var msg = document.getElementById("copy-msg");
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
-              function () { msg.textContent = "Copy the link above instead."; });
-          } else { msg.textContent = "Copy the link above instead."; }
-        };
+        wireShare(document.getElementById("share-made"), document.getElementById("copy-msg"), made.title, url);
         // Create stays off until something is typed, so a double tap can't replace the new link with an error.
         form.reset();
         submit.disabled = true;
@@ -587,21 +583,31 @@
     var hasSongs = !!(report && report.tracks.length);
     view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a>' +
       window.CrossfadeReport.header({ name: link.title, owner: report && report.owner, artwork: report && report.artwork, playUrl: play,
-        extra: hasSongs ? reportSummary(report) : "" }) +
+        share: true, extra: hasSongs ? reportSummary(report) : "",
+        // TODO(W10): real data. Links live in this browser until Phase 10 saves them (ADR 0010).
+        after: '<p class="small muted pl-sub" id="share-msg" role="status">Until Crossfade saves links online, a shared link opens only on this device.</p>' }) +
       '<div class="card">' + (hasSongs
         ? window.CrossfadeReport.list(report.tracks)
         : stateBlock("No songs in this link", "Make a new link to send this playlist with its songs.",
-            '<a class="btn quiet" href="#/create">Make a link</a>')) + "</div>" +
-      '<div class="card"><p class="small" style="margin:0 0 8px">Your friend opens</p>' +
-        '<p class="small" style="margin:0 0 10px"><a id="link-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
-        '<button class="btn quiet" type="button" id="copy-link">Copy link</button> ' +
-        '<span class="small muted" id="copy-msg" role="status"></span></div>';
-    document.getElementById("copy-link").onclick = function () {
-      var msg = document.getElementById("copy-msg");
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () { msg.textContent = "Copied"; },
-          function () { msg.textContent = "Copy the link above instead."; });
-      } else { msg.textContent = "Copy the link above instead."; }
+            '<a class="btn quiet" href="#/create">Make a link</a>')) + "</div>";
+    wireShare(document.getElementById("share-link"), document.getElementById("share-msg"), link.title, url);
+  }
+
+  // ADR 0028: the phone's share sheet with the friend's link, or a copy where there isn't one.
+  // A cancelled share sheet isn't an error, so it says nothing.
+  function wireShare(btn, msg, title, url) {
+    if (!btn) return;
+    btn.onclick = function () {
+      var copy = function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () { msg.textContent = "Link copied. Paste it in a text."; },
+            function () { msg.textContent = "Couldn't copy. The link is " + url; });
+        } else { msg.textContent = "Couldn't copy. The link is " + url; }
+      };
+      if (navigator.share) {
+        navigator.share({ title: title, text: title + " on Crossfade, ready to play in Spotify", url: url })
+          .catch(function (e) { if (!e || e.name !== "AbortError") copy(); });
+      } else copy();
     };
   }
 
@@ -647,9 +653,10 @@
       return;
     }
     box.innerHTML = '<div class="card"><ul class="list" id="received-list">' + rows.map(function (r) {
-      return '<li class="row received-row" data-code="' + esc(r.code) + '"><div class="grow">' +
-        '<a class="title" href="' + esc(recipientUrl(r.code)) + '">' + esc(r.title) + "</a>" +
-        '<div class="small muted">' + (r.sample ? "Sample · " : "") + "Opened " + esc(formatDate(r.opened_at)) + " · " + esc(r.track_count) + " songs</div></div>" +
+      return '<li class="row received-row pl-row" data-code="' + esc(r.code) + '">' + window.CrossfadeReport.cover(r.artwork, "row-art") +
+        '<div class="grow"><a class="title" href="' + esc(recipientUrl(r.code)) + '">' + esc(r.title) + "</a>" +
+        '<div class="small muted">' + (r.sample ? "Sample · " : "Playlist · ") + (r.owner ? esc(r.owner) + " · " : "") +
+        esc(r.track_count) + " songs</div></div>" +
         '<span class="pill ' + (r.matched === r.track_count ? "good" : "warn") + '">Matched ' +
         esc(r.matched) + " of " + esc(r.track_count) + "</span></li>";
     }).join("") + "</ul></div>";
