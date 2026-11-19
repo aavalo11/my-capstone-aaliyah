@@ -1,4 +1,6 @@
-# A friend's link /p/<code> shows p.html with a 200, keeping /p/<code> in the address bar (ADR 0008).
-/p/*  /p.html  200
+# A friend's link /p/<code> shows p.html with a 200, keeping /p/<code> in the address bar
+# (ADR 0008, ADR 0027). The target is /p, not /p.html: Cloudflare Pages answers /p.html
+# with a 308 to /p, which would drop the code.
+/p/*  /p  200
 # A profile link /u/<username> shows u.html the same way (ADR 0020).
-/u/*  /u.html  200
+/u/*  /u  200
