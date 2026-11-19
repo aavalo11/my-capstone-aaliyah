@@ -218,7 +218,7 @@
       var editing = linkMode && linkMode.code === r.code ? linkMode : null;
       // ADR 0028: cover, name, Playlist · owner, like a music app's library row.
       var owner = (r.report && r.report.owner) || "";
-      var head = window.CrossfadeReport.cover(r.report && r.report.artwork, "row-art") +
+      var head = window.CrossfadeReport.playlistCover({ artwork: r.report && r.report.artwork, title: r.title, appleName: r.report && r.report.name }, "row-art") +
         '<div class="grow"><a class="title" href="#/links/' + esc(r.code) + '">' + esc(r.title) + "</a>" +
         '<div class="small muted">Playlist' + (owner ? " · " + esc(owner) : "") +
         " · Made " + esc(formatDate(r.created_at)) + "</div>";
@@ -698,10 +698,11 @@
     var play = report && window.CrossfadeReport.playlistUrl(report.spotify_playlist_id);
     var hasSongs = !!(report && report.tracks.length);
     view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a>' +
-      window.CrossfadeReport.header({ name: link.title, owner: report && report.owner, artwork: report && report.artwork, playUrl: play,
+      window.CrossfadeReport.header({ name: link.title, appleName: report && report.name, owner: report && report.owner, artwork: report && report.artwork, playUrl: play,
         share: true, extra: hasSongs ? reportSummary(report) : "",
-        // TODO(W10): real data. Links live in this browser until Phase 10 saves them (ADR 0010).
-        after: '<p class="small muted pl-sub" id="share-msg" role="status">Until Crossfade saves links online, a shared link opens only on this device.</p>' }) +
+        // Links saved online (ADR 0029) open anywhere. Older ones lived only in this browser (ADR 0010).
+        after: '<p class="small muted pl-sub" id="share-msg" role="status">' + (link.server ? "" :
+          "This link was made before Crossfade saved links online, so it opens only on this device.") + "</p>" }) +
       '<div class="card">' + (hasSongs
         ? window.CrossfadeReport.list(report.tracks)
         : stateBlock("No songs in this link", "Make a new link to send this playlist with its songs.",
@@ -769,7 +770,8 @@
       return;
     }
     box.innerHTML = '<div class="card"><ul class="list" id="received-list">' + rows.map(function (r) {
-      return '<li class="row received-row pl-row" data-code="' + esc(r.code) + '">' + window.CrossfadeReport.cover(r.artwork, "row-art") +
+      return '<li class="row received-row pl-row" data-code="' + esc(r.code) + '">' +
+        window.CrossfadeReport.playlistCover({ artwork: r.artwork, title: r.title, appleName: r.apple_name }, "row-art") +
         '<div class="grow"><a class="title" href="' + esc(recipientUrl(r.code)) + '">' + esc(r.title) + "</a>" +
         '<div class="small muted">' + (r.sample ? "Sample · " : "Playlist · ") + (r.owner ? esc(r.owner) + " · " : "") +
         esc(r.track_count) + " songs</div></div>" +

@@ -106,7 +106,7 @@
     if (given) link.server = true;
     if (report && Array.isArray(report.tracks)) {
       var brief = function (s) { return s ? { id: s.id, title: s.title, artists: s.artists } : null; };
-      link.report = { sample: !!report.sample, matched: report.matched, total: report.total,
+      link.report = { sample: !!report.sample, name: typeof report.name === "string" ? report.name : null, matched: report.matched, total: report.total,
         owner: report.owner || null, artwork: report.artwork || null, spotify_playlist_id: report.spotify_playlist_id || null,
         tracks: report.tracks.map(function (t) {
           return { position: t.position, title: t.title, artist: t.artist, tier: t.tier,
@@ -148,7 +148,8 @@
 
   // Friends' links this browser has opened at p.html (ADR 0018, S17). One row per code,
   // { code, title, track_count, matched, sample, artwork, owner, opened_at }, newest first.
-  // artwork and owner draw the row's cover and Playlist · owner line (ADR 0028).
+  // artwork and owner draw the row's cover and Playlist · owner line (ADR 0028); apple_name
+  // tells a renamed link, which gets a drawn cover (ADR 0030).
   // TODO(W10): real data. Moves to the database with sender sign-in.
   var RECEIVED_KEY = "crossfade-received-v1"; // per account too (ADR 0021)
 
@@ -174,6 +175,7 @@
     rows.push({ code: String(row.code), title: String(row.title || ""), track_count: row.track_count | 0,
       matched: row.matched | 0, sample: !!row.sample,
       artwork: typeof row.artwork === "string" ? row.artwork : null, owner: typeof row.owner === "string" ? row.owner : null,
+      apple_name: typeof row.apple_name === "string" ? row.apple_name : null, // ADR 0030: drawn cover when renamed
       opened_at: new Date().toISOString() });
     try { localStorage.setItem(scoped(RECEIVED_KEY), JSON.stringify(rows)); } catch (e) { throw fail("write-failed"); }
   }

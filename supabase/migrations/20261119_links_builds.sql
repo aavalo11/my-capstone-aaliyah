@@ -86,7 +86,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
   select case when l.id is null then null
     when l.deleted_at is not null then jsonb_build_object('removed', true)
     else jsonb_build_object(
-      'code', l.code, 'name', l.title, 'owner', l.apple_owner, 'artwork_url', l.artwork_url,
+      'code', l.code, 'name', l.title, 'apple_name', l.apple_name, 'owner', l.apple_owner, 'artwork_url', l.artwork_url,
       'spotify_playlist_id', l.spotify_playlist_id, 'created_at', l.created_at,
       'sender', (select p.username from public.profiles p where p.id = l.owner_id),
       'tracks', coalesce((select jsonb_agg(jsonb_build_object(

@@ -22,7 +22,7 @@
     if (mine) {
       if (mine.deleted_at) return Promise.resolve({ removed: true });
       var r = mine.report || { tracks: [] };
-      return Promise.resolve({ local: true, sample: !!r.sample, name: mine.title, owner: r.owner || null, artwork: r.artwork || null,
+      return Promise.resolve({ local: true, sample: !!r.sample, name: mine.title, appleName: r.name || null, owner: r.owner || null, artwork: r.artwork || null,
         spotify_playlist_id: r.spotify_playlist_id || null, tracks: r.tracks });
     }
     if (code !== "sample") {
@@ -30,7 +30,7 @@
         if (!d) return null;
         if (d.removed) return { removed: true };
         if (DEMO === "empty") d.tracks = [];
-        return { name: d.name, owner: d.owner || null, artwork: d.artwork_url || null, sender: d.sender || null,
+        return { name: d.name, appleName: d.apple_name || null, owner: d.owner || null, artwork: d.artwork_url || null, sender: d.sender || null,
           spotify_playlist_id: d.spotify_playlist_id, tracks: window.CrossfadeReport.fromRows(d.tracks, d.sender) };
       });
     }
@@ -74,7 +74,7 @@
       // under Made by me. If this browser won't save, the page still shows the playlist.
       if (!link.local && !DEMO) {
         try { window.CrossfadeReceived.add({ code: CODE, title: link.name, track_count: link.tracks.length, matched: R.matched(link.tracks), sample: !!link.sample,
-          artwork: link.artwork || null, owner: link.owner || null }); }
+          artwork: link.artwork || null, owner: link.owner || null, apple_name: link.appleName || null }); }
         catch (e) { /* nothing to show: the playlist is what the friend came for */ }
       }
       var play = R.playlistUrl(link.spotify_playlist_id);
@@ -83,13 +83,13 @@
       var notice = !link.local && link.sample
         ? '<div class="notice"><b>Sample playlist.</b> These songs and matches are made up.</div>' : "";
       if (!link.tracks.length) {
-        view.innerHTML = notice + R.header({ name: link.name, owner: link.owner, artwork: link.artwork }) +
+        view.innerHTML = notice + R.header({ name: link.name, appleName: link.appleName, owner: link.owner, artwork: link.artwork }) +
           '<div class="card">' + stateBlock("This playlist has no songs", "There's nothing here to play.") + "</div>";
         return;
       }
       // R3: X counts exact and close, counted from the rows so the headline can't disagree with them.
       view.innerHTML = notice +
-        R.header({ name: link.name, owner: link.owner, artwork: link.artwork, playUrl: play,
+        R.header({ name: link.name, appleName: link.appleName, owner: link.owner, artwork: link.artwork, playUrl: play,
           extra: '<p class="muted" id="match-headline">Matched ' + esc(R.matched(link.tracks)) + " of " + esc(R.total(link.tracks)) + "</p>",
           after: play ? '<p class="small muted pl-sub">Nothing is ever added to your library.</p>' : "" }) +
         '<div class="card">' + R.list(link.tracks) + "</div>";

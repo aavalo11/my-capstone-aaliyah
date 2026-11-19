@@ -32,6 +32,38 @@
       : '<span class="' + cls + ' cover-blank" aria-hidden="true"></span>';
   }
 
+  // ADR 0030: two names are the same playlist name if they match ignoring case, spaces and
+  // punctuation, so "gym" and "gym." keep Apple's cover.
+  function sameName(a, b) {
+    var n = function (s) { return String(s || "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, ""); };
+    return n(a) === n(b);
+  }
+
+  // The colours Apple's own cover URL lists (c1–c4 and the text colour tc), as #RRGGBB, or a
+  // palette picked from the title when the URL has none. Only six hex digits ever reach style="".
+  function coverColors(src, title) {
+    var q = {};
+    try { new URL(src).searchParams.forEach(function (v, k) { q[k] = v; }); } catch (e) { /* no URL */ }
+    var hex = function (v) { return /^[0-9A-Fa-f]{6}$/.test(v || "") ? "#" + v : null; };
+    var c = [hex(q.c1), hex(q.c2), hex(q.c3), hex(q.c4)];
+    if (c.every(Boolean)) return { c: c, text: hex(q.tc) || "#FFFFFF" };
+    var PALETTES = [["#F2BC9D", "#FF7F40", "#B37C00", "#400000"], ["#B9D8FF", "#5B7CFA", "#2B2E8C", "#0B0D2E"],
+      ["#FFD6E8", "#F25C9B", "#8C1D5B", "#2E0A1F"], ["#D3F5E4", "#3CC48A", "#1E6B4B", "#06261A"]];
+    var h = 0;
+    String(title || "").split("").forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) >>> 0; });
+    return { c: PALETTES[h % PALETTES.length], text: "#FFFFFF" };
+  }
+
+  // A playlist's cover. p is { artwork, title, appleName }. Renamed links get one drawn here,
+  // with their own title in Apple's colours (ADR 0030); otherwise Apple's image.
+  function playlistCover(p, cls) {
+    if (!p.appleName || !p.title || sameName(p.title, p.appleName)) return cover(p.artwork, cls);
+    var k = coverColors(p.artwork, p.title);
+    var style = "--d1:" + k.c[0] + ";--d2:" + k.c[1] + ";--d3:" + k.c[2] + ";--d4:" + k.c[3] + ";--dt:" + k.text;
+    return '<span class="' + cls + ' cover-drawn" role="img" aria-label="Cover: ' + esc(p.title) + '" style="' + style + '">' +
+      '<span class="cover-title" aria-hidden="true">' + esc(p.title) + "</span></span>";
+  }
+
   // 97960 → "1:37". Null when Apple gave no length.
   function time(ms) {
     if (typeof ms !== "number" || !(ms > 0)) return "";
@@ -73,11 +105,11 @@
       '<ol class="list" id="tracks">' + tracks.map(row).join("") + "</ol>";
   }
 
-  // ADR 0025: the top of a playlist page. p is { name, owner, artwork, playUrl, share, extra, after }.
+  // ADR 0025: the top of a playlist page. p is { name, appleName, owner, artwork, playUrl, share, extra, after }.
   // share: true adds a Share button (#share-link, ADR 0028); the caller wires it.
   // extra (above the buttons) and after (below them) are trusted HTML the caller built.
   function header(p) {
-    return '<header class="pl-head">' + cover(p.artwork, "pl-cover") +
+    return '<header class="pl-head">' + playlistCover({ artwork: p.artwork, title: p.name, appleName: p.appleName }, "pl-cover") +
       '<div class="pl-meta"><h1>' + esc(p.name) + "</h1>" +
       '<p class="muted pl-sub">Playlist transferred with Crossfade</p>' +
       (p.owner ? '<p class="small muted pl-sub" id="pl-owner">Made by ' + esc(p.owner) + " on Apple Music</p>" : "") +
@@ -116,5 +148,5 @@
     return /^[A-Za-z0-9]{22}$/.test(spotifyPlaylistId || "") ? "https://open.spotify.com/playlist/" + spotifyPlaylistId : null;
   }
 
-  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, cover: cover, time: time, matched: matched, total: total, fromRows: fromRows, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
+  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, cover: cover, playlistCover: playlistCover, sameName: sameName, time: time, matched: matched, total: total, fromRows: fromRows, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
 })();

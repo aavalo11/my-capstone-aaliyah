@@ -64,7 +64,7 @@ async function stubServer(ctx) {
     const code = code10();
     const playlist = SAMPLE.spotify_playlist_id || "65q3ybp851nrVfF2WzOZez";
     links.set(code, {
-      code, name: String(b.title || "").trim() || d.name, owner: d.owner, artwork_url: d.artwork, spotify_playlist_id: playlist, sender: "test_sender",
+      code, name: String(b.title || "").trim() || d.name, apple_name: d.name, owner: d.owner, artwork_url: d.artwork, spotify_playlist_id: playlist, sender: "test_sender",
       tracks: tracks.map((t, i) => ({ position: i, source_title: t.title, source_artist: t.artist, tier: t.tier,
         spotify_track_id: t.spotify ? t.spotify.id : null, spotify_title: t.spotify ? t.spotify.title : null, spotify_artists: t.spotify ? t.spotify.artists : null,
         artwork_url: t.artwork, duration_ms: t.duration_ms, near_track_id: t.near ? t.near.id : null,

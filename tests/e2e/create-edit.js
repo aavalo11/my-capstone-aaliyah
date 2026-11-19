@@ -110,6 +110,30 @@ async function matchOnly(p, title) {
   await p.waitForSelector("#build-error");
   check("E9", (await p.textContent("#build-error")) === "Your sign-in ran out. Sign in again, then try once more.", `"${await p.textContent("#build-error")}"`);
 
+  // E10 (ADR 0030): a link named differently from its Apple playlist gets a drawn cover with its
+  // own title; one with the same name keeps Apple's image. A link saved online drops the
+  // "opens only on this device" line.
+  await p.unroute("**/functions/v1/match-playlist");
+  for (const t of ["poot", "70 degrees out"]) {
+    await p.goto(BASE + "/#/create");
+    await p.fill("#title", t); await p.fill("#link", APPLE);
+    await p.click("#create-form button[type=submit]");
+    await p.waitForSelector("#publish"); await p.click("#publish"); await p.waitForSelector("#made-url");
+  }
+  await p.goto(BASE + "/#/playlists/made"); await p.waitForSelector(".link-row");
+  const covers = await p.$$eval(".link-row", (rows) => rows.map((r) => ({
+    title: r.querySelector("a.title").textContent,
+    drawn: (r.querySelector(".cover-drawn .cover-title") || {}).textContent || null,
+    img: !!r.querySelector("img.row-art"),
+  })));
+  const poot = covers.find((c) => c.title === "poot"), same = covers.find((c) => c.title === "70 degrees out");
+  await p.click('.link-row a.title >> text="poot"'); await p.waitForSelector("#tracks");
+  const shareNote = txt(await p.textContent("#share-msg"));
+  const head = await p.$eval(".pl-head .pl-cover", (el) => ({ drawn: el.classList.contains("cover-drawn"), text: el.textContent, style: el.getAttribute("style") || "" }));
+  check("E10", poot && poot.drawn === "poot" && !poot.img && same && same.img && !same.drawn && head.drawn && head.text === "poot" &&
+    /--d1:#[0-9A-Fa-f]{6}/.test(head.style) && shareNote === "",
+    `poot drawn="${poot && poot.drawn}", same-name img=${same && same.img}, page cover drawn=${head.drawn} colours=${/--d1:#/.test(head.style)}, share note="${shareNote}"`);
+
   if (errors.length) check("no page errors", false, errors.join(" | "));
   await browser.close();
   const failed = results.filter((r) => !r).length;

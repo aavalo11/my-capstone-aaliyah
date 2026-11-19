@@ -349,3 +349,18 @@ a.near:hover, a.near:focus-visible { text-decoration: underline; }
 .song-search { margin-top: 18px; }
 .search-row { display: flex; gap: 8px; }
 .search-row input { flex: 1; min-width: 0; }
+
+/* ADR 0030: a renamed link's cover, drawn like Apple's: soft colour fields, title top left. */
+.cover-drawn {
+  display: block; position: relative; overflow: hidden; container-type: inline-size; color: var(--dt);
+  background:
+    radial-gradient(circle at 72% 28%, var(--d1) 0%, transparent 46%),
+    radial-gradient(circle at 30% 70%, var(--d2) 0%, transparent 58%),
+    radial-gradient(circle at 85% 90%, var(--d3) 0%, transparent 50%),
+    linear-gradient(165deg, var(--d4) 0%, var(--d3) 55%, var(--d2) 100%);
+}
+.cover-title {
+  position: absolute; top: 7%; left: 8%; right: 8%;
+  font-weight: 800; font-size: 13cqw; line-height: 1.02; letter-spacing: -.02em;
+  overflow-wrap: anywhere; text-shadow: 0 1px 12px rgb(0 0 0 / .12);
+}
