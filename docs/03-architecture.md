@@ -191,8 +191,10 @@ In Week 9 it becomes this schema, as a Supabase migration.
 | Supabase **publishable** key | Front end: `get_link`, `get_build` | `src/config.js` (public by design) |
 
 `.gitignore` already blocks `*.p8` and `.env`. The Spotify refresh token is obtained
-**once**: I log in as Crossfade's Premium account, approve `playlist-modify-public`, and
-store the result. That's a one-time manual step, not a feature.
+**once**: I log in as Crossfade's Premium account, approve `playlist-modify-public`,
+`playlist-modify-private` and `user-library-modify` (the last for `DELETE /me/library`
+cleanup), and `scripts/spotify-refresh-token.ts` writes the result into `.env`. That's a
+one-time manual step, not a feature.
 
 **Link codes.** 10 characters from 62 (`crypto.getRandomValues`), which is about 59 bits.
 That's too many to guess, and `get_link` only answers for an exact code.
