@@ -21,12 +21,19 @@
     return searchUrl(sp.title || t.title, sp.artists || t.artist);
   }
 
-  // One row. t is { title, artist, tier, spotify: { id, title, artists } | null }.
+  // One row. t is { title, artist, tier, spotify: { id, title, artists } | null,
+  // near: { id, title, artists } | null }.
   function row(t) {
     var head = '<div class="title">' + esc(t.title) + '</div><div class="small muted">' + esc(t.artist) + "</div>";
     if (t.tier === "unmatched" || !t.spotify) {
-      return '<li class="row unmatched" data-tier="unmatched"><div class="grow">' + head +
-        '<div class="small">Not found on Spotify (US)</div></div></li>';
+      // ADR 0026: still unmatched and still left out of the playlist. Spotify's nearest
+      // version is offered as a link the friend can open and save themselves.
+      var near = t.near && /^[A-Za-z0-9]{22}$/.test(t.near.id || "")
+        ? '<a class="near small" href="https://open.spotify.com/track/' + esc(t.near.id) + '" target="_blank" rel="noopener">' +
+          "Spotify has a different version: " + esc(t.near.title) + " · " + esc(t.near.artists) + "</a>"
+        : "";
+      return '<li class="row unmatched" data-tier="unmatched">' +
+        '<div class="grow"><div class="dim">' + head + '<div class="small">Not found on Spotify (US)</div></div>' + near + "</div></li>";
     }
     // ADR 0016: Spotify's version is shown only when its title is written differently.
     // ADR 0022: the whole row is the link to Spotify, with no separate button.

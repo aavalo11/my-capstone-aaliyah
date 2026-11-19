@@ -46,6 +46,9 @@ export type SavedLink = {
     spotify_track_id: string | null;
     spotify_title: string | null;
     spotify_artists: string | null;
+    near_track_id: string | null; // ADR 0026, unmatched rows only
+    near_title: string | null;
+    near_artists: string | null;
   }[];
 };
 
@@ -67,6 +70,7 @@ export type ReportRow = {
   artist: string;
   tier: "exact" | "close" | "unmatched";
   spotify: { id: string; title: string; artists: string } | null;
+  near: { id: string; title: string; artists: string } | null; // ADR 0026
 };
 export type Report = { name: string; matched: number; total: number; tracks: ReportRow[] };
 
@@ -268,6 +272,9 @@ async function pool<T>(items: T[], size: number, fn: (item: T, i: number) => Pro
   await Promise.all(Array.from({ length: Math.min(size, items.length) }, worker));
 }
 
+const brief = (c: { id: string; name: string; artists: { name: string }[] }) =>
+  ({ id: c.id, title: c.name, artists: c.artists.map((a) => a.name).join(", ") });
+
 function toReport(p: ApplePlaylist, results: ReturnType<typeof pickClose>[]): Report {
   const tracks = p.tracks.map((t: AppleTrack, i): ReportRow => {
     const r = results[i];
@@ -276,9 +283,8 @@ function toReport(p: ApplePlaylist, results: ReturnType<typeof pickClose>[]): Re
       title: t.title,
       artist: t.artistName,
       tier: r.tier,
-      spotify: r.tier === "close"
-        ? { id: r.candidate.id, title: r.candidate.name, artists: r.candidate.artists.map((a) => a.name).join(", ") }
-        : null,
+      spotify: r.tier === "close" ? brief(r.candidate) : null,
+      near: r.tier === "unmatched" && r.near ? brief(r.near) : null,
     };
   });
   return { name: p.name, matched: tracks.filter((t) => t.tier !== "unmatched").length, total: tracks.length, tracks };
@@ -301,6 +307,9 @@ function toSaved(code: string, url: string, p: ApplePlaylist, playlistId: string
       spotify_track_id: row.spotify?.id ?? null,
       spotify_title: row.spotify?.title ?? null,
       spotify_artists: row.spotify?.artists ?? null,
+      near_track_id: row.near?.id ?? null,
+      near_title: row.near?.title ?? null,
+      near_artists: row.near?.artists ?? null,
     })),
   };
 }

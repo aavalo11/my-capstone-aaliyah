@@ -88,7 +88,11 @@ test("builds a link from the real 52-track page: playlist, report and saved rows
   assert.deepEqual(saved.tracks[1], {
     position: 1, source_title: "Breathe", source_artist: "Malcolm Todd", isrc: null,
     tier: "unmatched", spotify_track_id: null, spotify_title: null, spotify_artists: null,
+    near_track_id: null, near_title: null, near_artists: null,
   });
+  // ADR 0026: the live-only track is unmatched but offers its (Live) version as a near one.
+  assert.match(report.tracks[6].near.title, /\(Live\)$/);
+  assert.equal(saved.tracks[6].near_title, report.tracks[6].near.title);
   assert.equal(s.db.builds.get("11111111-1111-4111-8111-111111111111").status, "ok");
 });
 

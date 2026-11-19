@@ -35,6 +35,7 @@
         return { sample: true, name: link.name, spotify_playlist_id: link.spotify_playlist_id,
           tracks: link.tracks.slice().sort(function (a, b) { return a.position - b.position; }).map(function (t) {
             return { title: t.source_title, artist: t.source_artist, tier: t.tier,
+              near: t.near_track_id ? { id: t.near_track_id, title: t.near_title, artists: t.near_artists } : null,
               spotify: t.tier === "unmatched" ? null : { id: t.spotify_track_id || null, title: t.spotify_title, artists: t.spotify_artists } };
           }) };
       });

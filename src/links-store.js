@@ -92,7 +92,7 @@
   }
 
   // report is create-link's match report ({ matched, total, tracks }), kept so the link can
-  // show its songs. TODO(W10): real data. Today it's the recorded build (ADR 0015).
+  // show its songs, with each unmatched song's near version (ADR 0026). TODO(W10): real data. Today it's the recorded build (ADR 0015).
   function create(title, appleUrl, report) {
     var rows = load(), taken = {};
     rows.forEach(function (r) { taken[r.code] = true; });
@@ -100,10 +100,11 @@
     var link = { code: newCode(taken), title: cleanTitle(title), apple_url: String(appleUrl).trim(),
       created_at: now, updated_at: now };
     if (report && Array.isArray(report.tracks)) {
+      var brief = function (s) { return s ? { id: s.id, title: s.title, artists: s.artists } : null; };
       link.report = { sample: !!report.sample, matched: report.matched, total: report.total,
         tracks: report.tracks.map(function (t) {
           return { position: t.position, title: t.title, artist: t.artist, tier: t.tier,
-            spotify: t.spotify ? { id: t.spotify.id, title: t.spotify.title, artists: t.spotify.artists } : null };
+            spotify: brief(t.spotify), near: brief(t.near) };
         }) };
     }
     rows.push(link);

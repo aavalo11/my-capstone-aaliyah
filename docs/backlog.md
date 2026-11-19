@@ -1,7 +1,8 @@
 # Lab 3 Backlog — Crossfade
 
 **Status:** draft, provisional pending W02/W03
-**Last updated:** 2026-11-05. S16 (search Spotify to build a playlist) added to the holding
+**Last updated:** 2026-11-19. S7 AC 4 allows a labelled near-version link (ADR 0026).
+Before that, 2026-11-05: S16 (search Spotify to build a playlist) added to the holding
 pen, with a W02/W03 question. Before that, 2026-09-27: S6, S7, S8, the MoSCoW board, and the
 MVP slice were brought in line with `02-prd.md` (§11) and ADR 0006.
 
@@ -237,7 +238,9 @@ retyping it from a screenshot.
 - [ ] **Negative — Given** a track has no equivalent in Spotify, **when** the recipient
   views the playlist, **then** it appears greyed with `Not found on Spotify (US)`. It's
   never silently dropped, and never substituted with a different recording as defined by
-  PRD R2's matching rules.
+  PRD R2's matching rules. If Spotify has a near version, the row may offer it as a link
+  labelled `Spotify has a different version:` with its real title. It opens in Spotify and
+  is never put in the playlist (ADR 0026).
 
 *Changed 2026-09-27:* "connected Apple Music account" became a pasted link, and "connects
 Spotify" was removed (ADR 0006). "At least 90% playable" moved to the PRD §8 match

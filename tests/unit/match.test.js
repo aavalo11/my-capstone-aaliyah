@@ -122,6 +122,45 @@ test("pickClose: a closer length that fails a check never wins", async () => {
   assert.equal(r.candidate.id, "ok");
 });
 
+// --- Near versions for unmatched songs (ADR 0026), from the 2026-11-19 real run ---
+
+test("nearVersion: a '- Radio Edit' label, a longer copy, and an explicit-only copy are offered", async () => {
+  const { pickClose } = await load();
+  const dywc = src({ title: "Don't You Worry Child (feat. John Martin)", primaryArtist: "Swedish House Mafia", durationMs: 212027, explicit: false });
+  const r1 = pickClose(dywc, [
+    cand({ id: "radio", name: "Don't You Worry Child (feat. John Martin) - Radio Edit", artists: [{ name: "Swedish House Mafia" }], duration_ms: 212862, explicit: false }),
+    cand({ id: "long", name: "Don't You Worry Child (feat. John Martin)", artists: [{ name: "Swedish House Mafia" }], duration_ms: 403493, explicit: false }),
+  ]);
+  assert.equal(r1.tier, "unmatched");
+  assert.equal(r1.near.id, "radio", "closest length wins, even over an exact title");
+
+  const people = src({ title: "We Are the People", primaryArtist: "Empire Of The Sun", durationMs: 267373, explicit: false });
+  const r2 = pickClose(people, [cand({ id: "p", name: "We Are The People", artists: [{ name: "Empire Of The Sun" }], duration_ms: 272174, explicit: false })]);
+  assert.equal(r2.tier, "unmatched");
+  assert.equal(r2.near.id, "p");
+
+  const pretend = src({ title: "Time to Pretend", primaryArtist: "MGMT", durationMs: 262853, explicit: false });
+  const r3 = pickClose(pretend, [cand({ id: "x", name: "Time to Pretend", artists: [{ name: "MGMT" }], duration_ms: 261000, explicit: true })]);
+  assert.equal(r3.tier, "unmatched");
+  assert.equal(r3.near.id, "x");
+});
+
+test("Negative: nearVersion never offers another artist, another song, or a word-prefix", async () => {
+  const { pickClose } = await load();
+  const r = pickClose(src({ explicit: false }), [
+    cand({ id: "other-artist", artists: [{ name: "Someone Else" }] }),
+    cand({ id: "other-song", name: "Good Morning" }),
+    cand({ id: "prefix", name: "Good Dayses" }),
+  ]);
+  assert.equal(r.tier, "unmatched");
+  assert.equal(r.near, undefined);
+});
+
+test("a close match never carries a near version", async () => {
+  const { pickClose } = await load();
+  assert.equal(pickClose(src(), [cand()]).near, undefined);
+});
+
 test("pickClose: only the first 10 results are checked", async () => {
   const { pickClose } = await load();
   const bad = Array.from({ length: 10 }, (_, i) => cand({ id: "bad" + i, name: "Other" }));

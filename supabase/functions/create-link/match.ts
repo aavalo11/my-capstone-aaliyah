@@ -20,7 +20,7 @@ export type SpotifyCandidate = {
 
 export type MatchResult =
   | { tier: "close"; candidate: SpotifyCandidate }
-  | { tier: "unmatched"; reason: string };
+  | { tier: "unmatched"; reason: string; near?: SpotifyCandidate }; // near: ADR 0026
 
 // A feature segment's first word must be exactly one of these (after lowercasing).
 const FEATURE_WORDS = new Set(["feat", "feat.", "ft", "ft.", "with"]);
@@ -69,7 +69,27 @@ export function pickClose(source: AppleTrack, candidates: SpotifyCandidate[]): M
     if (gap < bestGap) { best = c; bestGap = gap; } // strict <, so a tie keeps the earlier one
   }
   if (best) return { tier: "close", candidate: best };
-  return { tier: "unmatched", reason: "no candidate passed (" + reasons.join(", ") + ")" };
+  const near = nearVersion(source, checked);
+  return { tier: "unmatched", reason: "no candidate passed (" + reasons.join(", ") + ")", ...(near ? { near } : {}) };
+}
+
+// ADR 0026: for an unmatched song, Spotify's nearest version, shown as a link and never put
+// in the playlist. Same primary artist; normalized title equal to the source's, or starting
+// with it and a space ("… - Radio Edit"). The closest length wins, ties to the earlier one.
+export function nearVersion(source: AppleTrack, candidates: SpotifyCandidate[]): SpotifyCandidate | null {
+  const want = normalizeTitle(source.title);
+  if (want === "") return null;
+  let best: SpotifyCandidate | null = null;
+  let bestGap = Infinity;
+  for (const c of (candidates ?? []).slice(0, CANDIDATES_CHECKED)) {
+    const got = normalizeTitle(c.name);
+    if (got !== want && !got.startsWith(want + " ")) continue;
+    if (!c.artists?.some((a) => sameName(a.name ?? "", source.primaryArtist))) continue;
+    const gap = source.durationMs === null || typeof c.duration_ms !== "number"
+      ? Number.MAX_SAFE_INTEGER : Math.abs(source.durationMs - c.duration_ms);
+    if (gap < bestGap) { best = c; bestGap = gap; }
+  }
+  return best;
 }
 
 // R2 step 2's search for one source track. The format lives in spotify.ts (trackQuery).

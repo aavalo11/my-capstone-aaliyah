@@ -99,14 +99,21 @@ async function createLink(page, title, fx) {
   const rows = await sender.$$eval("#tracks > li", (ls) => ls.map((li) => ({
     title: li.querySelector(".title").textContent.trim(),
     unmatched: li.classList.contains("unmatched"),
-    opacity: Number(getComputedStyle(li.querySelector(".row") || li).opacity),
+    // A miss greys its song details (.dim) but not its near-version link (ADR 0026).
+    opacity: Number(getComputedStyle(li.querySelector(".row") || li.querySelector(".dim") || li).opacity),
     text: li.innerText,
     links: li.querySelectorAll("a").length,
+    nearLinks: [...li.querySelectorAll("a.near")].map((a) => a.textContent),
+    nearHref: li.querySelector("a.near") ? li.querySelector("a.near").href : null,
   })));
   const sourceOrder = FIFTY.report.tracks.map((t) => t.title);
   const inOrder = JSON.stringify(rows.map((r) => r.title)) === JSON.stringify(sourceOrder);
   const misses = rows.filter((r) => r.unmatched);
-  const missesOk = misses.length === 3 && misses.every((r) => r.opacity < 1 && r.links === 0 &&
+  // ADR 0026: a miss may offer Spotify's nearest version as its only link, labelled as different.
+  // It's never in the playlist: Play in Spotify plays only matched songs (unit test create-link R4).
+  const missesOk = misses.length === 3 && misses.every((r) => r.opacity < 1 && r.links === r.nearLinks.length && r.links <= 1 &&
+    r.nearLinks.every((t) => t.startsWith("Spotify has a different version: ")) &&
+    (r.nearHref === null || /^https:\/\/open\.spotify\.com\/track\//.test(r.nearHref)) &&
     r.text.includes("Not found on Spotify (US)") && !r.text.includes("On Spotify:"));
   const hitsNotGrey = rows.filter((r) => !r.unmatched).every((r) => r.opacity === 1);
   check("AC4", rows.length === 50 && inOrder && missesOk && hitsNotGrey,

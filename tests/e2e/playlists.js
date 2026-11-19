@@ -8,6 +8,9 @@ const URL1 = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2j
 const results = [];
 const check = (id, ok, detail) => { results.push(ok); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
 const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
+// Misses in the recorded build that offer a near version (ADR 0026), counted from the file.
+const SAMPLE = JSON.parse(require("node:fs").readFileSync(require("node:path").join(__dirname, "../../src/sample/build-sample.json"), "utf8")).report;
+const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).length;
 
 (async () => {
   const browser = await chromium.launch();
@@ -33,9 +36,11 @@ const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
   await p.waitForSelector("#tracks");
   const rows = await p.$$eval("#tracks li", (l) => l.length);
   const hrefs = await p.$$eval("#tracks li a.song-link", (a) => a.map((x) => x.href)); // ADR 0022: the row is the link
-  const unmatchedLinks = await p.$$eval("#tracks li.unmatched a", (a) => a.length);
-  check("P2", location(p).startsWith("#/links/" + code) && rows === 52 && hrefs.length === 48 && unmatchedLinks === 0,
-    `at ${location(p)}, songs=${rows}, Spotify links=${hrefs.length}, links on misses=${unmatchedLinks}`);
+  // ADR 0026: a miss has no song link, only its "Spotify has a different version" link, if any.
+  const unmatchedLinks = await p.$$eval("#tracks li.unmatched a", (a) => a.map((x) => x.className));
+  check("P2", location(p).startsWith("#/links/" + code) && rows === 52 && hrefs.length === 48 &&
+    unmatchedLinks.length === NEAR && unmatchedLinks.every((c) => c.includes("near")),
+    `at ${location(p)}, songs=${rows}, Spotify links=${hrefs.length}, links on misses=${JSON.stringify(unmatchedLinks)}`);
 
   // P3: matched songs open Spotify like Top songs do; sample ids never become fake track pages.
   check("P3", hrefs.every((h) => h.startsWith("https://open.spotify.com/search/")) &&

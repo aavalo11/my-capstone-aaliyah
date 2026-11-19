@@ -1,7 +1,7 @@
 # Crossfade — Product Requirements
 
 **Status:** v1 for CP-M2 · living spec, revised as the build proceeds
-**Last updated:** 2026-11-19 (R2 closest passing length wins, ADR 0024)
+**Last updated:** 2026-11-19 (R2 closest passing length wins, ADR 0024; R3 near versions, ADR 0026)
 **Owner:** A. Avalo
 **Builds from:** `01-concept-brief.md` (problem, job) · `backlog.md` (stories S1–S11,
 MoSCoW, MVP slice) · `research/interview-01.md` (W01) · `decisions/0002–0006`
@@ -216,7 +216,11 @@ content is identical for both.
     the Apple title, the Spotify title and all its artists, comma-separated, appear beneath
     with no label, so a reader can spot a wrong one. *Changed 2026-11-05 (ADR 0016):* this
     used to be a `Close match` label on every `close` track, which in v1 is every match.
-  - `unmatched` tracks are greyed, with the text `Not found on Spotify (US)`.
+  - `unmatched` tracks are greyed, with the text `Not found on Spotify (US)`. If Spotify
+    has a near version (same primary artist, normalized title equal or followed by more
+    words, closest length of the first 10 results), a link beneath reads `Spotify has a
+    different version: <title> · <artists>` and opens that track. It isn't in the
+    playlist and doesn't count toward X. *Added 2026-11-19 (ADR 0026).*
 - **Negative — Given** 3 of 50 tracks unmatched, **when** the recipient views the page,
   **then** all 50 rows are present. None is dropped and none is shown as playable.
 

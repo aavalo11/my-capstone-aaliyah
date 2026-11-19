@@ -139,14 +139,14 @@ test("create keeps a match report's songs with the link, and rename keeps them",
   const { store, rows } = load();
   const report = { sample: true, matched: 1, total: 2, tracks: [
     { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, extra: "dropped" },
-    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null },
+    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null, near: { id: "n1", title: "Breathe - Live", artists: "Malcolm Todd", extra: "dropped" } },
   ] };
   const made = store.create("70 degrees out", URL1, report);
   store.rename(made.code, "renamed");
   const saved = rows()[0];
   assert.deepEqual(saved.report, { sample: true, matched: 1, total: 2, tracks: [
-    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" } },
-    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null },
+    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, near: null },
+    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null, near: { id: "n1", title: "Breathe - Live", artists: "Malcolm Todd" } },
   ] });
   assert.equal(saved.title, "renamed");
 });
