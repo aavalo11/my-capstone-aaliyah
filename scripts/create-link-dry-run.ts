@@ -1,11 +1,14 @@
-// Runs create-link end to end from the terminal: the REAL Apple share page, a FAKE Spotify
-// and a FAKE database (tests/fakes/). TODO(W10): real data — swap in the real Spotify once
-// the Crossfade account's credentials are in .env.
+// Runs create-link end to end from the terminal: the REAL Apple share page, a FAKE database
+// (tests/fakes/), and a FAKE Spotify unless --real-spotify is passed. TODO(W10): real data —
+// the database is still fake.
 //
 //   node scripts/create-link-dry-run.ts "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D"
 //   node scripts/create-link-dry-run.ts --fixture        the saved page, no network at all
 //   node scripts/create-link-dry-run.ts --fixture --json > src/sample/build-sample.json
 //                                                        the sample Create plays back (ADR 0015)
+//   node --env-file=.env scripts/create-link-dry-run.ts --real-spotify [link]
+//                                                        real searches, and a REAL public playlist
+//                                                        on the Crossfade account (it stays there)
 //
 // The fake catalog holds every song, with a few twists so the report shows unmatched rows:
 // track 2 missing, 7 only as (Live), 9 with the other explicit flag, 14 ten seconds longer.
@@ -13,12 +16,27 @@
 import fs from "node:fs";
 import { fetchPlaylist, readSharePage } from "../supabase/functions/create-link/apple.ts";
 import { createLink, randomCode } from "../supabase/functions/create-link/build.ts";
+import { connectSpotify, type SpotifyPort } from "../supabase/functions/create-link/spotify.ts";
 import { FakeSpotify, catalogFrom } from "../tests/fakes/fake-spotify.mts";
 import { FakeDb } from "../tests/fakes/fake-db.mts";
 
 const args = process.argv.slice(2);
 const useFixture = args.includes("--fixture");
 const asJson = args.includes("--json");
+const realSpotify = args.includes("--real-spotify");
+if (realSpotify && asJson) {
+  console.error("--json writes the FAKE sample Create plays back; don't combine it with --real-spotify.");
+  process.exit(1);
+}
+const env = {
+  clientId: process.env.SPOTIFY_CLIENT_ID ?? "",
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
+  refreshToken: process.env.SPOTIFY_REFRESH_TOKEN ?? "",
+};
+if (realSpotify && (!env.clientId || !env.clientSecret || !env.refreshToken)) {
+  console.error("--real-spotify needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in .env. Run with --env-file=.env.");
+  process.exit(1);
+}
 const say = (...m: unknown[]) => { if (!asJson) console.log(...m); };
 const link = args.find((a) => !a.startsWith("--")) ?? "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D";
 const twists = { 2: "missing", 7: "live-only", 9: "explicit-flip", 14: "long-edit" } as const;
@@ -32,16 +50,17 @@ const readApple = async (url: string) => {
   const p = useFixture
     ? readSharePage(fs.readFileSync(new URL("../tests/fixtures/apple-70-degrees-out.html", import.meta.url), "utf8"), "fixture")
     : await fetchPlaylist(url);
-  spotify = new FakeSpotify(catalogFrom(p.tracks, twists), { searchDelayMs: 30 });
+  if (!realSpotify) spotify = new FakeSpotify(catalogFrom(p.tracks, twists), { searchDelayMs: 30 });
   return p;
 };
 
-say("create-link dry run — Apple is real" + (useFixture ? " (saved page)" : "") + ", Spotify and the database are FAKE\n");
+say("create-link dry run — Apple is real" + (useFixture ? " (saved page)" : "") +
+  (realSpotify ? ", Spotify is REAL (Crossfade account), the database is FAKE\n" : ", Spotify and the database are FAKE\n"));
 const t0 = Date.now();
 const out = await createLink({ link, passcode: "dry-run", build_id: crypto.randomUUID() }, {
   senderPasscode: "dry-run",
   readApple,
-  connectSpotify: () => spotify!.connect(),
+  connectSpotify: (): Promise<SpotifyPort> => realSpotify ? connectSpotify(env) : spotify!.connect(),
   db,
   now: () => Date.now(),
   sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
@@ -73,8 +92,14 @@ if ("error" in out.body) {
   for (const t of report.tracks) {
     const line = String(t.position).padStart(3) + "  " + t.title + " — " + t.artist;
     if (t.tier === "unmatched") console.log(line + "\n       Not found on Spotify (US)");
-    else console.log(line + "\n       Close match: " + t.spotify!.title + " — " + t.spotify!.artists + "  [FAKE " + t.spotify!.id + "]");
+    else console.log(line + "\n       Close match: " + t.spotify!.title + " — " + t.spotify!.artists +
+      (realSpotify ? "  https://open.spotify.com/track/" + t.spotify!.id : "  [FAKE " + t.spotify!.id + "]"));
   }
-  const pl = [...spotify!.playlists.values()][0];
-  if (pl) console.log("\n  FAKE Spotify playlist: \"" + pl.name + "\", " + pl.uris.length + " tracks\n  " + pl.description);
+  if (realSpotify) {
+    const saved = db.links.find((l) => l.code === code);
+    if (saved) console.log("\n  REAL Spotify playlist on the Crossfade account:\n  https://open.spotify.com/playlist/" + saved.spotify_playlist_id);
+  } else {
+    const pl = [...spotify!.playlists.values()][0];
+    if (pl) console.log("\n  FAKE Spotify playlist: \"" + pl.name + "\", " + pl.uris.length + " tracks\n  " + pl.description);
+  }
 }
