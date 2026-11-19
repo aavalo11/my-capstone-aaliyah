@@ -103,5 +103,8 @@
 
   window.CrossfadeAuth = { signIn: signIn, finishSignIn: finishSignIn, current: current, user: function () {
     var s = stored(); return s ? s.user : null;
+  }, token: function () {
+    // The Google session's access token, for Crossfade's server (ADR 0029). The server checks it.
+    var s = stored(); return s ? s.access_token : null;
   }, signOut: signOut, KEY: KEY, DAILY_LIMIT: 10 };
 })();

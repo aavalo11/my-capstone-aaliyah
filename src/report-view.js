@@ -21,9 +21,10 @@
     return searchUrl(sp.title || t.title, sp.artists || t.artist);
   }
 
-  // Only https covers on Apple's image CDN are drawn (ADR 0025). Anything else gets a blank tile.
+  // Only https covers on Apple's image CDN (ADR 0025) or, for a song the sender added,
+  // Spotify's (ADR 0029) are drawn. Anything else gets a blank tile.
   function coverUrl(src) {
-    return /^https:\/\/([a-z0-9-]+\.)*mzstatic\.com\//.test(src || "") ? src : null;
+    return /^https:\/\/(([a-z0-9-]+\.)*mzstatic\.com|i\.scdn\.co)\//.test(src || "") ? src : null;
   }
   function cover(src, cls) {
     var u = coverUrl(src);
@@ -56,12 +57,15 @@
     }
     // ADR 0016: Spotify's version is shown only when its title is written differently.
     // ADR 0022: the whole row is the link to Spotify, with no separate button.
-    var differs = t.spotify.title != null && t.spotify.title !== t.title;
+    var differs = t.tier !== "added" && t.spotify.title != null && t.spotify.title !== t.title;
+    // ADR 0029: a song the sender added on the edit screen, after the Apple songs.
+    var addedBy = t.tier === "added" ? '<div class="small muted" data-added style="margin-top:4px">Added by ' +
+      esc(t.addedBy || "the sender") + "</div>" : "";
     return '<li class="song" data-tier="' + esc(t.tier) + '"><a class="row song-link" href="' + esc(songUrl(t)) +
       '" target="_blank" rel="noopener" aria-label="' + esc(t.title) + ", " + esc(t.artist) + ', open in Spotify">' +
       cover(t.artwork, "row-art") + '<div class="grow">' + head +
       (differs ? '<div class="small muted" data-spotify-version style="margin-top:4px">On Spotify: ' +
-        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + "</div>" + len + "</a></li>";
+        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + addedBy + "</div>" + len + "</a></li>";
   }
 
   function list(tracks) {
@@ -86,8 +90,24 @@
       (p.after || "") + "</div></header>";
   }
 
+  // R3's "Matched X of N" counts the Apple songs only: an added song (ADR 0029) is neither.
   function matched(tracks) {
-    return tracks.filter(function (t) { return t.tier !== "unmatched" && t.spotify; }).length;
+    return tracks.filter(function (t) { return t.tier !== "unmatched" && t.tier !== "added" && t.spotify; }).length;
+  }
+  function total(tracks) {
+    return tracks.filter(function (t) { return t.tier !== "added"; }).length;
+  }
+
+  // get_link's rows (supabase/migrations/20261119_links_builds.sql) in this file's row shape.
+  function fromRows(rows, sender) {
+    return (rows || []).slice().sort(function (a, b) { return a.position - b.position; }).map(function (t) {
+      return {
+        position: t.position + 1, title: t.source_title, artist: t.source_artist, tier: t.tier,
+        artwork: t.artwork_url || null, duration_ms: t.duration_ms || null, addedBy: sender || null,
+        near: t.near_track_id ? { id: t.near_track_id, title: t.near_title, artists: t.near_artists } : null,
+        spotify: t.tier === "unmatched" ? null : { id: t.spotify_track_id || null, title: t.spotify_title, artists: t.spotify_artists },
+      };
+    });
   }
 
   // The playlist itself, once create-link has made a real one (R5). Null until then, so the
@@ -96,5 +116,5 @@
     return /^[A-Za-z0-9]{22}$/.test(spotifyPlaylistId || "") ? "https://open.spotify.com/playlist/" + spotifyPlaylistId : null;
   }
 
-  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, cover: cover, time: time, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
+  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, cover: cover, time: time, matched: matched, total: total, fromRows: fromRows, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
 })();

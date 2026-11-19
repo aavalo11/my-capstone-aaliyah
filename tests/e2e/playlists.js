@@ -3,6 +3,7 @@
 // Run all checks with node tests/e2e/run.js, or: node tests/e2e/playlists.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
 const { signedIn } = require("./signed-in");
+const { finishBuild } = require("./server-stub");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D";
 const results = [];
@@ -26,7 +27,7 @@ const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).lengt
   await p.click("#create-form button[type=submit]");
   const progress = txt(await p.textContent("#build-progress"));
   const disabled = await p.$eval("#create-form button[type=submit]", (b) => b.disabled);
-  await p.waitForSelector("#made-url");
+  await finishBuild(p);
   const headline = txt(await p.textContent("#build-report #match-headline"));
   const code = (await p.textContent("#made-url")).match(/code=(\w+)/)[1];
   check("P1", progress.startsWith("Reading playlist") && disabled && headline === "Matched " + MATCHED + " of " + TOTAL,

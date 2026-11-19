@@ -45,9 +45,11 @@ p { margin: 0 0 .75rem; }
 /* Shell */
 .view {
   padding: 20px 16px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
-  max-width: 1180px;
+  max-width: min(1180px, 100%);
+  box-sizing: border-box;
   margin: 0 auto;
   outline: none;
+  min-width: 0; /* centred in a grid cell it sizes to its content, so cap it at the cell, or a long song row pushes it off screen */
 }
 .nav {
   position: fixed; inset: auto 0 0 0; z-index: 10;
@@ -335,3 +337,15 @@ a.song-link:hover .title, a.song-link:focus-visible .title, a.song-card:hover .t
 a.near { display: block; margin-top: 4px; font-weight: 600; text-decoration: none; }
 a.near:hover, a.near:focus-visible { text-decoration: underline; }
 .row.unmatched > .dim:first-child { display: flex; flex: none; }
+
+/* ADR 0029: the edit screen between matching and Create playlist. */
+.draft-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 14px 0 6px; }
+.draft-actions .btn { min-width: 200px; }
+.edit-row .pill { cursor: pointer; border: 0; font-family: inherit; flex: none; }
+.edit-row .pill:disabled, #song-results .pill:disabled { opacity: .5; cursor: default; }
+#song-results .pill { cursor: pointer; border: 0; font-family: inherit; flex: none; }
+.edit-row.left-out .row-art, .edit-row.left-out .grow, .edit-row.left-out .time { opacity: .45; }
+.edit-row.left-out .title { text-decoration: line-through; }
+.song-search { margin-top: 18px; }
+.search-row { display: flex; gap: 8px; }
+.search-row input { flex: 1; min-width: 0; }

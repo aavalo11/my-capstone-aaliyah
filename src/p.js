@@ -11,7 +11,9 @@
 
   var esc = window.CrossfadeUI.esc, stateBlock = window.CrossfadeUI.stateBlock; // ui.js (ADR 0023)
 
-  // TODO(W10): real data. Replace with POST /rest/v1/rpc/get_link { p_code } (architecture §3).
+  // Where a link comes from, in order: a link made in this browser before Phase 10 (ADR 0010),
+  // then Crossfade's database through get_link (architecture §3, ADR 0029), then the made-up
+  // sample link (code=sample), which stays labelled as made up.
   function fetchLink(code) {
     if (DEMO === "error") return Promise.reject(new Error("demo"));
     // A link made in this browser (ADR 0010), with the songs from its recorded build (ADR 0015).
@@ -22,6 +24,15 @@
       var r = mine.report || { tracks: [] };
       return Promise.resolve({ local: true, sample: !!r.sample, name: mine.title, owner: r.owner || null, artwork: r.artwork || null,
         spotify_playlist_id: r.spotify_playlist_id || null, tracks: r.tracks });
+    }
+    if (code !== "sample") {
+      return window.CrossfadeServer.getLink(code).then(function (d) {
+        if (!d) return null;
+        if (d.removed) return { removed: true };
+        if (DEMO === "empty") d.tracks = [];
+        return { name: d.name, owner: d.owner || null, artwork: d.artwork_url || null, sender: d.sender || null,
+          spotify_playlist_id: d.spotify_playlist_id, tracks: window.CrossfadeReport.fromRows(d.tracks, d.sender) };
+      });
     }
     return fetch("sample/link-sample.json")
       .then(function (res) {
@@ -79,7 +90,7 @@
       // R3: X counts exact and close, counted from the rows so the headline can't disagree with them.
       view.innerHTML = notice +
         R.header({ name: link.name, owner: link.owner, artwork: link.artwork, playUrl: play,
-          extra: '<p class="muted" id="match-headline">Matched ' + esc(R.matched(link.tracks)) + " of " + esc(link.tracks.length) + "</p>",
+          extra: '<p class="muted" id="match-headline">Matched ' + esc(R.matched(link.tracks)) + " of " + esc(R.total(link.tracks)) + "</p>",
           after: play ? '<p class="small muted pl-sub">Nothing is ever added to your library.</p>' : "" }) +
         '<div class="card">' + R.list(link.tracks) + "</div>";
     }).catch(function () {

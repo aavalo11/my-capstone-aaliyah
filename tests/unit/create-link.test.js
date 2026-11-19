@@ -395,6 +395,7 @@ test("publish with no edits makes the same playlist createLink does, named by th
   await s.match();
   const out = await s.publish({ title: "  chilling  " });
   assert.equal(out.http, 200);
+  assert.equal(out.body.spotify_playlist_id, [...s.spotify.playlists.keys()][0], "Create shows Play in Spotify from this");
   const [pl] = [...s.spotify.playlists.values()];
   assert.equal(pl.name, "chilling");
   assert.equal(pl.uris.length, 52);

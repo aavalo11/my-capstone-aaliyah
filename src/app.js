@@ -480,21 +480,31 @@
       }
       // Saves the link on this device (ADR 0010). reportHtml is the build report shown above it.
       var form = e.target;
-      function saveLink(report, reportHtml) {
+      // serverCode: the code Crossfade's database saved the link under (ADR 0029). This browser
+      // keeps a copy so Playlists and Home show it straight away.
+      function saveLink(report, reportHtml, serverCode) {
         var made, earlier = [];
+        var copyFailed = false;
         try {
           earlier = window.CrossfadeLinks.samePlaylist(link);
-          made = window.CrossfadeLinks.create(title, link, report);
+          made = window.CrossfadeLinks.create(title, link, report, serverCode);
         } catch (err) {
-          result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
-          return;
+          // Saved online already (ADR 0029): the link works, only this browser's copy failed.
+          if (!serverCode) {
+            result.innerHTML = '<div class="notice error">' + esc(linkError(err)) + "</div>";
+            return;
+          }
+          copyFailed = true;
+          made = { code: serverCode, title: String(title || "").trim() || report.name, server: true };
         }
         var url = recipientUrl(made.code);
         result.innerHTML = (reportHtml || "") + '<div class="card" id="made-link"><a class="title" href="#/links/' + esc(made.code) + '"><strong>' + esc(made.title) + "</strong></a>" +
           '<p class="small" style="margin:6px 0"><a id="made-url" href="' + esc(url) + '">' + esc(url) + "</a></p>" +
           '<button class="btn quiet" type="button" id="share-made"><span aria-hidden="true">↗</span>&nbsp;Share</button> ' +
           '<span class="small muted" id="copy-msg" role="status"></span>' +
-          '<div class="notice" style="margin-top:12px"><b>Sample link.</b> It opens on this device only.</div>' +
+          (copyFailed ? '<div class="notice" id="copy-failed" style="margin-top:12px">Saved online, so the link works. This browser couldn\'t keep its own copy, so it may not show under Playlists here.</div>' : "") +
+          (made.server ? '<p class="small muted" style="margin:10px 0 0">Your friend opens this on any phone, and plays it in Spotify without signing in.</p>'
+            : '<div class="notice" style="margin-top:12px"><b>Sample link.</b> It opens on this device only.</div>') +
           (earlier.length ? '<div class="notice" style="margin-top:8px">You already had a link for this playlist (<b>' +
             esc(earlier[0].title) + "</b>). This is a separate one with its own code. Delete either on Home.</div>" : "") +
           "</div>";
@@ -505,49 +515,155 @@
         form.oninput = function () { submit.disabled = false; form.oninput = null; };
       }
 
-      // Plays back a recorded create-link run, then saves the link with its songs (ADR 0015).
+      // ADR 0029: match on the server, then the edit screen, then Create playlist.
       submit.disabled = true;
-      playSampleBuild(result).then(function (report) {
+      var token = window.CrossfadeAuth.token();
+      var buildId = crypto.randomUUID();
+      var progress = showProgress(result, token, buildId);
+      window.CrossfadeServer.match(token, link, buildId).then(function (m) {
+        progress.stop();
         submit.disabled = false;
-        saveLink(report, buildReport(report));
-      }, function () {
+        editDraft(result, m, title, function (pub) {
+          saveLink(Object.assign({}, pub.report, { spotify_playlist_id: pub.spotify_playlist_id }), buildReport(pub.report), pub.code);
+        });
+      }, function (err) {
+        progress.stop();
         submit.disabled = false;
-        result.innerHTML = '<div class="notice error">Something failed on Crossfade\'s side. Nothing was sent. Try again.</div>';
+        result.innerHTML = '<div class="notice error" id="build-error" role="alert">' + esc(serverError(err)) + "</div>";
       });
     };
   }
 
-  // ---------- recorded build (ADR 0015) ----------
-  // TODO(W10): real data. Plays back src/sample/build-sample.json: Apple's tracks are real,
-  // the Spotify matches are FAKE. Progress wording is PRD R1's. Resolves with the report.
-  function playSampleBuild(box) {
-    var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  // What to tell the sender when a server call fails. The server's own wording comes first:
+  // it already names whose side failed (PRD R1).
+  function serverError(err) {
+    if (err && err.name === "signed-out") return "Your sign-in ran out. Sign in again, then try once more.";
+    if (err && err.message && err.name !== "network" && err.name !== "not-configured") return err.message;
+    return "Couldn't reach Crossfade. Check your connection and try again. Nothing was sent.";
+  }
+
+  // PRD R1's progress lines while the server matches, read from get_build every second.
+  function showProgress(box, token, buildId) {
+    var stopped = false, timer = null;
     var line = function (text) {
-      box.innerHTML = '<div class="card" id="build-progress" role="status" aria-live="polite">' +
-        "<strong>" + esc(text) + "</strong></div>";
+      box.innerHTML = '<div class="card" id="build-progress" role="status" aria-live="polite"><strong>' + esc(text) + "</strong></div>";
     };
     line("Reading playlist…");
-    return Promise.all([fetchJSON("sample/build-sample.json", 8000), wait(700)]).then(function (r) {
-      var report = r[0].report, total = report.total, k = 0;
-      var step = function () {
-        line("Matching " + k + " of " + total + "…");
-        if (k >= total) return wait(250);
-        k = Math.min(total, k + 4);
-        return wait(90).then(step);
-      };
-      return step().then(function () {
-        return { sample: true, name: report.name, owner: report.owner || null, artwork: report.artwork || null,
-          spotify_playlist_id: report.spotify_playlist_id || null,
-          matched: report.matched, total: report.total, tracks: report.tracks };
+    var tick = function () {
+      if (stopped) return;
+      window.CrossfadeServer.getBuild(token, buildId).then(function (b) {
+        if (!stopped && b && b.total > 0 && b.status === "running") line("Matching " + b.done + " of " + b.total + "…");
+      }, function () { /* the match call reports failures; a missed progress read isn't one */ })
+        .then(function () { if (!stopped) timer = setTimeout(tick, 1000); });
+    };
+    timer = setTimeout(tick, 800);
+    return { stop: function () { stopped = true; clearTimeout(timer); } };
+  }
+
+  // ADR 0029: the report, editable. Leave songs out, search Spotify to add some, then
+  // Create playlist. Nothing reaches Spotify until that tap. onPublished gets publish-link's answer.
+  function editDraft(box, m, title, onPublished) {
+    var R = window.CrossfadeReport, draft = m.report, token = window.CrossfadeAuth.token();
+    var removed = {}, added = [], found = null, searchNote = "", draftError = "", busy = false, lastQuery = "";
+
+    function kept() {
+      return draft.tracks.filter(function (t) { return !removed[t.position]; }).concat(added.map(function (s) {
+        return { tier: "added", title: s.title, artist: s.artists, spotify: { id: s.id, title: s.title, artists: s.artists },
+          artwork: s.artwork, duration_ms: s.duration_ms, addedBy: "you" };
+      }));
+    }
+    function goingIn() { return kept().filter(function (t) { return t.spotify; }).length; }
+
+    function songRow(t, action, label, note, off) {
+      return '<li class="row edit-row' + (off ? " left-out" : "") + '">' + R.cover(t.artwork, "row-art") +
+        '<div class="grow"><div class="title">' + esc(t.title) + '</div><div class="small muted">' + esc(t.artist) + "</div>" +
+        (note ? '<div class="small' + (off ? "" : " muted") + '">' + note + "</div>" : "") + "</div>" +
+        '<span class="time small muted">' + esc(R.time(t.duration_ms)) + "</span>" +
+        '<button class="pill" type="button" ' + action + ">" + esc(label) + "</button></li>";
+    }
+
+    function render() {
+      var list = kept(), n = goingIn();
+      var rows = draft.tracks.map(function (t) {
+        var off = !!removed[t.position];
+        var note = off ? "Left out" : t.tier === "unmatched" ? "Not found on Spotify (US)" + (t.near ? " · Spotify has " + esc(t.near.title) : "")
+          : t.spotify && t.spotify.title !== t.title ? "On Spotify: " + esc(t.spotify.title) + " · " + esc(t.spotify.artists) : "";
+        return songRow(t, 'data-toggle="' + esc(t.position) + '"', off ? "Put back" : "Remove", note, off);
+      }).join("");
+      var addedRows = added.map(function (s, i) {
+        return songRow({ title: s.title, artist: s.artists, artwork: s.artwork, duration_ms: s.duration_ms }, 'data-unadd="' + i + '"', "Remove", "Added by you", false);
+      }).join("");
+      var results = found ? (found.length ? '<ul class="list" id="song-results">' + found.map(function (s, i) {
+        var have = added.some(function (a) { return a.id === s.id; });
+        return '<li class="row">' + R.cover(s.artwork, "row-art") + '<div class="grow"><div class="title">' + esc(s.title) +
+          '</div><div class="small muted">' + esc(s.artists) + (s.explicit ? " · Explicit" : "") + "</div></div>" +
+          '<span class="time small muted">' + esc(R.time(s.duration_ms)) + "</span>" +
+          '<button class="pill" type="button" data-add="' + i + '"' + (have ? " disabled" : "") + ">" + (have ? "Added" : "+ Add") + "</button></li>";
+      }).join("") + "</ul>" : '<p class="small muted" id="song-results">No songs found for that.</p>') : "";
+
+      box.innerHTML = '<div class="card" id="build-report">' + reportSummary({ tracks: list }) +
+        '<div class="draft-actions"><button class="btn" type="button" id="publish"' + (n === 0 || busy ? " disabled" : "") + ">" +
+          (busy ? "Creating playlist…" : "Create playlist") + "</button>" +
+          '<span class="small muted" id="draft-count">' + n + (n === 1 ? " song goes" : " songs go") + " in the playlist</span></div>" +
+        '<div class="field-error" id="draft-error" role="alert">' + esc(draftError) + "</div>" +
+        (m.publishable ? "" : '<p class="small">None of these songs were found on Spotify (US). Add songs below to make a playlist anyway.</p>') +
+        '<p class="small muted">Tap Remove to leave a song out, or search to add one. Nothing reaches Spotify until you tap Create playlist.</p>' +
+        // Search sits above the list, so adding a song doesn't mean scrolling past every song.
+        '<form id="song-search" class="song-search" role="search"><label for="song-q">Add a song from Spotify</label>' +
+          '<div class="search-row"><input id="song-q" type="search" autocomplete="off" placeholder="Song or artist" value="' + esc(lastQuery) + '">' +
+          '<button class="btn quiet" type="submit">Search</button></div>' +
+          '<div class="field-error" id="search-error" role="alert">' + esc(searchNote) + "</div></form>" + results +
+        (added.length ? '<h3 class="small" style="margin:14px 0 4px">Songs you added</h3><ol class="list" id="added-tracks">' + addedRows + "</ol>" : "") +
+        '<details open><summary class="small">All ' + esc(draft.tracks.length) + " songs from Apple Music</summary>" +
+          '<ol class="list" id="draft-tracks">' + rows + "</ol></details>" +
+        "</div>";
+      wire();
+    }
+
+    function wire() {
+      box.querySelectorAll("[data-toggle]").forEach(function (b) {
+        b.onclick = function () { var p = Number(b.getAttribute("data-toggle")); removed[p] = !removed[p]; draftError = ""; render(); };
       });
-    });
+      box.querySelectorAll("[data-unadd]").forEach(function (b) {
+        b.onclick = function () { added.splice(Number(b.getAttribute("data-unadd")), 1); render(); };
+      });
+      box.querySelectorAll("[data-add]").forEach(function (b) {
+        b.onclick = function () {
+          var s = found[Number(b.getAttribute("data-add"))];
+          if (added.length >= 50) { searchNote = "You can add up to 50 songs."; render(); return; }
+          if (!added.some(function (a) { return a.id === s.id; })) added.push(s);
+          draftError = ""; render();
+        };
+      });
+      document.getElementById("song-search").onsubmit = function (e) {
+        e.preventDefault();
+        var q = document.getElementById("song-q").value.trim();
+        lastQuery = q;
+        if (!q) { searchNote = "Type a song or an artist to search."; found = null; render(); return; }
+        searchNote = "Searching…"; render();
+        window.CrossfadeServer.search(token, q).then(function (r) {
+          found = (r && r.songs) || []; searchNote = ""; render();
+          var q2 = document.getElementById("song-q"); if (q2) q2.focus();
+        }, function (err) { found = null; searchNote = serverError(err); render(); });
+      };
+      document.getElementById("publish").onclick = function () {
+        if (busy) return;
+        busy = true; draftError = ""; render();
+        var remove = Object.keys(removed).filter(function (k) { return removed[k]; }).map(Number);
+        window.CrossfadeServer.publish(token, m.build_id, title, remove, added.map(function (s) { return s.id; })).then(function (pub) {
+          busy = false; onPublished(pub);
+        }, function (err) { busy = false; draftError = serverError(err); render(); });
+      };
+    }
+
+    render();
   }
 
   // PRD R3: the headline, the misses by name, then every song (report-view.js).
   function reportSummary(report) {
     var R = window.CrossfadeReport;
     var missing = report.tracks.filter(function (t) { return t.tier === "unmatched"; });
-    return '<h2 style="margin:0" id="match-headline">Matched ' + esc(R.matched(report.tracks)) + " of " + esc(report.tracks.length) + "</h2>" +
+    return '<h2 style="margin:0" id="match-headline">Matched ' + esc(R.matched(report.tracks)) + " of " + esc(R.total(report.tracks)) + "</h2>" +
       (missing.length ? '<p class="small muted" style="margin:4px 0 8px">Not on Spotify: ' +
         missing.map(function (t) { return esc(t.title); }).join(", ") + "</p>" : "");
   }

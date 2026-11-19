@@ -2,6 +2,7 @@
 // or this file alone against a running server: node tests/e2e/link-crud-fixes.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
 const { signedIn } = require("./signed-in");
+const { finishBuild } = require("./server-stub");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const URL1 = "https://music.apple.com/us/playlist/late-train-home/pl.u-8aAVZ";
 const results = [];
@@ -29,7 +30,8 @@ async function friendText(page, code) {
 }
 const row = (code) => `.link-row[data-code="${code}"]`;
 // Create plays back a recorded build before saving (ADR 0015). Field errors skip it.
-const built = (page) => page.waitForFunction(() => !document.querySelector("#build-progress"));
+// Create matches, then the sender taps Create playlist (ADR 0029).
+const built = (page) => finishBuild(page);
 
 (async () => {
   const browser = await chromium.launch();
@@ -147,13 +149,16 @@ const built = (page) => page.waitForFunction(() => !document.querySelector("#bui
   const d3 = txt(await p.textContent("#my-links"));
   check("F-D3", d3.startsWith("That link was already deleted"), `second tab shows "${d3.slice(0, 60)}…"`);
 
-  // R-4 corrupted data: Create says why
+  // R-4 corrupted data: the link is saved online anyway (ADR 0029), and Create says this
+  // browser couldn't keep its copy, instead of claiming nothing was saved.
   await p.evaluate(() => localStorage.setItem("crossfade-links-v1:test-user", "{not json"));
   await fill(p, "after corruption", URL1);
   await p.click("#create-form button[type=submit]");
   await built(p);
   const r4 = txt(await p.textContent("#create-result"));
-  check("F-R4", r4 === "Couldn't read the links saved on this device, so nothing was saved.", `"${r4}"`);
+  const r4url = await p.$("#made-url");
+  check("F-R4", !!r4url && r4.includes("Saved online, so the link works. This browser couldn't keep its own copy"),
+    `link shown=${!!r4url}, note="${r4.slice(r4.indexOf("Saved online"), r4.indexOf("Saved online") + 60)}"`);
 
   await browser.close();
   const failed = results.filter((r) => !r).length;

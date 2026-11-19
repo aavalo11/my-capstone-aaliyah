@@ -94,12 +94,16 @@
   // report is create-link's match report ({ matched, total, tracks }), kept so the link can
   // show its songs, with the cover, owner, playlist, and each song's cover, length and near
   // version (ADR 0025, ADR 0026). TODO(W10): real data. Today it's the recorded build (ADR 0015).
-  function create(title, appleUrl, report) {
+  // code: the server's code when Crossfade's database already saved the link (ADR 0029), so
+  // this copy and the friend's page agree. Without one, a new code is made here.
+  function create(title, appleUrl, report, code) {
     var rows = load(), taken = {};
     rows.forEach(function (r) { taken[r.code] = true; });
     var now = new Date().toISOString();
-    var link = { code: newCode(taken), title: cleanTitle(title), apple_url: String(appleUrl).trim(),
+    var given = typeof code === "string" && /^[A-Za-z0-9]{10}$/.test(code) && !taken[code] ? code : null;
+    var link = { code: given || newCode(taken), title: cleanTitle(title), apple_url: String(appleUrl).trim(),
       created_at: now, updated_at: now };
+    if (given) link.server = true;
     if (report && Array.isArray(report.tracks)) {
       var brief = function (s) { return s ? { id: s.id, title: s.title, artists: s.artists } : null; };
       link.report = { sample: !!report.sample, matched: report.matched, total: report.total,

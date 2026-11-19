@@ -6,13 +6,20 @@
 -- only call the functions at the bottom, and each one returns or changes just what it should.
 --
 -- This REPLACES the shell `links` table from supabase/schema.sql (two sample rows, nothing
--- real), because its columns don't match the real ones.
+-- real), because its columns don't match the real ones. Only that old shape is dropped:
+-- running this file again keeps every real link (2026-11-19: a second run had wiped them).
 
-drop table if exists public.link_tracks;
-drop table if exists public.links cascade;
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'links' and column_name = 'apple_url') then
+    drop table if exists public.link_tracks;
+    drop table public.links cascade;
+  end if;
+end $$;
 
 -- One row per Crossfade link a signed-in sender has published.
-create table public.links (
+create table if not exists public.links (
   id bigint generated always as identity primary key,
   code text not null unique,
   owner_id uuid not null references auth.users (id) on delete cascade,
@@ -32,10 +39,10 @@ create table public.links (
   constraint links_track_count check (track_count between 1 and 200),
   constraint links_matched_count check (matched_count between 0 and track_count)
 );
-create index links_owner on public.links (owner_id, created_at desc);
+create index if not exists links_owner on public.links (owner_id, created_at desc);
 
 -- Every song on a link, in the order the friend sees it.
-create table public.link_tracks (
+create table if not exists public.link_tracks (
   link_id bigint not null references public.links (id) on delete cascade,
   position int not null,                     -- 0-based
   source_title text not null,

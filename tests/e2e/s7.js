@@ -6,6 +6,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 const { signedIn } = require("./signed-in");
+const { stubServer, setReport } = require("./server-stub");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const APPLE = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D";
 const results = [];
@@ -23,10 +24,11 @@ const TWENTY_FIVE = fixture(recorded.tracks.slice(0, 25));
 const FIFTY = fixture(recorded.tracks.filter((t) => t.title !== "Feel So Close (Radio Edit)").slice(0, 50));
 const FIFTY_MISSES = FIFTY.report.tracks.filter((t) => t.tier === "unmatched").map((t) => t.title);
 
-// Fills in Create and taps Create link, with the build file swapped for `fx`.
+// Fills in Create and taps Create link, with the FAKE server matching `fx` (server-stub.js),
+// then taps Create playlist without editing (ADR 0029).
 // Returns what was on screen while it built, the time to the link, and the link.
 async function createLink(page, title, fx) {
-  await page.route("**/sample/build-sample.json", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(fx) }));
+  setReport(fx.report);
   await page.goto(BASE + "/#/create");
   await page.fill("#title", title); await page.fill("#link", APPLE);
   // Every line the progress box shows, recorded as it changes.
@@ -41,10 +43,13 @@ async function createLink(page, title, fx) {
   const started = Date.now();
   await page.click("#create-form button[type=submit]");
   let url = null;
-  try { await page.waitForSelector("#made-url", { timeout: 15000 }); url = await page.textContent("#made-url"); } catch (e) { /* no link in 15 s */ }
+  try {
+    await page.click("#publish", { timeout: 15000 });
+    await page.waitForSelector("#made-url", { timeout: 15000 }); url = await page.textContent("#made-url");
+  } catch (e) { /* no link in 15 s */ }
   const ms = Date.now() - started;
   const progress = await page.evaluate(() => window.__progress);
-  await page.unroute("**/sample/build-sample.json");
+  setReport(null);
   return { url, ms, progress };
 }
 
@@ -66,14 +71,15 @@ async function createLink(page, title, fx) {
   // Play in Spotify: playback within 3 taps of opening the text, never asked to log in.
   // Tap 1 opens the link. Tap 2 must be Play in Spotify, pointing at the playlist, so Spotify's own
   // play is tap 3 at most. That last tap happens inside Spotify, which no browser check can see.
-  const friendCtx = await browser.newContext(); // no session, no saved data: someone else's phone
+  const friendCtx = await stubServer(await browser.newContext()); // no session, no saved data: someone else's phone
   const friend = await friendCtx.newPage();
   const asked = [];
   friend.on("request", (r) => { if (/accounts\.google|\/auth\/v1\//.test(r.url())) asked.push(r.url()); });
   await friend.goto(a1.url || BASE + "/p.html?code=missing");
   await friend.waitForFunction(() => !/Loading…/.test(document.getElementById("view").innerText));
   const friendText = txt(await friend.textContent("#view"));
-  const play = await friend.$$eval("a", (as) => as.filter((a) => a.textContent.trim() === "Play in Spotify").map((a) => a.href));
+  // The button reads "▶ Play in Spotify" since ADR 0025; the ▶ is decoration (aria-hidden).
+  const play = await friend.$$eval("a", (as) => as.filter((a) => /^\W*Play in Spotify$/.test(a.textContent.trim())).map((a) => a.href));
   const loginAsked = asked.length > 0 || /sign in|log in/i.test(friendText);
   check("AC2", play.length === 1 && /^https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]{22}$/.test(play[0]) && !loginAsked,
     `Play in Spotify=${JSON.stringify(play)}, asked to log in=${loginAsked}, friend sees "${friendText.slice(0, 60)}"`);

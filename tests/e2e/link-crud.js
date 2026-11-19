@@ -2,6 +2,7 @@
 // or this file alone against a running server: node tests/e2e/link-crud.js http://127.0.0.1:8000
 const { chromium } = require("playwright");
 const { signedIn } = require("./signed-in");
+const { finishBuild } = require("./server-stub");
 const BASE = process.argv[2] || "http://127.0.0.1:8000";
 const results = [];
 const check = (id, ok, detail) => { results.push([id, ok]); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
@@ -14,8 +15,8 @@ async function create(page, title, link) {
   await page.fill("#title", title);
   await page.fill("#link", link);
   await page.click("#create-form button[type=submit]");
-  // Create plays back a recorded build before saving (ADR 0015). Field errors skip it.
-  await page.waitForFunction(() => !document.querySelector("#build-progress"));
+  // Create matches, then the sender taps Create playlist (ADR 0029). Field errors skip both.
+  await finishBuild(page);
 }
 async function myLinks(page) {
   await page.goto("about:blank");

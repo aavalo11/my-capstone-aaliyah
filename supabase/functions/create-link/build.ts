@@ -113,7 +113,7 @@ export type Report = {
 
 export type Outcome<B> = { http: 200; body: B } | { http: number; body: { error: string } };
 export type MatchOutcome = Outcome<{ build_id: string; report: Report; publishable: boolean }>;
-export type PublishOutcome = Outcome<{ code: string; report: Report }>;
+export type PublishOutcome = Outcome<{ code: string; report: Report; spotify_playlist_id: string }>;
 export type LinkOutcome = Outcome<{ code: string | null; report: Report }>;
 export type SongResult = { id: string; title: string; artists: string; artwork: string | null; duration_ms: number | null; explicit: boolean };
 export type SearchOutcome = Outcome<{ songs: SongResult[] }>;
@@ -366,7 +366,7 @@ export async function publishLink(
   }
   await progress("ok");
   deps.log("built", { build_id: buildId, matched: report.matched, added: added.length, removed: removed.size, ms: deps.now() - started });
-  return { http: 200, body: { code, report } };
+  return { http: 200, body: { code, report, spotify_playlist_id: playlistId } };
 }
 
 // ---------- createLink: match, then publish with no edits ----------
@@ -379,7 +379,8 @@ export async function createLink(input: { link?: unknown; build_id?: unknown; ti
     await deps.db.updateBuild(m.body.build_id, { status: "failed" }).catch(() => {});
     return { http: 200, body: { code: null, report: m.body.report } };
   }
-  return publishLink({ build_id: m.body.build_id, title: input.title }, deps);
+  const p = await publishLink({ build_id: m.body.build_id, title: input.title }, deps);
+  return p.http === 200 && "code" in p.body ? { http: 200, body: { code: p.body.code, report: p.body.report } } : p as LinkOutcome;
 }
 
 // ---------- helpers ----------
