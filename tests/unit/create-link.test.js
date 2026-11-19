@@ -1,4 +1,5 @@
-// Unit tests for supabase/functions/create-link/build.ts, architecture §2 steps 1–9.
+// Unit tests for supabase/functions/create-link/build.ts, architecture §2 steps 1–9, split into
+// matchPlaylist, searchSongs and publishLink (ADR 0029). createLink is match then publish.
 // Apple is the saved real share page; Spotify and the database are FAKES (tests/fakes/).
 // No network, no secrets.
 const { test } = require("node:test");
@@ -8,7 +9,12 @@ const path = require("node:path");
 
 const FIXTURE = fs.readFileSync(path.join(__dirname, "../fixtures/apple-70-degrees-out.html"), "utf8");
 const LINK = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D";
-const PASS = "correct horse";
+const USER = "test-user";
+const BUILD = "11111111-1111-4111-8111-111111111111";
+// A song only the edit screen adds: real-shaped id (22 characters), Spotify CDN art.
+const EXTRA = { id: "7yNf9YjeO5JXUE3JEBgnYc", uri: "spotify:track:7yNf9YjeO5JXUE3JEBgnYc", name: "Kill Bill",
+  artists: [{ name: "SZA" }], duration_ms: 153946, explicit: true,
+  album: { images: [{ url: "https://i.scdn.co/image/640", width: 640 }, { url: "https://i.scdn.co/image/300", width: 300 }, { url: "https://evil.example/64", width: 64 }] } };
 const T0 = Date.parse("2026-11-05T12:00:00Z");
 
 async function setup(opts = {}) {
@@ -21,14 +27,15 @@ async function setup(opts = {}) {
   const spotify = new FakeSpotify(opts.catalog ?? catalogFrom(playlist.tracks, opts.twists ?? {}), {
     failures: opts.failures, searchDelayMs: opts.searchDelayMs,
   });
-  const db = new FakeDb(opts.seedBuildTimes);
+  const db = new FakeDb(opts.seedBuildTimes, opts.seedOwner);
   Object.assign(db.fail, opts.dbFail ?? {});
   let clock = T0;
   const slept = [];
   const logs = [];
   const appleCalls = [];
+  db.now = () => clock;
   const deps = {
-    senderPasscode: "senderPasscode" in opts ? opts.senderPasscode : PASS,
+    userId: "userId" in opts ? opts.userId : USER,
     readApple: async (url) => {
       appleCalls.push(url);
       if (opts.appleError) throw new apple.AppleError(opts.appleError);
@@ -42,8 +49,11 @@ async function setup(opts = {}) {
     newBuildId: () => "00000000-0000-4000-8000-000000000000",
     log: (event, data) => logs.push({ event, data }),
   };
-  const run = (input = {}) => build.createLink({ link: LINK, passcode: PASS, build_id: "11111111-1111-4111-8111-111111111111", ...input }, deps);
-  return { build, apple, spotify, db, deps, run, slept, logs, appleCalls, playlist, advance: (ms) => { clock += ms; } };
+  const run = (input = {}) => build.createLink({ link: LINK, build_id: BUILD, ...input }, deps);
+  const match = (input = {}) => build.matchPlaylist({ link: LINK, build_id: BUILD, ...input }, deps);
+  const publish = (input = {}) => build.publishLink({ build_id: BUILD, ...input }, deps);
+  const search = (q) => build.searchSongs({ q }, deps);
+  return { build, apple, spotify, db, deps, run, match, publish, search, slept, logs, appleCalls, playlist, advance: (ms) => { clock += ms; } };
 }
 
 const noOutsideCalls = (s) => {
@@ -162,34 +172,17 @@ test("the same link twice makes two links and two playlists (no de-duplication)"
   assert.equal(s.spotify.playlists.size, 2);
 });
 
-// --- Step 1: passcode ---
+// --- Step 1: signed in (ADR 0019, 0029) ---
 
-test("Negative: a wrong or empty passcode is rejected before any call or row", async () => {
-  for (const passcode of ["wrong", "", undefined, "correct horse ", "Correct horse"]) {
-    const s = await setup();
-    const out = await s.run({ passcode });
-    assert.deepEqual(out, { http: 401, body: { error: "Wrong passcode." } }, String(passcode));
+test("Negative: signed out is rejected before any call or row, on match, search and publish", async () => {
+  for (const userId of [null, undefined, ""]) {
+    const s = await setup({ userId });
+    assert.deepEqual(await s.run(), { http: 401, body: { error: "Sign in to make a link." } }, String(userId));
+    assert.deepEqual(await s.search("SZA"), { http: 401, body: { error: "Sign in to make a link." } });
+    assert.deepEqual(await s.publish(), { http: 401, body: { error: "Sign in to make a link." } });
     noOutsideCalls(s);
-    assert.equal(s.db.builds.size, 0, "a wrong passcode must not count toward the rate limit");
+    assert.equal(s.db.builds.size, 0, "signed out must not count toward the rate limit");
   }
-});
-
-test("Negative: an unset SENDER_PASSCODE fails on Crossfade's side, even for an empty passcode", async () => {
-  for (const senderPasscode of [undefined, ""]) {
-    const s = await setup({ senderPasscode });
-    const out = await s.run({ passcode: "" });
-    assert.equal(out.http, 500);
-    assert.equal(out.body.error, "Something failed on Crossfade's side. Nothing was sent. Try again.");
-    noOutsideCalls(s);
-  }
-});
-
-test("the passcode never reaches the logs", async () => {
-  const s = await setup({ failures: [{ method: "addTracks", status: 500 }] });
-  await s.run();
-  await s.run({ passcode: "a-wrong-guess" });
-  const text = JSON.stringify(s.logs);
-  assert.ok(!text.includes(PASS) && !text.includes("a-wrong-guess"));
 });
 
 // --- Step 2: link format ---
@@ -365,11 +358,207 @@ test("a missing or malformed build_id gets a fresh one instead of failing", asyn
   assert.ok(s.db.builds.has("00000000-0000-4000-8000-000000000000"));
 });
 
-test("samePasscode: equal strings match, anything else doesn't", async () => {
-  const { build } = await setup();
-  assert.equal(await build.samePasscode("abc", "abc"), true);
-  assert.equal(await build.samePasscode("abd", "abc"), false);
-  assert.equal(await build.samePasscode("", "abc"), false);
-  assert.equal(await build.samePasscode(undefined, "abc"), false);
-  assert.equal(await build.samePasscode({ toString: () => "abc" }, "abc"), true); // String() of an object; JSON bodies can't send one
+// --- ADR 0029: match, edit, publish ---
+
+const ERR = {
+  gone: "That match isn't here anymore. Paste the link again.",
+  expired: "That match is over an hour old. Paste the link again.",
+  made: "You already made a link from this match.",
+  edit: "Those changes didn't add up. Reload the page and try again.",
+  empty: "There are no songs left to put in the playlist.",
+  daily: "You've made 10 links today. You can make more tomorrow.",
+};
+const withExtra = async (opts = {}) => {
+  const s0 = await setup();
+  const { catalogFrom } = await import("../fakes/fake-spotify.mts");
+  return setup({ catalog: [...catalogFrom(s0.playlist.tracks, opts.twists ?? {}), EXTRA], ...opts });
+};
+
+test("match saves a draft and touches nothing on Spotify", async () => {
+  const s = await setup({ twists: { 2: "missing" } });
+  const out = await s.match();
+  assert.equal(out.http, 200);
+  assert.equal(out.body.build_id, BUILD);
+  assert.equal(out.body.publishable, true);
+  assert.equal(out.body.report.matched, 51);
+  const b = s.db.builds.get(BUILD);
+  assert.equal(b.status, "matched");
+  assert.equal(b.owner_id, USER);
+  assert.deepEqual(b.draft.report, out.body.report);
+  assert.equal(b.draft.source_url, LINK);
+  assert.equal(s.spotify.count("createPlaylist") + s.spotify.count("addTracks"), 0);
+  assert.equal(s.db.links.length, 0);
+});
+
+test("publish with no edits makes the same playlist createLink does, named by the sender", async () => {
+  const s = await setup();
+  await s.match();
+  const out = await s.publish({ title: "  chilling  " });
+  assert.equal(out.http, 200);
+  const [pl] = [...s.spotify.playlists.values()];
+  assert.equal(pl.name, "chilling");
+  assert.equal(pl.uris.length, 52);
+  const [saved] = s.db.links;
+  assert.equal(saved.title, "chilling");
+  assert.equal(saved.name, "70 degrees out");
+  assert.equal(saved.owner_id, USER);
+  assert.equal(s.db.builds.get(BUILD).status, "ok");
+});
+
+test("a blank title falls back to the Apple playlist's name", async () => {
+  const s = await setup();
+  await s.match();
+  await s.publish({ title: "   " });
+  assert.equal(s.db.links[0].title, "70 degrees out");
+});
+
+test("removed songs leave the playlist and the link; Matched X of N counts what's left", async () => {
+  const s = await setup({ twists: { 2: "missing" } });
+  await s.match();
+  const out = await s.publish({ remove: [1, 2, 5] }); // 2 was a miss
+  assert.equal(out.http, 200);
+  const r = out.body.report;
+  assert.equal(r.total, 49);
+  assert.equal(r.matched, 49);
+  assert.ok(!r.tracks.some((t) => [1, 2, 5].includes(t.position)));
+  const [pl] = [...s.spotify.playlists.values()];
+  assert.equal(pl.uris.length, 49);
+  assert.ok(!pl.uris.includes("spotify:track:fake-1") && !pl.uris.includes("spotify:track:fake-5"));
+  assert.deepEqual(s.db.links[0].tracks.map((t) => t.position), Array.from({ length: 49 }, (_, i) => i));
+});
+
+test("an added song is checked with Spotify and goes after the rest, tier added, with Spotify's cover", async () => {
+  const s = await withExtra();
+  await s.match();
+  const out = await s.publish({ add: [EXTRA.id] });
+  assert.equal(out.http, 200);
+  assert.deepEqual(s.spotify.calls.filter((c) => c.method === "getTrack").map((c) => c.args[0]), [EXTRA.id]);
+  const last = out.body.report.tracks.at(-1);
+  assert.deepEqual({ tier: last.tier, title: last.title, artist: last.artist, position: last.position, artwork: last.artwork },
+    { tier: "added", title: "Kill Bill", artist: "SZA", position: 53, artwork: "https://i.scdn.co/image/300" });
+  assert.equal(out.body.report.total, 52, "an added song isn't one of the Apple rows");
+  const [pl] = [...s.spotify.playlists.values()];
+  assert.equal(pl.uris.at(-1), EXTRA.uri);
+  assert.equal(s.db.links[0].matched_count, 53);
+  assert.equal(s.db.links[0].tracks.at(-1).tier, "added");
+});
+
+test("zero matched can still be published once the sender adds a song", async () => {
+  const s = await setup({ catalog: [EXTRA] });
+  const m = await s.match();
+  assert.equal(m.body.publishable, false);
+  assert.equal(s.db.builds.get(BUILD).status, "matched");
+  const out = await s.publish({ add: [EXTRA.id] });
+  assert.equal(out.http, 200);
+  assert.equal([...s.spotify.playlists.values()][0].uris.length, 1);
+});
+
+test("Negative: removing every song fails with nothing on Spotify", async () => {
+  const s = await setup();
+  await s.match();
+  const out = await s.publish({ remove: Array.from({ length: 52 }, (_, i) => i + 1) });
+  assert.deepEqual(out, { http: 422, body: { error: ERR.empty } });
+  assert.equal(s.spotify.count("createPlaylist"), 0);
+});
+
+test("Negative: edits that don't make sense are refused before Spotify is called", async () => {
+  for (const edit of [
+    { remove: [99] }, { remove: [1.5] }, { remove: ["1"] }, { remove: "1" },
+    { add: ["fake-1"] }, { add: ["x".repeat(22) + "<"] }, { add: "abc" }, { add: Array(51).fill(EXTRA.id) },
+  ]) {
+    const s = await setup();
+    await s.match();
+    const before = s.spotify.calls.length;
+    assert.deepEqual(await s.publish(edit), { http: 400, body: { error: ERR.edit } }, JSON.stringify(edit).slice(0, 40));
+    assert.ok(s.spotify.calls.slice(before).every((c) => c.method === "connect"), "no Spotify call but the token");
+    assert.equal(s.db.links.length, 0);
+  }
+});
+
+test("Negative: an added id Spotify doesn't have is refused, nothing made", async () => {
+  const s = await setup();
+  await s.match();
+  assert.deepEqual(await s.publish({ add: ["0000000000000000000000"] }), { http: 400, body: { error: ERR.edit } });
+  assert.equal(s.spotify.count("createPlaylist"), 0);
+});
+
+test("Negative: another sender's draft, a missing one, or a bad id is not found", async () => {
+  const s = await setup();
+  await s.match();
+  s.deps.userId = "someone-else";
+  assert.deepEqual(await s.publish(), { http: 404, body: { error: ERR.gone } });
+  s.deps.userId = USER;
+  assert.deepEqual(await s.publish({ build_id: "99999999-9999-4999-8999-999999999999" }), { http: 404, body: { error: ERR.gone } });
+  assert.deepEqual(await s.publish({ build_id: "not-a-uuid" }), { http: 404, body: { error: ERR.gone } });
+  assert.equal(s.spotify.count("createPlaylist"), 0);
+});
+
+test("Negative: a draft over an hour old has expired", async () => {
+  const s = await setup();
+  await s.match();
+  s.advance(60 * 60 * 1000 + 1);
+  assert.deepEqual(await s.publish(), { http: 410, body: { error: ERR.expired } });
+  assert.equal(s.spotify.count("createPlaylist"), 0);
+});
+
+test("Negative: a draft can be published once", async () => {
+  const s = await setup();
+  await s.match();
+  assert.equal((await s.publish()).http, 200);
+  assert.deepEqual(await s.publish(), { http: 409, body: { error: ERR.made } });
+  assert.equal(s.spotify.playlists.size, 1);
+});
+
+test("Negative: a failed match (Apple said no) can't be published", async () => {
+  const s = await setup({ appleError: "not-shared" });
+  await s.match();
+  assert.deepEqual(await s.publish(), { http: 404, body: { error: ERR.gone } });
+});
+
+test("a failed Spotify write leaves the draft matched, so Try again can publish it", async () => {
+  const s = await setup({ failures: [{ method: "createPlaylist", status: 500 }] });
+  await s.match();
+  assert.equal((await s.publish()).http, 502);
+  assert.equal(s.db.builds.get(BUILD).status, "matched");
+  assert.equal((await s.publish()).http, 200);
+});
+
+test("Negative: the 11th link in a day is refused (ADR 0019); links from yesterday don't count", async () => {
+  const s = await setup();
+  for (let i = 0; i < 10; i++) {
+    const id = "aaaaaaaa-aaaa-4aaa-8aaa-" + String(i).padStart(12, "0");
+    await s.match({ build_id: id });
+    assert.equal((await s.publish({ build_id: id })).http, 200, "link " + (i + 1));
+    s.advance(6 * 60 * 1000); // stay under 20 builds an hour
+  }
+  await s.match();
+  assert.deepEqual(await s.publish(), { http: 429, body: { error: ERR.daily } });
+  s.advance(24 * 60 * 60 * 1000);
+  await s.match({ build_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" });
+  assert.equal((await s.publish({ build_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" })).http, 200);
+});
+
+test("the hourly rate limit counts only this sender's builds", async () => {
+  const s = await setup({ seedOwner: "someone-else", seedBuildTimes: Array.from({ length: 20 }, (_, i) => T0 - i * 60_000) });
+  assert.equal((await s.match()).http, 200);
+});
+
+// --- ADR 0029: search ---
+
+test("search returns up to 10 songs with Spotify CDN covers only", async () => {
+  const s = await withExtra();
+  const out = await s.search("  kill bill ");
+  assert.equal(out.http, 200);
+  assert.deepEqual(out.body.songs, [{ id: EXTRA.id, title: "Kill Bill", artists: "SZA", artwork: "https://i.scdn.co/image/300", duration_ms: 153946, explicit: true }]);
+  assert.deepEqual(s.spotify.calls.find((c) => c.method === "searchAny").args, ["kill bill"]);
+  const many = await s.search("a");
+  assert.ok(many.body.songs.length <= 10);
+});
+
+test("Negative: a blank search is refused without calling Spotify; a Spotify failure says so", async () => {
+  const s = await setup();
+  assert.deepEqual(await s.search("   "), { http: 400, body: { error: "Type a song or an artist to search." } });
+  assert.equal(s.spotify.calls.length, 0);
+  const f = await setup({ failures: [{ method: "searchAny", status: 500 }] });
+  assert.deepEqual(await f.search("SZA"), { http: 502, body: { error: "Something failed on Spotify's side. Nothing was sent. Try again." } });
 });

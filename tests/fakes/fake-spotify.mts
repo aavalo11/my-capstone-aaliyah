@@ -103,6 +103,19 @@ export class FakeSpotify {
           this.inFlight--;
         }
       },
+      searchAny: async (q) => {
+        this.calls.push({ method: "searchAny", args: [q] });
+        this.maybeFail("searchAny");
+        const want = q.toLowerCase();
+        return this.catalog.filter((c) => (c.name + " " + c.artists.map((a) => a.name).join(" ")).toLowerCase().includes(want)).slice(0, 10);
+      },
+      getTrack: async (id) => {
+        this.calls.push({ method: "getTrack", args: [id] });
+        this.maybeFail("getTrack");
+        const c = this.catalog.find((x) => x.id === id);
+        if (!c) throw new SpotifyError(404, { error: { status: 404, message: "fake: no such track" } });
+        return c;
+      },
       createPlaylist: async (name, description) => {
         this.calls.push({ method: "createPlaylist", args: [name, description] });
         this.maybeFail("createPlaylist");

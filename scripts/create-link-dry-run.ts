@@ -56,8 +56,8 @@ const readApple = async (url: string) => {
 say("create-link dry run — Apple is real" + (useFixture ? " (saved page)" : "") +
   (realSpotify ? ", Spotify is REAL (Crossfade account), the database is FAKE\n" : ", Spotify and the database are FAKE\n"));
 const t0 = Date.now();
-const out = await createLink({ link, passcode: "dry-run", build_id: crypto.randomUUID() }, {
-  senderPasscode: "dry-run",
+const out = await createLink({ link, build_id: crypto.randomUUID() }, {
+  userId: "dry-run-sender", // stands in for a signed-in sender (ADR 0029)
   readApple,
   connectSpotify: (): Promise<SpotifyPort> => realSpotify ? connectSpotify(env) : spotify!.connect(),
   db,

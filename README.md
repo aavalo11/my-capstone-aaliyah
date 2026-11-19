@@ -39,7 +39,8 @@ probably paused (see *Things that went wrong* below).
 public by design and already in `src/config.js`. The `.env` is only for the terminal
 scripts in `scripts/`. `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` come from the
 Crossfade Spotify developer app (developer.spotify.com → Dashboard → the app → Settings).
-`SPOTIFY_REFRESH_TOKEN` and `SENDER_PASSCODE` aren't used by anything yet.
+`SPOTIFY_REFRESH_TOKEN` comes from `scripts/spotify-refresh-token.ts`. The three Spotify
+values are also set as Supabase secrets for the Edge Functions (ADR 0029).
 `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` can be copied from `src/config.js`. There's
 no login, so there's nothing to sign in to (backlog S14).
 

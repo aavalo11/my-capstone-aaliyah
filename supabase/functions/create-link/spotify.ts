@@ -114,6 +114,11 @@ export async function addItems(accessToken: string, playlistId: string, uris: st
   }
 }
 
+// ADR 0029: one track by id, to check a song the sender added on the edit screen.
+export function getTrack(accessToken: string, id: string): Promise<unknown> {
+  return call(API + "/tracks/" + encodeURIComponent(id) + "?market=US", { headers: { Authorization: "Bearer " + accessToken } });
+}
+
 // R1 cleanup: remove a playlist from Crossfade's library, Spotify's only form of delete.
 export async function removePlaylist(accessToken: string, playlistId: string): Promise<void> {
   const uris = encodeURIComponent("spotify:playlist:" + playlistId);
@@ -123,9 +128,12 @@ export async function removePlaylist(accessToken: string, playlistId: string): P
 // The shape build.ts uses. One user token per build: a fresh one each time (§6).
 export type SpotifyCandidateRaw = {
   id: string; uri: string; name: string; artists: { name: string }[]; duration_ms: number; explicit: boolean;
+  album?: { images?: { url: string; width?: number | null }[] };
 };
 export type SpotifyPort = {
   search(title: string, artist: string): Promise<SpotifyCandidateRaw[]>;
+  searchAny(q: string): Promise<SpotifyCandidateRaw[]>; // ADR 0029: the edit screen's free search
+  getTrack(id: string): Promise<SpotifyCandidateRaw>; // ADR 0029: checks an added song
   createPlaylist(name: string, description: string): Promise<{ id: string }>;
   addTracks(playlistId: string, uris: string[]): Promise<void>;
   removePlaylist(playlistId: string): Promise<void>;
@@ -138,6 +146,11 @@ export async function connectSpotify(env: { clientId: string; clientSecret: stri
       const body = await searchTrack(t, title, artist) as { tracks?: { items?: SpotifyCandidateRaw[] } };
       return body.tracks?.items ?? [];
     },
+    async searchAny(q) {
+      const body = await searchTrack(t, "", "", { q }) as { tracks?: { items?: SpotifyCandidateRaw[] } };
+      return body.tracks?.items ?? [];
+    },
+    getTrack: async (id) => (await getTrack(t, id)) as SpotifyCandidateRaw,
     createPlaylist: (name, description) => createPlaylist(t, name, description),
     addTracks: (id, uris) => addItems(t, id, uris),
     removePlaylist: (id) => removePlaylist(t, id),

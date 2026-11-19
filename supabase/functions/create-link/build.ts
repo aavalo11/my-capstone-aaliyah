@@ -1,42 +1,70 @@
-// create-link, steps 1–9 (architecture §2), with every outside service passed in. The
-// Edge Function hands it the real Apple reader, Spotify and database; tests and
-// scripts/create-link-dry-run.ts hand it fakes. Nothing here reads env vars or calls fetch.
+// create-link (architecture §2), split in three for ADR 0029, with every outside service
+// passed in. The Edge Functions hand these the real Apple reader, Spotify and database; tests
+// and scripts/create-link-dry-run.ts hand them fakes. Nothing here reads env vars or calls fetch.
+//
+//   matchPlaylist  R1 steps 2–7: Apple, then R2 matching. Saves a draft. Nothing on Spotify.
+//   searchSongs    the edit screen's Spotify search, for songs to add.
+//   publishLink    the sender's edits applied to the draft, then R4's playlist and the link.
+//   createLink     match, then publish with no edits (the dry run, and most tests).
 
 import { AppleError, MAX_TRACKS, parseAppleLink, type ApplePlaylist, type AppleTrack } from "./apple.ts";
-import { closeQuery, pickClose, type SpotifyCandidate } from "./match.ts";
-import { SpotifyError, type SpotifyPort } from "./spotify.ts";
+import { pickClose, type SpotifyCandidate } from "./match.ts";
+import { SpotifyError, type SpotifyCandidateRaw, type SpotifyPort } from "./spotify.ts";
 
-export const RATE_LIMIT = 20; // builds per rolling hour (R6)
+export const RATE_LIMIT = 20; // builds per account per rolling hour (R6)
 export const HOUR_MS = 60 * 60 * 1000;
+export const DAY_MS = 24 * HOUR_MS;
+export const DAILY_LINKS = 10; // links per account per rolling day (ADR 0019)
+export const DRAFT_TTL_MS = HOUR_MS; // a draft older than this can't be published (ADR 0029)
+export const MAX_ADDED = 50; // songs the sender can add to one draft
 export const SEARCHES_AT_ONCE = 5; // architecture §2, "Speed"
 export const GIVE_UP_AFTER_MS = 120_000; // a retry wait that would pass this fails instead
 export const NAME_MAX = 100; // code points (architecture §5)
 
 export const MSG = {
-  wrongPasscode: "Wrong passcode.",
+  signIn: "Sign in to make a link.",
   notPlaylist: "That isn't an Apple Music playlist link.",
   notUs: "Crossfade only handles US Apple Music links.",
   notShared: "Apple Music wouldn't share this playlist. Check that it's shared by link.",
   empty: "This playlist is empty.",
   tooMany: "This playlist has more than 100 tracks. Crossfade handles up to 100.",
   rateLimited: (min: number) => "Crossfade is rate-limited. Try again in " + min + (min === 1 ? " minute." : " minutes."),
+  dailyLimit: "You've made " + DAILY_LINKS + " links today. You can make more tomorrow.",
+  draftGone: "That match isn't here anymore. Paste the link again.",
+  draftExpired: "That match is over an hour old. Paste the link again.",
+  alreadyMade: "You already made a link from this match.",
+  badEdit: "Those changes didn't add up. Reload the page and try again.",
+  nothingLeft: "There are no songs left to put in the playlist.",
+  badSearch: "Type a song or an artist to search.",
   failed: (side: "Apple Music" | "Spotify" | "Crossfade") => "Something failed on " + side + "'s side. Nothing was sent. Try again.",
 };
 
+export type BuildStatus = "running" | "matched" | "ok" | "failed";
+
+// What matchPlaylist saves and publishLink reads back (builds.draft, ADR 0029).
+export type Draft = { source_url: string; report: Report };
+
 export type Db = {
-  buildTimesSince(sinceMs: number): Promise<number[]>; // created_at of each build, any order
-  insertBuild(id: string, createdAtMs: number, total: number): Promise<void>;
-  updateBuild(id: string, fields: { done?: number; total?: number; status?: "running" | "ok" | "failed" }): Promise<void>;
-  saveLink(link: SavedLink): Promise<void>; // links + link_tracks in one transaction
+  buildTimesSince(ownerId: string, sinceMs: number): Promise<number[]>; // created_at of each build, any order
+  insertBuild(id: string, ownerId: string, createdAtMs: number, total: number): Promise<void>;
+  updateBuild(id: string, fields: { done?: number; total?: number; status?: BuildStatus }): Promise<void>;
+  saveDraft(id: string, draft: Draft): Promise<void>; // and status = matched
+  getBuild(id: string): Promise<{ owner_id: string | null; created_at: number; status: BuildStatus; draft: Draft | null } | null>;
+  linksSince(ownerId: string, sinceMs: number): Promise<number>;
+  saveLink(link: SavedLink): Promise<void>; // links + link_tracks; nothing half-saved
 };
+
+export type Tier = "exact" | "close" | "unmatched" | "added";
 
 export type SavedLink = {
   code: string;
+  owner_id: string;
+  title: string; // the sender's name for it
   source_url: string;
-  name: string;
+  name: string; // the Apple playlist's name
   spotify_playlist_id: string;
-  track_count: number;
-  matched_count: number;
+  track_count: number; // rows on the link
+  matched_count: number; // rows in the Spotify playlist
   owner: string | null; // Apple display name (ADR 0025)
   artwork_url: string | null;
   tracks: {
@@ -44,7 +72,7 @@ export type SavedLink = {
     source_title: string;
     source_artist: string;
     isrc: null; // always null in v1 (ADR 0012)
-    tier: "exact" | "close" | "unmatched";
+    tier: Tier;
     spotify_track_id: string | null;
     spotify_title: string | null;
     spotify_artists: string | null;
@@ -57,7 +85,7 @@ export type SavedLink = {
 };
 
 export type Deps = {
-  senderPasscode: string | undefined; // SENDER_PASSCODE
+  userId: string | null; // the signed-in sender, from their Google session (ADR 0019, 0029)
   readApple(link: string): Promise<ApplePlaylist>;
   connectSpotify(): Promise<SpotifyPort>;
   db: Db;
@@ -65,14 +93,14 @@ export type Deps = {
   sleep(ms: number): Promise<void>;
   randomCode(): string;
   newBuildId(): string;
-  log(event: string, data?: Record<string, unknown>): void; // never given the passcode
+  log(event: string, data?: Record<string, unknown>): void;
 };
 
 export type ReportRow = {
-  position: number; // 1-based, as shown
+  position: number; // 1-based, as shown; an added song continues after the Apple rows
   title: string;
   artist: string;
-  tier: "exact" | "close" | "unmatched";
+  tier: Tier;
   spotify: { id: string; title: string; artists: string } | null;
   artwork: string | null; // ADR 0025
   duration_ms: number | null;
@@ -83,27 +111,16 @@ export type Report = {
   matched: number; total: number; tracks: ReportRow[];
 };
 
-export type Outcome =
-  | { http: 200; body: { code: string; report: Report } }
-  | { http: 200; body: { code: null; report: Report } } // zero matched: report, no link (R1)
-  | { http: number; body: { error: string } };
+export type Outcome<B> = { http: 200; body: B } | { http: number; body: { error: string } };
+export type MatchOutcome = Outcome<{ build_id: string; report: Report; publishable: boolean }>;
+export type PublishOutcome = Outcome<{ code: string; report: Report }>;
+export type LinkOutcome = Outcome<{ code: string | null; report: Report }>;
+export type SongResult = { id: string; title: string; artists: string; artwork: string | null; duration_ms: number | null; explicit: boolean };
+export type SearchOutcome = Outcome<{ songs: SongResult[] }>;
 
-const fail = (http: number, error: string): Outcome => ({ http, body: { error } });
+const fail = (http: number, error: string) => ({ http, body: { error } });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// Step 1: compare SHA-256 digests byte by byte, so the time taken doesn't depend on how
-// much of the passcode was right.
-export async function samePasscode(given: unknown, expected: string): Promise<boolean> {
-  const enc = new TextEncoder();
-  const [a, b] = await Promise.all([
-    crypto.subtle.digest("SHA-256", enc.encode(String(given ?? ""))),
-    crypto.subtle.digest("SHA-256", enc.encode(expected)),
-  ]);
-  const x = new Uint8Array(a), y = new Uint8Array(b);
-  let diff = 0;
-  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
-  return diff === 0;
-}
+const TRACK_ID = /^[A-Za-z0-9]{22}$/;
 
 // 10 characters from [A-Za-z0-9], with rejection sampling so every character is equally likely.
 export function randomCode(): string {
@@ -122,18 +139,23 @@ export function playlistName(appleName: string): string {
   return name.trim() === "" ? "Untitled playlist" : name;
 }
 
+// The sender's name for the link and its Spotify playlist, or the Apple name when it's blank.
+function linkTitle(given: unknown, appleName: string): string {
+  const t = Array.from(String(given ?? "").trim()).slice(0, NAME_MAX).join("");
+  return t === "" ? playlistName(appleName) : t;
+}
+
 const describe = (matched: number, total: number) =>
   "Rebuilt from Apple Music by Crossfade. " + matched + " of " + total + " tracks matched.";
 
-export async function createLink(input: { link?: unknown; passcode?: unknown; build_id?: unknown }, deps: Deps): Promise<Outcome> {
+// ---------- matchPlaylist: R1 steps 2–7 ----------
+
+export async function matchPlaylist(input: { link?: unknown; build_id?: unknown }, deps: Deps): Promise<MatchOutcome> {
   const started = deps.now();
 
-  // 1. Passcode. An unset SENDER_PASSCODE is a server mistake, never "no passcode needed".
-  if (!deps.senderPasscode) {
-    deps.log("config", { missing: "SENDER_PASSCODE" });
-    return fail(500, MSG.failed("Crossfade"));
-  }
-  if (!(await samePasscode(input.passcode, deps.senderPasscode))) return fail(401, MSG.wrongPasscode);
+  // 1. Signed in. The Edge Function has already checked the session; no user, no build.
+  const owner = deps.userId;
+  if (!owner) return fail(401, MSG.signIn);
 
   // 2. Link format.
   let source: { id: string; url: string };
@@ -147,13 +169,13 @@ export async function createLink(input: { link?: unknown; passcode?: unknown; bu
   // 3–4. Rate limit, then the builds row. From here on the build counts (R6).
   const buildId = typeof input.build_id === "string" && UUID.test(input.build_id) ? input.build_id : deps.newBuildId();
   try {
-    const times = (await deps.db.buildTimesSince(started - HOUR_MS)).sort((a, b) => a - b);
+    const times = (await deps.db.buildTimesSince(owner, started - HOUR_MS)).sort((a, b) => a - b);
     if (times.length >= RATE_LIMIT) {
       // The window drops below the limit when the (n − 19)th oldest build turns an hour old.
       const freesAt = times[times.length - RATE_LIMIT] + HOUR_MS;
       return fail(429, MSG.rateLimited(Math.max(1, Math.ceil((freesAt - started) / 60_000))));
     }
-    await deps.db.insertBuild(buildId, started, 0);
+    await deps.db.insertBuild(buildId, owner, started, 0);
   } catch (e) {
     deps.log("db", { step: "rate-limit", error: String(e) });
     return fail(500, MSG.failed("Crossfade"));
@@ -161,7 +183,7 @@ export async function createLink(input: { link?: unknown; passcode?: unknown; bu
 
   const progress = (fields: Parameters<Db["updateBuild"]>[1]) =>
     deps.db.updateBuild(buildId, fields).catch((e) => deps.log("db", { step: "progress", error: String(e) }));
-  const stop = async (out: Outcome) => { await progress({ status: "failed" }); return out; };
+  const stop = async <T>(out: T) => { await progress({ status: "failed" }); return out; };
 
   // 5. Apple.
   let playlist: ApplePlaylist;
@@ -207,21 +229,114 @@ export async function createLink(input: { link?: unknown; passcode?: unknown; bu
 
   const report = toReport(playlist, results);
 
-  // 7. Zero matched: show the report, create nothing, issue no link.
-  if (report.matched === 0) {
-    await progress({ status: "failed" });
-    return { http: 200, body: { code: null, report } };
+  // 7. Save the draft. Zero matched can still be published if the sender adds songs, so the
+  // draft is kept either way; `publishable` tells Create whether one tap is enough.
+  try {
+    await deps.db.saveDraft(buildId, { source_url: source.url, report });
+  } catch (e) {
+    deps.log("db", { step: "draft", error: String(e) });
+    return stop(fail(500, MSG.failed("Crossfade")));
+  }
+  deps.log("matched", { build_id: buildId, matched: report.matched, total, ms: deps.now() - started });
+  return { http: 200, body: { build_id: buildId, report, publishable: report.matched > 0 } };
+}
+
+// ---------- searchSongs: the edit screen (ADR 0029) ----------
+
+export async function searchSongs(input: { q?: unknown }, deps: Pick<Deps, "userId" | "connectSpotify" | "log">): Promise<SearchOutcome> {
+  if (!deps.userId) return fail(401, MSG.signIn);
+  const q = String(input.q ?? "").trim().slice(0, 100);
+  if (q === "") return fail(400, MSG.badSearch);
+  try {
+    const spotify = await deps.connectSpotify();
+    const found = await spotify.searchAny(q);
+    return { http: 200, body: { songs: found.slice(0, 10).map(toSong) } };
+  } catch (e) {
+    deps.log("spotify", { step: "search-songs", ...spotifyInfo(e) });
+    if (!(e instanceof SpotifyError)) throw e;
+    return fail(502, MSG.failed("Spotify"));
+  }
+}
+
+// ---------- publishLink: R1 steps 8–9 with the sender's edits ----------
+
+export async function publishLink(
+  input: { build_id?: unknown; title?: unknown; remove?: unknown; add?: unknown },
+  deps: Deps,
+): Promise<PublishOutcome> {
+  const started = deps.now();
+  const owner = deps.userId;
+  if (!owner) return fail(401, MSG.signIn);
+
+  // The edits have to make sense before anything is looked up.
+  const remove = Array.isArray(input.remove ?? []) ? (input.remove ?? []) as unknown[] : null;
+  const add = Array.isArray(input.add ?? []) ? (input.add ?? []) as unknown[] : null;
+  if (!remove || !add || add.length > MAX_ADDED || !add.every((id) => typeof id === "string" && TRACK_ID.test(id)) ||
+      !remove.every((p) => Number.isInteger(p))) {
+    return fail(400, MSG.badEdit);
+  }
+  if (typeof input.build_id !== "string" || !UUID.test(input.build_id)) return fail(404, MSG.draftGone);
+  const buildId = input.build_id;
+
+  // The draft: this sender's own, matched, under an hour old.
+  let build: Awaited<ReturnType<Db["getBuild"]>>;
+  let madeToday: number;
+  try {
+    build = await deps.db.getBuild(buildId);
+    madeToday = await deps.db.linksSince(owner, started - DAY_MS);
+  } catch (e) {
+    deps.log("db", { step: "draft-read", error: String(e) });
+    return fail(500, MSG.failed("Crossfade"));
+  }
+  if (!build || build.owner_id !== owner || !build.draft) return fail(404, MSG.draftGone);
+  if (build.status === "ok") return fail(409, MSG.alreadyMade);
+  if (build.status !== "matched") return fail(404, MSG.draftGone);
+  if (started - build.created_at > DRAFT_TTL_MS) return fail(410, MSG.draftExpired);
+  if (madeToday >= DAILY_LINKS) return fail(429, MSG.dailyLimit);
+
+  const { report: matched, source_url } = build.draft;
+  const positions = new Set(matched.tracks.map((t) => t.position));
+  if (!remove.every((p) => positions.has(p as number))) return fail(400, MSG.badEdit);
+  const removed = new Set(remove as number[]);
+
+  let spotify: SpotifyPort;
+  try {
+    spotify = await deps.connectSpotify();
+  } catch (e) {
+    deps.log("spotify", { step: "token", ...spotifyInfo(e) });
+    return fail(502, MSG.failed("Spotify"));
   }
 
-  // 8. The Spotify playlist, matched tracks only, in source order, duplicates included.
-  const uris = results.flatMap((r) => (r.tier === "close" ? [r.candidate.uri ?? "spotify:track:" + r.candidate.id] : []));
+  // Each added song is looked up, so the playlist only gets real tracks Spotify plays in the US.
+  const added: SongResult[] = new Array(add.length);
+  try {
+    await pool(add as string[], SEARCHES_AT_ONCE, async (id, i) => {
+      added[i] = toSong(await withRetry(() => spotify.getTrack(id), deps, started));
+    });
+  } catch (e) {
+    deps.log("spotify", { step: "get-track", ...spotifyInfo(e) });
+    if (e instanceof SpotifyError && e.status === 404) return fail(400, MSG.badEdit);
+    if (!(e instanceof SpotifyError)) throw e;
+    return fail(502, MSG.failed("Spotify"));
+  }
+
+  const report = editReport(matched, removed, added);
+  const inPlaylist = report.tracks.filter((t) => t.spotify !== null);
+  if (inPlaylist.length === 0) return fail(422, MSG.nothingLeft);
+  const title = linkTitle(input.title, matched.name);
+
+  const progress = (status: BuildStatus) =>
+    deps.db.updateBuild(buildId, { status }).catch((e) => deps.log("db", { step: "progress", error: String(e) }));
+
+  // 8. The Spotify playlist: kept matches in source order (duplicates included), then added songs.
+  const uris = inPlaylist.map((t) => "spotify:track:" + t.spotify!.id);
   let playlistId: string;
   try {
-    playlistId = (await withRetry(() => spotify.createPlaylist(playlistName(playlist.name), describe(report.matched, total)), deps, started)).id;
+    playlistId = (await withRetry(() => spotify.createPlaylist(title, describe(report.matched, report.total)), deps, started)).id;
   } catch (e) {
     deps.log("spotify", { step: "create", ...spotifyInfo(e) });
     if (!(e instanceof SpotifyError)) throw e;
-    return stop(fail(502, MSG.failed("Spotify")));
+    return fail(502, MSG.failed("Spotify")); // the draft stays matched: Try again can publish it
   }
 
   const cleanUp = async () => {
@@ -237,26 +352,41 @@ export async function createLink(input: { link?: unknown; passcode?: unknown; bu
   } catch (e) {
     deps.log("spotify", { step: "add", ...spotifyInfo(e) });
     await cleanUp();
-    return stop(fail(502, MSG.failed(e instanceof SpotifyError ? "Spotify" : "Crossfade")));
+    return fail(502, MSG.failed(e instanceof SpotifyError ? "Spotify" : "Crossfade"));
   }
 
   // 9. Save the link and its tracks, then answer.
   const code = deps.randomCode();
   try {
-    await deps.db.saveLink(toSaved(code, source.url, playlist, playlistId, report));
+    await deps.db.saveLink(toSaved(code, owner, title, source_url, playlistId, report));
   } catch (e) {
     deps.log("db", { step: "save", error: String(e) });
     await cleanUp();
-    return stop(fail(500, MSG.failed("Crossfade")));
+    return fail(500, MSG.failed("Crossfade"));
   }
-  await progress({ status: "ok" });
-  deps.log("built", { build_id: buildId, matched: report.matched, total, ms: deps.now() - started });
+  await progress("ok");
+  deps.log("built", { build_id: buildId, matched: report.matched, added: added.length, removed: removed.size, ms: deps.now() - started });
   return { http: 200, body: { code, report } };
 }
 
+// ---------- createLink: match, then publish with no edits ----------
+
+export async function createLink(input: { link?: unknown; build_id?: unknown; title?: unknown }, deps: Deps): Promise<LinkOutcome> {
+  const m = await matchPlaylist(input, deps);
+  if (m.http !== 200 || "error" in m.body) return m as LinkOutcome;
+  // R1: zero matched shows the report, creates nothing and issues no link.
+  if (!m.body.publishable) {
+    await deps.db.updateBuild(m.body.build_id, { status: "failed" }).catch(() => {});
+    return { http: 200, body: { code: null, report: m.body.report } };
+  }
+  return publishLink({ build_id: m.body.build_id, title: input.title }, deps);
+}
+
+// ---------- helpers ----------
+
 // A timeout (status 0) or a 429 gets one more try: after Retry-After for a 429, at once for
 // a timeout, and only if waiting wouldn't carry the build past GIVE_UP_AFTER_MS.
-async function withRetry<T>(fn: () => Promise<T>, deps: Deps, started: number): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, deps: Pick<Deps, "now" | "sleep">, started: number): Promise<T> {
   try {
     return await fn();
   } catch (e) {
@@ -284,6 +414,17 @@ async function pool<T>(items: T[], size: number, fn: (item: T, i: number) => Pro
 const brief = (c: { id: string; name: string; artists: { name: string }[] }) =>
   ({ id: c.id, title: c.name, artists: c.artists.map((a) => a.name).join(", ") });
 
+// Spotify's album art nearest 300 px, only from its image CDN (ADR 0029 extends ADR 0025).
+function spotifyArt(c: SpotifyCandidateRaw): string | null {
+  const imgs = (c.album?.images ?? []).filter((i) => typeof i?.url === "string" && /^https:\/\/i\.scdn\.co\//.test(i.url));
+  if (!imgs.length) return null;
+  return imgs.reduce((a, b) => (Math.abs((b.width ?? 300) - 300) < Math.abs((a.width ?? 300) - 300) ? b : a)).url;
+}
+
+function toSong(c: SpotifyCandidateRaw): SongResult {
+  return { ...brief(c), artwork: spotifyArt(c), duration_ms: typeof c.duration_ms === "number" ? c.duration_ms : null, explicit: c.explicit === true };
+}
+
 function toReport(p: ApplePlaylist, results: ReturnType<typeof pickClose>[]): Report {
   const tracks = p.tracks.map((t: AppleTrack, i): ReportRow => {
     const r = results[i];
@@ -301,16 +442,30 @@ function toReport(p: ApplePlaylist, results: ReturnType<typeof pickClose>[]): Re
   return { name: p.name, owner: p.owner ?? null, artwork: p.artworkUrl ?? null, matched: tracks.filter((t) => t.tier !== "unmatched").length, total: tracks.length, tracks };
 }
 
-function toSaved(code: string, url: string, p: ApplePlaylist, playlistId: string, report: Report): SavedLink {
+// The draft with the sender's edits: removed rows dropped, added songs after the rest.
+// matched / total count the Apple rows that are left (R3's "Matched X of N").
+function editReport(draft: Report, removed: Set<number>, added: SongResult[]): Report {
+  const kept = draft.tracks.filter((t) => !removed.has(t.position));
+  const last = draft.tracks.reduce((m, t) => Math.max(m, t.position), 0);
+  const extra = added.map((s, i): ReportRow => ({
+    position: last + 1 + i, title: s.title, artist: s.artists, tier: "added",
+    spotify: { id: s.id, title: s.title, artists: s.artists }, artwork: s.artwork, duration_ms: s.duration_ms, near: null,
+  }));
+  return { ...draft, matched: kept.filter((t) => t.tier !== "unmatched").length, total: kept.length, tracks: [...kept, ...extra] };
+}
+
+function toSaved(code: string, ownerId: string, title: string, url: string, playlistId: string, report: Report): SavedLink {
   return {
     code,
+    owner_id: ownerId,
+    title,
     source_url: url,
-    name: playlistName(p.name),
+    name: playlistName(report.name),
     spotify_playlist_id: playlistId,
     owner: report.owner,
     artwork_url: report.artwork,
-    track_count: report.total,
-    matched_count: report.matched,
+    track_count: report.tracks.length,
+    matched_count: report.tracks.filter((t) => t.spotify !== null).length,
     tracks: report.tracks.map((row, i) => ({
       position: i,
       source_title: row.title,

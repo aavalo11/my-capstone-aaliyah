@@ -1,0 +1,15 @@
+# Supabase CLI settings for deploying the Edge Functions (ADR 0029).
+# Deploy: npx supabase functions deploy match-playlist search-songs publish-link --project-ref irzqwrznqvtjrrmkddzw
+project_id = "crossfade"
+
+# The gateway's own JWT check is off because a browser's CORS preflight (OPTIONS) carries no
+# token and would be refused. Each function checks the Google session itself
+# (create-link/server.ts, signedInUser) before doing anything.
+[functions.match-playlist]
+verify_jwt = false
+
+[functions.search-songs]
+verify_jwt = false
+
+[functions.publish-link]
+verify_jwt = false

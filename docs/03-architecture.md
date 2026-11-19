@@ -63,7 +63,18 @@ plain link, and Home reads Apple's keyless public chart feed (ADR 0017).
 
 ## 2. Creating a link, step by step
 
-This is `create-link`, a single `POST` from the Create page with
+> **Changed 2026-11-19 (ADR 0029).** `create-link` is now three Edge Functions, each a
+> `POST` with the sender's Google session (`Authorization: Bearer <access token>`), which
+> replaces the passcode in step 1:
+> `match-playlist {link, build_id}` runs steps 2–7 and saves the report as a draft on the
+> `builds` row (`status = matched`); `search-songs {q}` returns up to 10 Spotify tracks for
+> the edit screen; `publish-link {build_id, title, remove, add}` checks the draft is the
+> sender's, `matched` and under an hour old, that they've made fewer than 10 links today,
+> looks up each added song, then runs steps 8–9. The logic is
+> `supabase/functions/create-link/build.ts`; `server.ts` is the Deno glue. The table below
+> is still the order of work; only its step 1 and the split changed.
+
+Originally `create-link` was a single `POST` from the Create page with
 `{ link, passcode, build_id }`. `build_id` is a random UUID the browser makes so it can
 poll progress (§5).
 
@@ -185,10 +196,11 @@ In Week 9 it becomes this schema, as a Supabase migration.
 
 | Secret | Used for | Lives in |
 |---|---|---|
-| `SENDER_PASSCODE` | Step 1 | `supabase secrets set` |
 | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` | A fresh Spotify access token for Crossfade's account each build | `supabase secrets set` |
-| Supabase secret key | `create-link` writing to the database | Provided to Edge Functions automatically |
-| Supabase **publishable** key | Front end: `get_link`, `get_build` | `src/config.js` (public by design) |
+| Supabase secret key | The three functions writing to the database | Provided to Edge Functions automatically (`SUPABASE_SERVICE_ROLE_KEY`) |
+| Supabase **publishable** key | Front end: `get_link`, `get_build`, `my_links`, `rename_link`, `delete_link` | `src/config.js` (public by design) |
+
+`SENDER_PASSCODE` is gone: the Google session replaced it (ADR 0019, ADR 0029).
 
 `.gitignore` already blocks `*.p8` and `.env`. The Spotify refresh token is obtained
 **once**: I log in as Crossfade's Premium account, approve `playlist-modify-public`,
@@ -208,7 +220,7 @@ That's too many to guess, and `get_link` only answers for an exact code.
 | Front end | **None** | `fetch` against Supabase's REST endpoints is enough |
 | `create-link` | **None planned.** Deno's built-in WebCrypto signs the Apple JWT, and `fetch` calls Apple, Spotify and Supabase. | Every dependency is something to update later. If ES256 signing in WebCrypto fights me, `jose` is the fallback, and I'll say so. |
 | Lab 5 (Oct 22) | `@supabase/supabase-js`, pinned | Auth sessions are where a client library earns its place |
-| Tooling, Week 9 | Supabase CLI (Homebrew, system-wide) | Deploying functions and setting secrets. Docker only if I want functions to run locally. |
+| Tooling, Week 9 | Supabase CLI, run with `npx supabase` (nothing installed in the repo) | Deploying the three functions and setting secrets. Docker only if I want functions to run locally. |
 
 ---
 

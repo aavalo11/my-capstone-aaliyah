@@ -84,6 +84,10 @@ as written. Where an AC names exact text, that text is the requirement.
 
 ### R1 — Create a link (sender) · from S7
 
+*Changed 2026-11-19 (ADR 0029):* **Create link** now matches first and shows the report with
+**Create playlist** at the top. The sender can remove songs or add some by searching
+Spotify before tapping it. Nothing reaches Spotify until then. A draft lasts an hour.
+
 **The page.** Signed out, Create shows **Sign in with Google** in place of the form
 (ADR 0019). Signed in, it's one form with two fields, **Playlist name** and **Apple Music
 link**, and a **Create link** button. That's the empty state. Nothing is remembered
@@ -229,9 +233,14 @@ content is identical for both.
 
 ### R4 — The rebuilt Spotify playlist · from S7, S11 AC 1
 
+*Changed 2026-11-19 (ADR 0029):* the sender can remove songs, or search and add songs,
+before the playlist is made. It's made from what's left, kept matches first in source order,
+then added songs in the order added. Its name is the sender's name for the link.
+
 - It's created on the Crossfade Spotify account and is public.
-- Its name is the Apple Music playlist name exactly, cut to 100 characters, or
-  `Untitled playlist` if Apple's name is empty.
+- Its name is the sender's name for the link, or, if that's blank, the Apple Music
+  playlist name exactly, cut to 100 characters, or `Untitled playlist` if Apple's name is
+  empty.
 - Its description reads `Rebuilt from Apple Music by Crossfade. X of N tracks
   matched.`
 - It contains the `exact` and `close` tracks in source order, **duplicates included**.
