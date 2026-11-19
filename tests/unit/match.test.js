@@ -98,11 +98,28 @@ test("Negative: wrong artist, or a missing duration, is a mismatch", async () =>
 
 // --- Picking from a result list ---
 
-test("pickClose: takes the first passing candidate, not the first result", async () => {
+test("pickClose: skips failing results; equal lengths tie to the earlier one (ADR 0024)", async () => {
   const { pickClose } = await load();
   const r = pickClose(src(), [cand({ id: "live", name: "Good Days (Live)" }), cand({ id: "a" }), cand({ id: "b" })]);
   assert.equal(r.tier, "close");
   assert.equal(r.candidate.id, "a");
+});
+
+test("pickClose: the closest passing length wins, not the first passing result (ADR 0024)", async () => {
+  const { pickClose } = await load();
+  // The real 2026-11-19 case: Apple's solo "expectations", feature version listed first.
+  const s = src({ title: "expectations", primaryArtist: "Olivia Rodrigo", durationMs: 221958, explicit: false });
+  const feat = cand({ id: "feat", name: "expectations (feat. Chappell Roan)", artists: [{ name: "Olivia Rodrigo" }, { name: "Chappell Roan" }], duration_ms: 223935, explicit: false });
+  const solo = cand({ id: "solo", name: "expectations", artists: [{ name: "Olivia Rodrigo" }], duration_ms: 221958, explicit: false });
+  assert.equal(pickClose(s, [feat, solo]).candidate.id, "solo");
+  assert.equal(pickClose(s, [solo, feat]).candidate.id, "solo");
+  assert.equal(pickClose(s, [feat]).candidate.id, "feat"); // still a pass on its own: no check was loosened
+});
+
+test("pickClose: a closer length that fails a check never wins", async () => {
+  const { pickClose } = await load();
+  const r = pickClose(src(), [cand({ id: "ok", duration_ms: 280000 }), cand({ id: "clean", duration_ms: 278480, explicit: false })]);
+  assert.equal(r.candidate.id, "ok");
 });
 
 test("pickClose: only the first 10 results are checked", async () => {

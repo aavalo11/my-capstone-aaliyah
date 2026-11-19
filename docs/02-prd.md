@@ -1,7 +1,7 @@
 # Crossfade — Product Requirements
 
 **Status:** v1 for CP-M2 · living spec, revised as the build proceeds
-**Last updated:** 2026-11-05 (R2 title normalization; R3 shows Spotify's version only when different, ADR 0016)
+**Last updated:** 2026-11-19 (R2 closest passing length wins, ADR 0024)
 **Owner:** A. Avalo
 **Builds from:** `01-concept-brief.md` (problem, job) · `backlog.md` (stories S1–S11,
 MoSCoW, MVP slice) · `research/interview-01.md` (W01) · `decisions/0002–0006`
@@ -156,7 +156,8 @@ Run for every item, in source order. The first rule that produces a result wins.
    *In v1 this never fires:* the share page has no ISRCs (ADR 0012).
 2. **Close.** If there's no ISRC, **or** the ISRC search returned nothing, search Spotify
    for `track:"<title>" artist:"<primary artist>"` with `market=US`. Of the first 10
-   results, take the first one where **all** of these hold:
+   results, keep every one where **all** of these hold, then take the one whose duration
+   is closest to the source's. A tie goes to the earlier result (ADR 0024):
    - the normalized titles are equal. Normalization (below) is applied to both sides.
    - the primary artist equals, case-insensitively, one of the candidate's artist names
    - the durations differ by at most 3,000 ms, inclusive
@@ -191,6 +192,12 @@ itself. Without the whitespace rule, a no-break space would be removed and two w
 would run together. Neither change loosens the rule: both make two spellings of the same
 title equal, and no different words are treated as the same.
 
+*Changed 2026-11-19 (ADR 0024):* step 2 took the first passing result, so Apple's solo
+*expectations* matched the *feat. Chappell Roan* version (1,977 ms off) ahead of a 0 ms solo
+copy. The closest passing length now wins. No check is loosened.
+
+- **Given** two passing candidates, a feature version 1,977 ms off listed first and a solo
+  version 0 ms off listed second, **when** it's matched, **then** the solo version is taken.
 - **Negative — Given** a studio track whose only Spotify title match is a `(Live)` or
   `(Sped Up)` version, **when** it's matched, **then** it's `unmatched`, because the
   normalized titles differ.

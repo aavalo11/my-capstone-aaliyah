@@ -52,18 +52,23 @@ export function closeMismatch(source: AppleTrack, c: SpotifyCandidate): string |
   return null;
 }
 
-// R2 steps 2–3: the first of the first 10 candidates that passes every check, else unmatched.
-// Anything that isn't a song (a music video) is unmatched without looking at candidates.
+// R2 steps 2–3: of the first 10 candidates that pass every check, the one closest in length
+// to the source, ties to the earlier result (ADR 0024); else unmatched. Anything that isn't
+// a song (a music video) is unmatched without looking at candidates.
 export function pickClose(source: AppleTrack, candidates: SpotifyCandidate[]): MatchResult {
   if (source.kind !== "song") return { tier: "unmatched", reason: "not a song (" + source.kind + ")" };
   const checked = (candidates ?? []).slice(0, CANDIDATES_CHECKED);
   if (checked.length === 0) return { tier: "unmatched", reason: "no results" };
   const reasons: string[] = [];
+  let best: SpotifyCandidate | null = null;
+  let bestGap = Infinity;
   for (const c of checked) {
     const why = closeMismatch(source, c);
-    if (why === null) return { tier: "close", candidate: c };
-    reasons.push(why);
+    if (why !== null) { reasons.push(why); continue; }
+    const gap = Math.abs((source.durationMs as number) - c.duration_ms); // both numbers once it passes
+    if (gap < bestGap) { best = c; bestGap = gap; } // strict <, so a tie keeps the earlier one
   }
+  if (best) return { tier: "close", candidate: best };
   return { tier: "unmatched", reason: "no candidate passed (" + reasons.join(", ") + ")" };
 }
 
