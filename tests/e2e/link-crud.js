@@ -74,13 +74,16 @@ const URL2 = "https://music.apple.com/us/playlist/study-no-words/pl.u-0zZ1";
   // C3: friend view + regressions
   const f1 = await friend(page, code);
   const f1Rows = await page.$$eval("#tracks li", (l) => l.length);
-  const play = (await page.$("a.btn, button.btn")) === null; // no real Spotify playlist yet, so no Play button
+  // Since 2026-11-19 the recorded build has a real Spotify playlist, so the friend gets Play in Spotify,
+  // and the page opens like ADR 0025's header with no sample label (the songs and matches are real).
+  const play = (await page.$("#play-spotify")) !== null;
   const nope = await friend(page, "nope");
   const sample = await friend(page, "sample");
   const sampleRows = await page.$$eval("#tracks li", (l) => l.length);
-  check("C3", f1.includes("late train home") && f1.includes("saved on this device only") && f1Rows === 52 && play &&
-    nope.includes("doesn't exist") && sampleRows === 6,
-    `friend="${f1.slice(0, 90)}…" songs=${f1Rows} no Play button=${play} | nope="${nope.slice(0, 35)}" | sample rows=${sampleRows}`);
+  const sampleText = await page.$eval("#view", (v) => v.innerText);
+  check("C3", f1.includes("late train home") && f1.includes("Playlist transferred with Crossfade") && !/sample/i.test(f1) &&
+    f1Rows === 53 && play && nope.includes("doesn't exist") && sampleRows === 6 && sampleText.includes("These songs and matches are made up"),
+    `friend="${f1.slice(0, 90)}…" songs=${f1Rows} Play button=${play} | nope="${nope.slice(0, 35)}" | sample rows=${sampleRows}, made-up label kept=${sampleText.includes("made up")}`);
 
   // C4: rename keeps the code
   await myLinks(page);

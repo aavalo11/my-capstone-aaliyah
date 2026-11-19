@@ -20,7 +20,8 @@
     if (mine) {
       if (mine.deleted_at) return Promise.resolve({ removed: true });
       var r = mine.report || { tracks: [] };
-      return Promise.resolve({ local: true, sample: !!r.sample, name: mine.title, spotify_playlist_id: r.spotify_playlist_id || null, tracks: r.tracks });
+      return Promise.resolve({ local: true, sample: !!r.sample, name: mine.title, owner: r.owner || null, artwork: r.artwork || null,
+        spotify_playlist_id: r.spotify_playlist_id || null, tracks: r.tracks });
     }
     return fetch("sample/link-sample.json")
       .then(function (res) {
@@ -32,9 +33,11 @@
         if (link && DEMO === "empty") link = { name: link.name, spotify_playlist_id: null, tracks: [] };
         if (!link) return null;
         // get_link's rows (architecture §4) in report-view.js's shape.
-        return { sample: true, name: link.name, spotify_playlist_id: link.spotify_playlist_id,
+        return { sample: true, name: link.name, owner: link.owner || null, artwork: link.artwork_url || null,
+          spotify_playlist_id: link.spotify_playlist_id,
           tracks: link.tracks.slice().sort(function (a, b) { return a.position - b.position; }).map(function (t) {
             return { title: t.source_title, artist: t.source_artist, tier: t.tier,
+              artwork: t.artwork_url || null, duration_ms: t.duration_ms || null,
               near: t.near_track_id ? { id: t.near_track_id, title: t.near_title, artists: t.near_artists } : null,
               spotify: t.tier === "unmatched" ? null : { id: t.spotify_track_id || null, title: t.spotify_title, artists: t.spotify_artists } };
           }) };
@@ -63,20 +66,20 @@
         catch (e) { /* nothing to show: the playlist is what the friend came for */ }
       }
       var play = R.playlistUrl(link.spotify_playlist_id);
-      var notice = link.local
-        ? '<div class="notice"><b>Sample playlist, saved on this device only.</b> The Spotify matches are made up.</div>'
-        : link.sample ? '<div class="notice"><b>Sample playlist.</b> These songs and matches are made up.</div>' : "";
+      // A link made on this device holds a real Spotify run (ADR 0025), so it isn't labelled.
+      // The made-up link (code=sample) still is: its songs and matches are invented.
+      var notice = !link.local && link.sample
+        ? '<div class="notice"><b>Sample playlist.</b> These songs and matches are made up.</div>' : "";
       if (!link.tracks.length) {
-        view.innerHTML = notice + "<h1>" + esc(link.name) + "</h1>" +
+        view.innerHTML = notice + R.header({ name: link.name, owner: link.owner, artwork: link.artwork }) +
           '<div class="card">' + stateBlock("This playlist has no songs", "There's nothing here to play.") + "</div>";
         return;
       }
       // R3: X counts exact and close, counted from the rows so the headline can't disagree with them.
       view.innerHTML = notice +
-        "<h1>" + esc(link.name) + "</h1>" +
-        '<p class="muted" id="match-headline">Matched ' + R.matched(link.tracks) + " of " + link.tracks.length + "</p>" +
-        (play ? '<a class="btn block" href="' + esc(play) + '" target="_blank" rel="noopener">Play in Spotify</a>' +
-          '<p class="small muted" style="margin-top:8px">Nothing is ever added to your library.</p>' : "") +
+        R.header({ name: link.name, owner: link.owner, artwork: link.artwork, playUrl: play,
+          extra: '<p class="muted" id="match-headline">Matched ' + esc(R.matched(link.tracks)) + " of " + esc(link.tracks.length) + "</p>",
+          after: play ? '<p class="small muted pl-sub">Nothing is ever added to your library.</p>' : "" }) +
         '<div class="card">' + R.list(link.tracks) + "</div>";
     }).catch(function () {
       view.innerHTML = '<div class="card">' + stateBlock("Couldn't open this playlist",

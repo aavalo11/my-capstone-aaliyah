@@ -34,14 +34,31 @@ export type AppleTrack = {
   primaryArtist: string; // first subtitleLinks entry, else artistName unchanged (R2)
   durationMs: number | null;
   explicit: boolean; // only showExplicitBadge === true counts (R2)
+  artworkUrl: string | null; // 300 px cover on Apple's image CDN (ADR 0025)
 };
 
 export type ApplePlaylist = {
   id: string;
   name: string;
   trackCount: number;
+  owner: string | null; // the playlist owner's Apple display name (ADR 0025)
+  artworkUrl: string | null; // 600 px playlist cover (ADR 0025)
   tracks: AppleTrack[];
 };
+
+// Apple's artwork URLs are templates: ".../{w}x{h}bb.{f}". Fill in a square size and JPEG.
+// Only https URLs on mzstatic.com are kept, since the browser loads them (ADR 0025).
+export function artworkUrl(artwork: unknown, size: number): string | null {
+  const t = (artwork as { dictionary?: { url?: unknown } } | undefined)?.dictionary?.url;
+  if (typeof t !== "string") return null;
+  const url = t.replace("{w}", String(size)).replace("{h}", String(size)).replace("{c}", "").replace("{f}", "jpg");
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (u.hostname === "mzstatic.com" || u.hostname.endsWith(".mzstatic.com")) ? url : null;
+  } catch {
+    return null;
+  }
+}
 
 // Step 2 (PRD R1 "What counts as a valid link"): http(s), host music.apple.com, path
 // /us/playlist/<any-slug>/<id> with <id> starting "pl.". A trailing slash and any query
@@ -92,8 +109,10 @@ export function readSharePage(html: string, id = ""): ApplePlaylist {
   if (!list || !Array.isArray(list.items)) throw new AppleError("apple-failed", "no track-list section");
 
   const header = sections.find((s) => typeof s?.id === "string" && s.id.startsWith("playlist-detail-header"))
-    ?.items?.[0] as { title?: unknown; trackCount?: unknown } | undefined;
+    ?.items?.[0] as { title?: unknown; trackCount?: unknown; artwork?: unknown; subtitleLinks?: { title?: unknown }[] } | undefined;
   const name = typeof header?.title === "string" ? header.title : "";
+  const ownerName = Array.isArray(header?.subtitleLinks) ? header.subtitleLinks[0]?.title : undefined;
+  const owner = typeof ownerName === "string" && ownerName.trim() !== "" ? ownerName.trim() : null;
   const headerCount = typeof header?.trackCount === "number" ? header.trackCount : null;
 
   const items = list.items;
@@ -108,7 +127,7 @@ export function readSharePage(html: string, id = ""): ApplePlaylist {
     throw new AppleError("apple-failed", "page holds " + items.length + " of " + headerCount + " tracks");
   }
 
-  return { id, name, trackCount: count, tracks: items.map(toTrack) };
+  return { id, name, trackCount: count, owner, artworkUrl: artworkUrl(header?.artwork, 600), tracks: items.map(toTrack) };
 }
 
 function toTrack(item: Record<string, unknown>, i: number): AppleTrack {
@@ -125,6 +144,7 @@ function toTrack(item: Record<string, unknown>, i: number): AppleTrack {
     primaryArtist: first || artistName,
     durationMs: typeof item.duration === "number" ? item.duration : null,
     explicit: item.showExplicitBadge === true,
+    artworkUrl: artworkUrl(item.artwork, 300),
   };
 }
 

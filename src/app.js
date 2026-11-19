@@ -540,7 +540,9 @@
         return wait(90).then(step);
       };
       return step().then(function () {
-        return { sample: true, name: report.name, matched: report.matched, total: report.total, tracks: report.tracks };
+        return { sample: true, name: report.name, owner: report.owner || null, artwork: report.artwork || null,
+          spotify_playlist_id: report.spotify_playlist_id || null,
+          matched: report.matched, total: report.total, tracks: report.tracks };
       });
     });
   }
@@ -556,7 +558,9 @@
 
   function buildReport(report) {
     return '<div class="card" id="build-report">' +
-      (report.sample ? '<div class="notice" style="margin-bottom:12px"><b>Sample playlist.</b> The Spotify matches are made up.</div>' : "") +
+      // Create can't read the pasted link yet, so every link gets this one recorded run (ADR 0015).
+      (report.sample ? '<div class="notice" style="margin-bottom:12px">Crossfade can\'t read your link yet, so this shows a real run of <b>' +
+        esc(report.name) + "</b> instead.</div>" : "") +
       reportSummary(report) +
       '<details><summary class="small">All ' + esc(report.tracks.length) + " songs</summary>" +
       window.CrossfadeReport.list(report.tracks) + "</details></div>";
@@ -580,12 +584,12 @@
     var url = recipientUrl(link.code);
     var report = link.report;
     var play = report && window.CrossfadeReport.playlistUrl(report.spotify_playlist_id);
+    var hasSongs = !!(report && report.tracks.length);
     view.innerHTML = '<a class="back" href="#/playlists/made">‹ Playlists</a>' +
-      "<h1>" + esc(link.title) + "</h1>" +
-      (report && report.sample ? '<div class="notice"><b>Sample playlist.</b> The Spotify matches are made up.</div>' : "") +
-      (play ? '<a class="btn block" href="' + esc(play) + '" target="_blank" rel="noopener">Play in Spotify</a>' : "") +
-      '<div class="card">' + (report && report.tracks.length
-        ? reportSummary(report) + window.CrossfadeReport.list(report.tracks)
+      window.CrossfadeReport.header({ name: link.title, owner: report && report.owner, artwork: report && report.artwork, playUrl: play,
+        extra: hasSongs ? reportSummary(report) : "" }) +
+      '<div class="card">' + (hasSongs
+        ? window.CrossfadeReport.list(report.tracks)
         : stateBlock("No songs in this link", "Make a new link to send this playlist with its songs.",
             '<a class="btn quiet" href="#/create">Make a link</a>')) + "</div>" +
       '<div class="card"><p class="small" style="margin:0 0 8px">Your friend opens</p>' +

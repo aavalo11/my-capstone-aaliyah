@@ -1,12 +1,14 @@
 {
  "_sample": true,
- "_note": "One create-link dry run (ADR 0015). Apple's tracks are real, read 2026-11-05 from tests/fixtures/apple-70-degrees-out.html. Every Spotify match is FAKE (tests/fakes/fake-spotify.mts). TODO(W10): real data.",
+ "_note": "One create-link dry run (ADR 0015). Apple's tracks are real, read 2026-11-19 from https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2jzpe8D. The Spotify matches and playlist are REAL (Crossfade account); only the link code is local. TODO(W10): real data.",
  "http": 200,
- "code": "MrRf6NBE7s",
+ "code": "labIjoLTXq",
  "report": {
   "name": "70 degrees out",
-  "matched": 48,
-  "total": 52,
+  "owner": "Aaliyah Avalo",
+  "artwork": "https://is1-ssl.mzstatic.com/image/thumb/gen/600x600AM.PDCXS19.jpg?c1=F2BC9D&c2=FF7F40&c3=B37C00&c4=400000&signature=826a2f335509340323ba023f6a0b9e11dd945b8ebd5852e00420a46dd68d59a3&t=NzAgZGVncmVlcyBvdXQ%3D&tc=FFFFFF&vkey=1",
+  "matched": 50,
+  "total": 53,
   "tracks": [
    {
     "position": 1,
@@ -14,17 +16,27 @@
     "artist": "Dominic Fike",
     "tier": "close",
     "spotify": {
-     "id": "fake-1",
+     "id": "7yNf9YjeO5JXUE3JEBgnYc",
      "title": "Babydoll",
      "artists": "Dominic Fike"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/2d/37/18/2d3718e9-8620-b603-d3cc-f34ce817070d/886447290170.jpg/300x300bb.jpg",
+    "duration_ms": 97960,
+    "near": null
    },
    {
     "position": 2,
     "title": "Breathe",
     "artist": "Malcolm Todd",
-    "tier": "unmatched",
-    "spotify": null
+    "tier": "close",
+    "spotify": {
+     "id": "3rKjT23XeGg3pbqE1T1fpd",
+     "title": "Breathe",
+     "artists": "Malcolm Todd"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/35/ba/0b/35ba0b65-9c59-241a-5338-cf600c18151c/196874132357.jpg/300x300bb.jpg",
+    "duration_ms": 176413,
+    "near": null
    },
    {
     "position": 3,
@@ -32,10 +44,13 @@
     "artist": "Dominic Fike",
     "tier": "close",
     "spotify": {
-     "id": "fake-3",
-     "title": "White Keys",
+     "id": "5ViLKrbyL3HD6wsq3AB9eI",
+     "title": "WHITE KEYS",
      "artists": "Dominic Fike"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/0c/5a/ef/0c5aef1c-6929-76c8-d9cb-9c8e9c5537fa/196873758947.jpg/300x300bb.jpg",
+    "duration_ms": 144101,
+    "near": null
    },
    {
     "position": 4,
@@ -43,10 +58,13 @@
     "artist": "Malcolm Todd",
     "tier": "close",
     "spotify": {
-     "id": "fake-4",
+     "id": "0eAuGrXyGFYwur9ARUe7LJ",
      "title": "Earrings",
      "artists": "Malcolm Todd"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d0/06/1f/d0061f04-bcae-f9a1-8126-830c04fa32db/196871971188.jpg/300x300bb.jpg",
+    "duration_ms": 151500,
+    "near": null
    },
    {
     "position": 5,
@@ -54,10 +72,13 @@
     "artist": "Malcolm Todd",
     "tier": "close",
     "spotify": {
-     "id": "fake-5",
+     "id": "5vPUv0xziXbV4lnWeVNXNq",
      "title": "Roommates",
      "artists": "Malcolm Todd"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d0/06/1f/d0061f04-bcae-f9a1-8126-830c04fa32db/196871971188.jpg/300x300bb.jpg",
+    "duration_ms": 214505,
+    "near": null
    },
    {
     "position": 6,
@@ -65,17 +86,27 @@
     "artist": "Malcolm Todd",
     "tier": "close",
     "spotify": {
-     "id": "fake-6",
+     "id": "59c2xv2kMzYM6HR9oY6BIa",
      "title": "Sweet Boy",
      "artists": "Malcolm Todd"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d0/06/1f/d0061f04-bcae-f9a1-8126-830c04fa32db/196871971188.jpg/300x300bb.jpg",
+    "duration_ms": 180000,
+    "near": null
    },
    {
     "position": 7,
     "title": "Chest Pain (I Love)",
     "artist": "Malcolm Todd",
-    "tier": "unmatched",
-    "spotify": null
+    "tier": "close",
+    "spotify": {
+     "id": "3gPYoFtn70aTgl546XVSET",
+     "title": "Chest Pain (I Love)",
+     "artists": "Malcolm Todd"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/93/68/85/9368851d-cc58-b883-5c2a-d08e8826b145/196872917871.jpg/300x300bb.jpg",
+    "duration_ms": 200827,
+    "near": null
    },
    {
     "position": 8,
@@ -83,17 +114,27 @@
     "artist": "Frank Ocean",
     "tier": "close",
     "spotify": {
-     "id": "fake-8",
+     "id": "3xKsf9qdS1CyvXSMEid6g8",
      "title": "Pink + White",
      "artists": "Frank Ocean"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/45/68/bb4568f3-68cd-619d-fbcb-4e179916545d/BlondCover-Final.jpg/300x300bb.jpg",
+    "duration_ms": 184516,
+    "near": null
    },
    {
     "position": 9,
     "title": "Good Days",
     "artist": "SZA",
-    "tier": "unmatched",
-    "spotify": null
+    "tier": "close",
+    "spotify": {
+     "id": "78taBbkW8AioCyPx8lWZR1",
+     "title": "Good Days",
+     "artists": "SZA"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/73/05/7d/73057d8f-846c-01b8-2760-6d3c3071c48a/196872790276.jpg/300x300bb.jpg",
+    "duration_ms": 278480,
+    "near": null
    },
    {
     "position": 10,
@@ -101,10 +142,13 @@
     "artist": "Steve Lacy",
     "tier": "close",
     "spotify": {
-     "id": "fake-10",
+     "id": "4k6Uh1HXdhtusDW5y8Gbvy",
      "title": "Bad Habit",
      "artists": "Steve Lacy"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/7a/e5/96/7ae596ae-2acf-2070-cfdb-d06372773e0b/196589099631.jpg/300x300bb.jpg",
+    "duration_ms": 232115,
+    "near": null
    },
    {
     "position": 11,
@@ -112,10 +156,13 @@
     "artist": "SZA",
     "tier": "close",
     "spotify": {
-     "id": "fake-11",
+     "id": "5fQBa4wkmq28xpSLOQ202K",
      "title": "Normal Girl",
      "artists": "SZA"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/0f/62/05/0f620515-5166-410e-64ae-5c209e7f6609/196589231000.jpg/300x300bb.jpg",
+    "duration_ms": 253591,
+    "near": null
    },
    {
     "position": 12,
@@ -123,10 +170,13 @@
     "artist": "F3miii",
     "tier": "close",
     "spotify": {
-     "id": "fake-12",
+     "id": "4Jsus7N4d8hFB2G9gcRdBv",
      "title": "NOBLE",
      "artists": "F3miii"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/24/a4/84/24a48418-e757-949a-2593-76851e0f9c05/196874129104.jpg/300x300bb.jpg",
+    "duration_ms": 185806,
+    "near": null
    },
    {
     "position": 13,
@@ -134,17 +184,27 @@
     "artist": "DJ Snake & AlunaGeorge",
     "tier": "close",
     "spotify": {
-     "id": "fake-13",
+     "id": "57kR5SniQIbsbVoIjjOUDa",
      "title": "You Know You Like It",
      "artists": "DJ Snake, AlunaGeorge"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/b9/b8/ca/b9b8ca59-12c2-b333-7a2b-77c5432fc36a/00602547066749.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 247267,
+    "near": null
    },
    {
     "position": 14,
     "title": "Feel So Close (Radio Edit)",
     "artist": "Calvin Harris",
-    "tier": "unmatched",
-    "spotify": null
+    "tier": "close",
+    "spotify": {
+     "id": "1gihuPhrLraKYrJMAEONyc",
+     "title": "Feel So Close - Radio Edit",
+     "artists": "Calvin Harris"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ab/af/22/abaf2296-ed4d-6da2-c24d-503cfdfa4c1f/0617465356858.jpg/300x300bb.jpg",
+    "duration_ms": 206413,
+    "near": null
    },
    {
     "position": 15,
@@ -152,10 +212,13 @@
     "artist": "Katy Perry",
     "tier": "close",
     "spotify": {
-     "id": "fake-15",
+     "id": "5Uc37Y6FijZcM538PqqkWd",
      "title": "Legendary Lovers",
      "artists": "Katy Perry"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/36/21/81/36218129-51b4-df22-cafb-8e9503b53147/13UAAIM70445.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 224216,
+    "near": null
    },
    {
     "position": 16,
@@ -163,10 +226,13 @@
     "artist": "Malcolm Todd",
     "tier": "close",
     "spotify": {
-     "id": "fake-16",
+     "id": "3cLBx0lEWPKSM99hx5RVcx",
      "title": "I Saw Your Face",
      "artists": "Malcolm Todd"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/cb/9f/30/cb9f3003-d9bb-4283-cd24-b97891516205/196874286470.jpg/300x300bb.jpg",
+    "duration_ms": 189570,
+    "near": null
    },
    {
     "position": 17,
@@ -174,10 +240,13 @@
     "artist": "Ellie Goulding",
     "tier": "close",
     "spotify": {
-     "id": "fake-17",
+     "id": "7C7yqFTM0ncyJ04GIKrxdV",
      "title": "Anything Could Happen",
      "artists": "Ellie Goulding"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/99/48/f6/9948f600-7cfb-1c09-b8f7-b390557f0e30/13UAAIM44623.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 286082,
+    "near": null
    },
    {
     "position": 18,
@@ -185,20 +254,26 @@
     "artist": "BIA",
     "tier": "close",
     "spotify": {
-     "id": "fake-18",
+     "id": "0ln6XoVvlFsGqrO5Y2kzx8",
      "title": "WE ON GO",
      "artists": "BIA"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/5f/bf/e8/5fbfe875-27cf-4f4d-0478-d824db66f843/196872918403.jpg/300x300bb.jpg",
+    "duration_ms": 168533,
+    "near": null
    },
    {
     "position": 19,
     "title": "Don't You Worry Child (feat. John Martin)",
     "artist": "Swedish House Mafia",
-    "tier": "close",
-    "spotify": {
-     "id": "fake-19",
-     "title": "Don't You Worry Child (feat. John Martin)",
-     "artists": "Swedish House Mafia"
+    "tier": "unmatched",
+    "spotify": null,
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/6a/30/7d/6a307d9d-2d13-999a-3b9c-03221087f845/15UMGIM27846.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 212027,
+    "near": {
+     "id": "5tALkmrC4bRfrSDLimAzuq",
+     "title": "Don't You Worry Child (feat. John Martin) - Radio Edit",
+     "artists": "Swedish House Mafia, John Martin"
     }
    },
    {
@@ -207,10 +282,13 @@
     "artist": "Leon Thomas",
     "tier": "close",
     "spotify": {
-     "id": "fake-20",
+     "id": "1mh9eHVRdNhzryG43PXdW1",
      "title": "MUTT",
      "artists": "Leon Thomas"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/9f/b5/f6/9fb5f62a-4015-bce1-282a-dca212e5e802/24UMGIM77170.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 193333,
+    "near": null
    },
    {
     "position": 21,
@@ -218,10 +296,13 @@
     "artist": "Tove Lo",
     "tier": "close",
     "spotify": {
-     "id": "fake-21",
+     "id": "14OxJlLdcHNpgsm4DRwDOB",
      "title": "Habits (Stay High)",
      "artists": "Tove Lo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b9/2d/20/b92d205d-f9fc-13cc-c714-14aed93081b4/15UMGIM46170.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 209160,
+    "near": null
    },
    {
     "position": 22,
@@ -229,10 +310,13 @@
     "artist": "Maroon 5",
     "tier": "close",
     "spotify": {
-     "id": "fake-22",
+     "id": "2bL2gyO6kBdLkNSkxXNh6x",
      "title": "Animals",
      "artists": "Maroon 5"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/b7/25/76/b72576f1-072e-3da2-60d5-2724a9bccf4a/14UMGIM31673.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 231079,
+    "near": null
    },
    {
     "position": 23,
@@ -240,10 +324,13 @@
     "artist": "Fall Out Boy",
     "tier": "close",
     "spotify": {
-     "id": "fake-23",
+     "id": "04aAxqtGp5pv12UXAg4pkq",
      "title": "Centuries",
      "artists": "Fall Out Boy"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ea/5f/87/ea5f87ea-4bc3-0e01-456c-37401a4268f2/14UMGIM60337.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 228348,
+    "near": null
    },
    {
     "position": 24,
@@ -251,10 +338,13 @@
     "artist": "Tyler, The Creator",
     "tier": "close",
     "spotify": {
-     "id": "fake-24",
-     "title": "Sugar on My Tongue",
+     "id": "6xV7Be6XEvkSnighmh2Tzj",
+     "title": "Sugar On My Tongue",
      "artists": "Tyler, The Creator"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/ae/e6/a0aee657-b365-fed2-249c-0f22efa507d0/196873435435.jpg/300x300bb.jpg",
+    "duration_ms": 153333,
+    "near": null
    },
    {
     "position": 25,
@@ -262,10 +352,13 @@
     "artist": "Tyler, The Creator",
     "tier": "close",
     "spotify": {
-     "id": "fake-25",
+     "id": "1lTqq0aC6r2bXLviQ3oaVt",
      "title": "Ring Ring Ring",
      "artists": "Tyler, The Creator"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/ae/e6/a0aee657-b365-fed2-249c-0f22efa507d0/196873435435.jpg/300x300bb.jpg",
+    "duration_ms": 201869,
+    "near": null
    },
    {
     "position": 26,
@@ -273,10 +366,13 @@
     "artist": "Tyler, The Creator",
     "tier": "close",
     "spotify": {
-     "id": "fake-26",
+     "id": "6ie0uyyvOKTTuIFBMPiNIl",
      "title": "Judge Judy",
      "artists": "Tyler, The Creator"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/7d/bd/e9/7dbde97e-b97d-8cc3-0203-218b687408a9/196872555059.jpg/300x300bb.jpg",
+    "duration_ms": 269622,
+    "near": null
    },
    {
     "position": 27,
@@ -284,10 +380,13 @@
     "artist": "One Direction",
     "tier": "close",
     "spotify": {
-     "id": "fake-27",
+     "id": "0iSWAT0EL8TwmzcgBjKMh6",
      "title": "What a Feeling",
      "artists": "One Direction"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/45/ac/db/45acdb3d-1a85-52e3-43d5-195f8f58067d/mzm.qyfviqnb.jpg/300x300bb.jpg",
+    "duration_ms": 200539,
+    "near": null
    },
    {
     "position": 28,
@@ -295,10 +394,13 @@
     "artist": "One Direction",
     "tier": "close",
     "spotify": {
-     "id": "fake-28",
+     "id": "4fLTtg48X0QtKrj0Jv8I3v",
      "title": "Hey Angel",
      "artists": "One Direction"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/45/ac/db/45acdb3d-1a85-52e3-43d5-195f8f58067d/mzm.qyfviqnb.jpg/300x300bb.jpg",
+    "duration_ms": 240009,
+    "near": null
    },
    {
     "position": 29,
@@ -306,10 +408,13 @@
     "artist": "One Direction",
     "tier": "close",
     "spotify": {
-     "id": "fake-29",
+     "id": "2pFEbA6GdNxBOMn9Egvowm",
      "title": "Why Don't We Go There",
      "artists": "One Direction"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/66/75/88/6675882c-3685-2b6b-f9de-c6d3e06602b5/dj.fuklqvvg.jpg/300x300bb.jpg",
+    "duration_ms": 174360,
+    "near": null
    },
    {
     "position": 30,
@@ -317,10 +422,13 @@
     "artist": "Charli xcx",
     "tier": "close",
     "spotify": {
-     "id": "fake-30",
+     "id": "2RdEC8Ff83WkX7kDVCHseE",
      "title": "party 4 u",
      "artists": "Charli xcx"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/5c/e9/1a5ce93c-aef4-6667-b7d1-7162203e1c39/190295229993.jpg/300x300bb.jpg",
+    "duration_ms": 296653,
+    "near": null
    },
    {
     "position": 31,
@@ -328,10 +436,13 @@
     "artist": "t.A.T.u.",
     "tier": "close",
     "spotify": {
-     "id": "fake-31",
+     "id": "4bJygwUKrRgq1stlNXcgMg",
      "title": "All The Things She Said",
      "artists": "t.A.T.u."
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/08/f3/0d/08f30d01-3fd2-5e7b-5316-d58e8d8715ed/12UMGIM55594.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 214440,
+    "near": null
    },
    {
     "position": 32,
@@ -339,10 +450,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-32",
-     "title": "Can’t Catch Me Now (from The Hunger Games: The Ballad of Songbirds & Snakes)",
+     "id": "56xHMIfQPoe0prrSi3BGhf",
+     "title": "Can’t Catch Me Now - from The Hunger Games: The Ballad of Songbirds & Snakes",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/17/5c/8e/175c8ec4-a8fd-6a14-5a1e-ea5917a1e687/23UM1IM46888.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 205484,
+    "near": null
    },
    {
     "position": 33,
@@ -350,10 +464,13 @@
     "artist": "Camila Cabello",
     "tier": "close",
     "spotify": {
-     "id": "fake-33",
+     "id": "4eWQlBRaTjPPUlzacqEeoQ",
      "title": "Never Be the Same",
      "artists": "Camila Cabello"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/85/28/70/85287029-19b9-cbe3-d1ab-300781875bf4/886446870298.jpg/300x300bb.jpg",
+    "duration_ms": 226986,
+    "near": null
    },
    {
     "position": 34,
@@ -361,10 +478,13 @@
     "artist": "Addison Rae",
     "tier": "close",
     "spotify": {
-     "id": "fake-34",
+     "id": "7B3BwNecBhKvNwSMOOl7Gk",
      "title": "Fame is a Gun",
      "artists": "Addison Rae"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/cf/4a/e3/cf4ae3c9-3420-6021-f059-cc6c87cf11b2/196872958249.jpg/300x300bb.jpg",
+    "duration_ms": 183238,
+    "near": null
    },
    {
     "position": 35,
@@ -372,10 +492,13 @@
     "artist": "Ellie Goulding, Diplo & Swae Lee",
     "tier": "close",
     "spotify": {
-     "id": "fake-35",
-     "title": "Close to Me",
+     "id": "5JEx7HbmvHQQswJCsoo9rA",
+     "title": "Close To Me (with Diplo) (feat. Swae Lee)",
      "artists": "Ellie Goulding, Diplo, Swae Lee"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/11/bc/a3/11bca346-b9d2-7e56-d546-9d364f5a08e7/00602577161421.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 182623,
+    "near": null
    },
    {
     "position": 36,
@@ -383,10 +506,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-36",
+     "id": "4Ilw2lD6z4WBqh65vUUZUf",
      "title": "my way",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 180721,
+    "near": null
    },
    {
     "position": 37,
@@ -394,10 +520,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-37",
+     "id": "4LfCY65LvojKjWEnU7fNN4",
      "title": "stupid song",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 209680,
+    "near": null
    },
    {
     "position": 38,
@@ -405,10 +534,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-38",
+     "id": "55pBIZO1cqoldeqpp5WR7H",
      "title": "the cure",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 297090,
+    "near": null
    },
    {
     "position": 39,
@@ -416,19 +548,25 @@
     "artist": "Harry Styles",
     "tier": "close",
     "spotify": {
-     "id": "fake-39",
+     "id": "7gtG45ieyQzKtNKobfLd49",
      "title": "American Girls",
      "artists": "Harry Styles"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/07/41/6a/07416a78-38b9-2d47-7ce8-8a52a44c510f/196874010112.jpg/300x300bb.jpg",
+    "duration_ms": 213440,
+    "near": null
    },
    {
     "position": 40,
     "title": "We Are the People",
     "artist": "Empire Of The Sun",
-    "tier": "close",
-    "spotify": {
-     "id": "fake-40",
-     "title": "We Are the People",
+    "tier": "unmatched",
+    "spotify": null,
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3e/42/a7/3e42a78d-57a3-fd69-6703-14d51205dd4c/13UMGIM24968.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 267373,
+    "near": {
+     "id": "01RGwdlx5dZRbbQTOeJf0k",
+     "title": "We Are The People",
      "artists": "Empire Of The Sun"
     }
    },
@@ -438,10 +576,13 @@
     "artist": "Charli xcx",
     "tier": "close",
     "spotify": {
-     "id": "fake-41",
+     "id": "4t9PBD27dndlf6YMBK2ROc",
      "title": "Track 10",
      "artists": "Charli xcx"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/9e/9f/62/9e9f624b-40fa-e806-05fc-4b0308ef5344/190295698201.jpg/300x300bb.jpg",
+    "duration_ms": 326907,
+    "near": null
    },
    {
     "position": 42,
@@ -449,10 +590,13 @@
     "artist": "Justin Timberlake",
     "tier": "close",
     "spotify": {
-     "id": "fake-42",
-     "title": "Suit & Tie (feat. JAŸ-Z)",
-     "artists": "Justin Timberlake"
-    }
+     "id": "6vt0I1cw1YmAIKDJvHVIM5",
+     "title": "Suit & Tie (feat. JAY-Z)",
+     "artists": "Justin Timberlake, JAŸ-Z"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/53/74/c9/5374c99e-cff1-61a6-ca0f-fa1219d050a0/886443854406.jpg/300x300bb.jpg",
+    "duration_ms": 326272,
+    "near": null
    },
    {
     "position": 43,
@@ -460,10 +604,13 @@
     "artist": "Steve Lacy",
     "tier": "close",
     "spotify": {
-     "id": "fake-43",
+     "id": "22NHkFYbgxB2Zirj29Gbp8",
      "title": "oh yeah?",
      "artists": "Steve Lacy"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1c/b2/46/1cb246db-afae-a599-d377-44a7ea7267fa/196874346976.jpg/300x300bb.jpg",
+    "duration_ms": 170585,
+    "near": null
    },
    {
     "position": 44,
@@ -471,10 +618,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-44",
+     "id": "25nbeJzxF3dwvtTq57QKZi",
      "title": "expectations",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 221958,
+    "near": null
    },
    {
     "position": 45,
@@ -482,10 +632,13 @@
     "artist": "Olivia Rodrigo",
     "tier": "close",
     "spotify": {
-     "id": "fake-45",
+     "id": "6LJYBq1h5GElQO4sKFdRA9",
      "title": "serena joy",
      "artists": "Olivia Rodrigo"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/74/88/51/748851f3-26da-36f5-65a3-d41fe0b292ec/26UM1IM06641.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 185839,
+    "near": null
    },
    {
     "position": 46,
@@ -493,18 +646,24 @@
     "artist": "Fitz and The Tantrums",
     "tier": "close",
     "spotify": {
-     "id": "fake-46",
+     "id": "2Z5wXgysowvzl0nKGNGU0t",
      "title": "Out of My League",
      "artists": "Fitz and The Tantrums"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/be/7d/64/be7d6440-4b7e-a3d3-3985-2fabf57f6705/075679954695.jpg/300x300bb.jpg",
+    "duration_ms": 211189,
+    "near": null
    },
    {
     "position": 47,
     "title": "Time to Pretend",
     "artist": "MGMT",
-    "tier": "close",
-    "spotify": {
-     "id": "fake-47",
+    "tier": "unmatched",
+    "spotify": null,
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e5/06/cc/e506ccd5-56ec-3d4c-69f7-14900bea74f0/mzi.bbgsikee.jpg/300x300bb.jpg",
+    "duration_ms": 262853,
+    "near": {
+     "id": "4I29nKzHGj01AMShw7J6pB",
      "title": "Time to Pretend",
      "artists": "MGMT"
     }
@@ -515,10 +674,13 @@
     "artist": "Malcolm Todd",
     "tier": "close",
     "spotify": {
-     "id": "fake-48",
+     "id": "77Jy02wGI2iU5HCcynsBmS",
      "title": "Obsessica",
      "artists": "Malcolm Todd"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8b/02/13/8b0213f8-bc16-3f1d-ffd7-d9accd49880e/196874337578.jpg/300x300bb.jpg",
+    "duration_ms": 219428,
+    "near": null
    },
    {
     "position": 49,
@@ -526,10 +688,13 @@
     "artist": "Lorde",
     "tier": "close",
     "spotify": {
-     "id": "fake-49",
+     "id": "2dLLR6qlu5UJ5gk0dKz0h3",
      "title": "Royals",
      "artists": "Lorde"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/96/a5/09/96a50916-169b-724c-b722-b8c474406352/13UAAIM68691.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 190185,
+    "near": null
    },
    {
     "position": 50,
@@ -537,10 +702,13 @@
     "artist": "Ravyn Lenae",
     "tier": "close",
     "spotify": {
-     "id": "fake-50",
+     "id": "4WFgvKVfEhb3IUAFGrutTR",
      "title": "Love Me Not",
      "artists": "Ravyn Lenae"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/300x300bb.jpg",
+    "duration_ms": 213467,
+    "near": null
    },
    {
     "position": 51,
@@ -548,10 +716,13 @@
     "artist": "Tame Impala",
     "tier": "close",
     "spotify": {
-     "id": "fake-51",
+     "id": "2X485T9Z5Ly0xyaghN73ed",
      "title": "Let It Happen",
      "artists": "Tame Impala"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/2e/b4/a82eb490-f30a-a321-461a-0383c88fec95/15UMGIM23316.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 466893,
+    "near": null
    },
    {
     "position": 52,
@@ -559,11 +730,29 @@
     "artist": "Selena Gomez",
     "tier": "close",
     "spotify": {
-     "id": "fake-52",
+     "id": "2dRvMEW4EwySxRUtEamSfG",
      "title": "The Heart Wants What It Wants",
      "artists": "Selena Gomez"
-    }
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/87/10/df/8710df62-5898-f41d-b11f-47dc614531e3/14DMGIM05704.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 227360,
+    "near": null
+   },
+   {
+    "position": 53,
+    "title": "My Moon My Man",
+    "artist": "Feist",
+    "tier": "close",
+    "spotify": {
+     "id": "5FFQbvn7055P1DvgJDdCBP",
+     "title": "My Moon My Man",
+     "artists": "Feist"
+    },
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/cc/f4/46/ccf44641-40d8-018d-1bb2-e86ed8b7beeb/00602547820976.rgb.jpg/300x300bb.jpg",
+    "duration_ms": 228360,
+    "near": null
    }
-  ]
+  ],
+  "spotify_playlist_id": "65q3ybp851nrVfF2WzOZez"
  }
 }

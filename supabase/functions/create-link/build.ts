@@ -37,6 +37,8 @@ export type SavedLink = {
   spotify_playlist_id: string;
   track_count: number;
   matched_count: number;
+  owner: string | null; // Apple display name (ADR 0025)
+  artwork_url: string | null;
   tracks: {
     position: number; // 0-based (architecture §4)
     source_title: string;
@@ -46,6 +48,8 @@ export type SavedLink = {
     spotify_track_id: string | null;
     spotify_title: string | null;
     spotify_artists: string | null;
+    artwork_url: string | null; // ADR 0025
+    duration_ms: number | null;
     near_track_id: string | null; // ADR 0026, unmatched rows only
     near_title: string | null;
     near_artists: string | null;
@@ -70,9 +74,14 @@ export type ReportRow = {
   artist: string;
   tier: "exact" | "close" | "unmatched";
   spotify: { id: string; title: string; artists: string } | null;
+  artwork: string | null; // ADR 0025
+  duration_ms: number | null;
   near: { id: string; title: string; artists: string } | null; // ADR 0026
 };
-export type Report = { name: string; matched: number; total: number; tracks: ReportRow[] };
+export type Report = {
+  name: string; owner: string | null; artwork: string | null;
+  matched: number; total: number; tracks: ReportRow[];
+};
 
 export type Outcome =
   | { http: 200; body: { code: string; report: Report } }
@@ -284,10 +293,12 @@ function toReport(p: ApplePlaylist, results: ReturnType<typeof pickClose>[]): Re
       artist: t.artistName,
       tier: r.tier,
       spotify: r.tier === "close" ? brief(r.candidate) : null,
+      artwork: t.artworkUrl ?? null,
+      duration_ms: t.durationMs,
       near: r.tier === "unmatched" && r.near ? brief(r.near) : null,
     };
   });
-  return { name: p.name, matched: tracks.filter((t) => t.tier !== "unmatched").length, total: tracks.length, tracks };
+  return { name: p.name, owner: p.owner ?? null, artwork: p.artworkUrl ?? null, matched: tracks.filter((t) => t.tier !== "unmatched").length, total: tracks.length, tracks };
 }
 
 function toSaved(code: string, url: string, p: ApplePlaylist, playlistId: string, report: Report): SavedLink {
@@ -296,6 +307,8 @@ function toSaved(code: string, url: string, p: ApplePlaylist, playlistId: string
     source_url: url,
     name: playlistName(p.name),
     spotify_playlist_id: playlistId,
+    owner: report.owner,
+    artwork_url: report.artwork,
     track_count: report.total,
     matched_count: report.matched,
     tracks: report.tracks.map((row, i) => ({
@@ -307,6 +320,8 @@ function toSaved(code: string, url: string, p: ApplePlaylist, playlistId: string
       spotify_track_id: row.spotify?.id ?? null,
       spotify_title: row.spotify?.title ?? null,
       spotify_artists: row.spotify?.artists ?? null,
+      artwork_url: row.artwork,
+      duration_ms: row.duration_ms,
       near_track_id: row.near?.id ?? null,
       near_title: row.near?.title ?? null,
       near_artists: row.near?.artists ?? null,

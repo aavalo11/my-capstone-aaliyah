@@ -137,16 +137,18 @@ test("?demo=empty and ?demo=error give the screens their states", () => {
 
 test("create keeps a match report's songs with the link, and rename keeps them", () => {
   const { store, rows } = load();
-  const report = { sample: true, matched: 1, total: 2, tracks: [
-    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, extra: "dropped" },
+  const ART = "https://is1-ssl.mzstatic.com/a/300x300bb.jpg";
+  const report = { sample: true, matched: 1, total: 2, owner: "Aaliyah Avalo", artwork: ART, spotify_playlist_id: "65q3ybp851nrVfF2WzOZez", extra: "dropped", tracks: [
+    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, artwork: ART, duration_ms: 97960, extra: "dropped" },
     { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null, near: { id: "n1", title: "Breathe - Live", artists: "Malcolm Todd", extra: "dropped" } },
   ] };
   const made = store.create("70 degrees out", URL1, report);
   store.rename(made.code, "renamed");
   const saved = rows()[0];
-  assert.deepEqual(saved.report, { sample: true, matched: 1, total: 2, tracks: [
-    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, near: null },
-    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null, near: { id: "n1", title: "Breathe - Live", artists: "Malcolm Todd" } },
+  // ADR 0025 / 0026: the cover, owner, playlist, song covers, lengths and near versions are kept.
+  assert.deepEqual(saved.report, { sample: true, matched: 1, total: 2, owner: "Aaliyah Avalo", artwork: ART, spotify_playlist_id: "65q3ybp851nrVfF2WzOZez", tracks: [
+    { position: 1, title: "Babydoll", artist: "Dominic Fike", tier: "close", spotify: { id: "fake-1", title: "Babydoll", artists: "Dominic Fike" }, artwork: ART, duration_ms: 97960, near: null },
+    { position: 2, title: "Breathe", artist: "Malcolm Todd", tier: "unmatched", spotify: null, artwork: null, duration_ms: null, near: { id: "n1", title: "Breathe - Live", artists: "Malcolm Todd" } },
   ] });
   assert.equal(saved.title, "renamed");
 });

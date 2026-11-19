@@ -92,7 +92,8 @@
   }
 
   // report is create-link's match report ({ matched, total, tracks }), kept so the link can
-  // show its songs, with each unmatched song's near version (ADR 0026). TODO(W10): real data. Today it's the recorded build (ADR 0015).
+  // show its songs, with the cover, owner, playlist, and each song's cover, length and near
+  // version (ADR 0025, ADR 0026). TODO(W10): real data. Today it's the recorded build (ADR 0015).
   function create(title, appleUrl, report) {
     var rows = load(), taken = {};
     rows.forEach(function (r) { taken[r.code] = true; });
@@ -102,9 +103,11 @@
     if (report && Array.isArray(report.tracks)) {
       var brief = function (s) { return s ? { id: s.id, title: s.title, artists: s.artists } : null; };
       link.report = { sample: !!report.sample, matched: report.matched, total: report.total,
+        owner: report.owner || null, artwork: report.artwork || null, spotify_playlist_id: report.spotify_playlist_id || null,
         tracks: report.tracks.map(function (t) {
           return { position: t.position, title: t.title, artist: t.artist, tier: t.tier,
-            spotify: brief(t.spotify), near: brief(t.near) };
+            spotify: brief(t.spotify), artwork: t.artwork || null,
+            duration_ms: typeof t.duration_ms === "number" ? t.duration_ms : null, near: brief(t.near) };
         }) };
     }
     rows.push(link);

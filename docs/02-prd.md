@@ -1,7 +1,7 @@
 # Crossfade — Product Requirements
 
 **Status:** v1 for CP-M2 · living spec, revised as the build proceeds
-**Last updated:** 2026-11-19 (R2 closest passing length wins, ADR 0024; R3 near versions, ADR 0026)
+**Last updated:** 2026-11-19 (R2 closest passing length wins, ADR 0024; R3 covers, owner and near versions, ADR 0025–0026)
 **Owner:** A. Avalo
 **Builds from:** `01-concept-brief.md` (problem, job) · `backlog.md` (stories S1–S11,
 MoSCoW, MVP slice) · `research/interview-01.md` (W01) · `decisions/0002–0006`
@@ -221,6 +221,9 @@ content is identical for both.
     words, closest length of the first 10 results), a link beneath reads `Spotify has a
     different version: <title> · <artists>` and opens that track. It isn't in the
     playlist and doesn't count toward X. *Added 2026-11-19 (ADR 0026).*
+  - Each row shows the song's cover and length, and the page opens with the playlist's
+    cover, `Playlist transferred with Crossfade`, and `Made by <owner> on Apple Music`
+    when Apple names an owner. *Added 2026-11-19 (ADR 0025).*
 - **Negative — Given** 3 of 50 tracks unmatched, **when** the recipient views the page,
   **then** all 50 rows are present. None is dropped and none is shown as playable.
 

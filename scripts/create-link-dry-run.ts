@@ -9,6 +9,9 @@
 //   node --env-file=.env scripts/create-link-dry-run.ts --real-spotify [link]
 //                                                        real searches, and a REAL public playlist
 //                                                        on the Crossfade account (it stays there)
+//   node --env-file=.env scripts/create-link-dry-run.ts --real-spotify --json > src/sample/build-sample.json
+//                                                        the sample Create plays back, with real
+//                                                        matches and its real playlist (ADR 0025)
 //
 // The fake catalog holds every song, with a few twists so the report shows unmatched rows:
 // track 2 missing, 7 only as (Live), 9 with the other explicit flag, 14 ten seconds longer.
@@ -24,10 +27,6 @@ const args = process.argv.slice(2);
 const useFixture = args.includes("--fixture");
 const asJson = args.includes("--json");
 const realSpotify = args.includes("--real-spotify");
-if (realSpotify && asJson) {
-  console.error("--json writes the FAKE sample Create plays back; don't combine it with --real-spotify.");
-  process.exit(1);
-}
 const env = {
   clientId: process.env.SPOTIFY_CLIENT_ID ?? "",
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
@@ -75,9 +74,14 @@ if (asJson) {
     _sample: true,
     _note: "One create-link dry run (ADR 0015). Apple's tracks are real, read " + new Date().toISOString().slice(0, 10) +
       (useFixture ? " from tests/fixtures/apple-70-degrees-out.html" : " from " + link) +
-      ". Every Spotify match is FAKE (tests/fakes/fake-spotify.mts). TODO(W10): real data.",
+      (realSpotify
+        ? ". The Spotify matches and playlist are REAL (Crossfade account); only the link code is local. TODO(W10): real data."
+        : ". Every Spotify match is FAKE (tests/fakes/fake-spotify.mts). TODO(W10): real data."),
     http: out.http,
     ...out.body,
+    ...("report" in out.body && realSpotify
+      ? { report: { ...out.body.report, spotify_playlist_id: db.links.find((l) => l.code === out.body.code)?.spotify_playlist_id ?? null } }
+      : {}),
   }, null, 1));
   process.exit(out.http === 200 ? 0 : 1);
 }

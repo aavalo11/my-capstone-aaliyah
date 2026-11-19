@@ -88,8 +88,14 @@ test("builds a link from the real 52-track page: playlist, report and saved rows
   assert.deepEqual(saved.tracks[1], {
     position: 1, source_title: "Breathe", source_artist: "Malcolm Todd", isrc: null,
     tier: "unmatched", spotify_track_id: null, spotify_title: null, spotify_artists: null,
+    artwork_url: saved.tracks[1].artwork_url, duration_ms: report.tracks[1].duration_ms,
     near_track_id: null, near_title: null, near_artists: null,
   });
+  // ADR 0025: the owner, the cover, and each song's cover and length travel with the link.
+  assert.equal(saved.owner, "Aaliyah Avalo");
+  assert.equal(saved.owner, report.owner);
+  assert.match(saved.artwork_url, /mzstatic\.com/);
+  assert.ok(report.tracks.every((t) => /^https:\/\/[^/]*mzstatic\.com\//.test(t.artwork) && t.duration_ms > 0));
   // ADR 0026: the live-only track is unmatched but offers its (Live) version as a near one.
   assert.match(report.tracks[6].near.title, /\(Live\)$/);
   assert.equal(saved.tracks[6].near_title, report.tracks[6].near.title);

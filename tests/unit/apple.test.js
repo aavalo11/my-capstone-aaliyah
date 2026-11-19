@@ -82,8 +82,26 @@ test("reads all 52 tracks from the real share page, in order", async () => {
   assert.deepEqual(p.tracks[0], {
     position: 1, appleId: "1438243880", kind: "song", title: "Babydoll",
     artistName: "Dominic Fike", primaryArtist: "Dominic Fike", durationMs: 97960, explicit: false,
+    artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/2d/37/18/2d3718e9-8620-b603-d3cc-f34ce817070d/886447290170.jpg/300x300bb.jpg",
   });
   assert.equal(p.tracks.at(-1).title, "The Heart Wants What It Wants");
+});
+
+test("the playlist's owner and cover come from the header (ADR 0025)", async () => {
+  const { readSharePage } = await load();
+  const p = readSharePage(FIXTURE);
+  assert.equal(p.owner, "Aaliyah Avalo");
+  assert.match(p.artworkUrl, /^https:\/\/is1-ssl\.mzstatic\.com\/image\/thumb\/gen\/600x600AM\.PDCXS19\.jpg\?/);
+});
+
+test("Negative: artwork that's missing, not a template, or off Apple's CDN is null", async () => {
+  const { artworkUrl } = await load();
+  assert.equal(artworkUrl(undefined, 300), null);
+  assert.equal(artworkUrl({ dictionary: {} }, 300), null);
+  assert.equal(artworkUrl({ dictionary: { url: "https://evil.example/{w}x{h}.{f}" } }, 300), null);
+  assert.equal(artworkUrl({ dictionary: { url: "http://is1-ssl.mzstatic.com/a/{w}x{h}bb.{f}" } }, 300), null);
+  assert.equal(artworkUrl({ dictionary: { url: "javascript:alert(1)" } }, 300), null);
+  assert.equal(artworkUrl({ dictionary: { url: "https://is1-ssl.mzstatic.com/a/{w}x{h}bb.{f}" } }, 60), "https://is1-ssl.mzstatic.com/a/60x60bb.jpg");
 });
 
 test("primary artist is the first subtitle link, not the joined string", async () => {

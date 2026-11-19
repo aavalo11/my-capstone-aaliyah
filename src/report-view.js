@@ -21,10 +21,28 @@
     return searchUrl(sp.title || t.title, sp.artists || t.artist);
   }
 
+  // Only https covers on Apple's image CDN are drawn (ADR 0025). Anything else gets a blank tile.
+  function coverUrl(src) {
+    return /^https:\/\/([a-z0-9-]+\.)*mzstatic\.com\//.test(src || "") ? src : null;
+  }
+  function cover(src, cls) {
+    var u = coverUrl(src);
+    return u ? '<img class="' + cls + '" src="' + esc(u) + '" alt="" loading="lazy">'
+      : '<span class="' + cls + ' cover-blank" aria-hidden="true"></span>';
+  }
+
+  // 97960 → "1:37". Null when Apple gave no length.
+  function time(ms) {
+    if (typeof ms !== "number" || !(ms > 0)) return "";
+    var s = Math.round(ms / 1000);
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
   // One row. t is { title, artist, tier, spotify: { id, title, artists } | null,
-  // near: { id, title, artists } | null }.
+  // artwork, duration_ms, near: { id, title, artists } | null }.
   function row(t) {
     var head = '<div class="title">' + esc(t.title) + '</div><div class="small muted">' + esc(t.artist) + "</div>";
+    var len = '<span class="time small muted">' + esc(time(t.duration_ms)) + "</span>";
     if (t.tier === "unmatched" || !t.spotify) {
       // ADR 0026: still unmatched and still left out of the playlist. Spotify's nearest
       // version is offered as a link the friend can open and save themselves.
@@ -32,20 +50,36 @@
         ? '<a class="near small" href="https://open.spotify.com/track/' + esc(t.near.id) + '" target="_blank" rel="noopener">' +
           "Spotify has a different version: " + esc(t.near.title) + " · " + esc(t.near.artists) + "</a>"
         : "";
-      return '<li class="row unmatched" data-tier="unmatched">' +
-        '<div class="grow"><div class="dim">' + head + '<div class="small">Not found on Spotify (US)</div></div>' + near + "</div></li>";
+      return '<li class="row unmatched" data-tier="unmatched"><span class="dim">' + cover(t.artwork, "row-art") + "</span>" +
+        '<div class="grow"><div class="dim">' + head + '<div class="small">Not found on Spotify (US)</div></div>' + near + "</div>" +
+        '<span class="dim">' + len + "</span></li>";
     }
     // ADR 0016: Spotify's version is shown only when its title is written differently.
     // ADR 0022: the whole row is the link to Spotify, with no separate button.
     var differs = t.spotify.title != null && t.spotify.title !== t.title;
     return '<li class="song" data-tier="' + esc(t.tier) + '"><a class="row song-link" href="' + esc(songUrl(t)) +
-      '" target="_blank" rel="noopener" aria-label="' + esc(t.title) + ", " + esc(t.artist) + ', open in Spotify"><div class="grow">' + head +
+      '" target="_blank" rel="noopener" aria-label="' + esc(t.title) + ", " + esc(t.artist) + ', open in Spotify">' +
+      cover(t.artwork, "row-art") + '<div class="grow">' + head +
       (differs ? '<div class="small muted" data-spotify-version style="margin-top:4px">On Spotify: ' +
-        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + "</div></a></li>";
+        esc(t.spotify.title) + " · " + esc(t.spotify.artists) + "</div>" : "") + "</div>" + len + "</a></li>";
   }
 
   function list(tracks) {
-    return '<ol class="list" id="tracks">' + tracks.map(row).join("") + "</ol>";
+    return '<div class="list-head small muted" aria-hidden="true"><span>Song</span><span>Time</span></div>' +
+      '<ol class="list" id="tracks">' + tracks.map(row).join("") + "</ol>";
+  }
+
+  // ADR 0025: the top of a playlist page. p is { name, owner, artwork, playUrl, extra, after }.
+  // extra (above the button) and after (below it) are trusted HTML the caller built.
+  function header(p) {
+    return '<header class="pl-head">' + cover(p.artwork, "pl-cover") +
+      '<div class="pl-meta"><h1>' + esc(p.name) + "</h1>" +
+      '<p class="muted pl-sub">Playlist transferred with Crossfade</p>' +
+      (p.owner ? '<p class="small muted pl-sub" id="pl-owner">Made by ' + esc(p.owner) + " on Apple Music</p>" : "") +
+      (p.extra || "") +
+      (p.playUrl ? '<a class="btn pl-play" href="' + esc(p.playUrl) + '" target="_blank" rel="noopener" id="play-spotify">' +
+        '<span aria-hidden="true">▶</span>&nbsp;Play in Spotify</a>' : "") +
+      (p.after || "") + "</div></header>";
   }
 
   function matched(tracks) {
@@ -58,5 +92,5 @@
     return /^[A-Za-z0-9]{22}$/.test(spotifyPlaylistId || "") ? "https://open.spotify.com/playlist/" + spotifyPlaylistId : null;
   }
 
-  window.CrossfadeReport = { esc: esc, row: row, list: list, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
+  window.CrossfadeReport = { esc: esc, row: row, list: list, header: header, time: time, matched: matched, searchUrl: searchUrl, songUrl: songUrl, playlistUrl: playlistUrl };
 })();

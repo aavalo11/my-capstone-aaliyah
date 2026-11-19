@@ -1,8 +1,9 @@
 # Lab 3 Backlog — Crossfade
 
 **Status:** draft, provisional pending W02/W03
-**Last updated:** 2026-11-19. S7 AC 4 allows a labelled near-version link (ADR 0026).
-Before that, 2026-11-05: S16 (search Spotify to build a playlist) added to the holding
+**Last updated:** 2026-11-19. S7 AC 4 allows a labelled near-version link (ADR 0026); S19
+(sender edits a sent playlist) and S20 (playlist page with cover and owner, ADR 0025) added to
+the holding pen. Before that, 2026-11-05: S16 (search Spotify to build a playlist) added to the holding
 pen, with a W02/W03 question. Before that, 2026-09-27: S6, S7, S8, the MoSCoW board, and the
 MVP slice were brought in line with `02-prd.md` (§11) and ADR 0006.
 
@@ -486,6 +487,47 @@ For W02/W03: "Have you ever sent someone your profile on a music app? What happe
 
 ---
 
+**S19.** As a sender, I want to remove songs from a playlist I've sent, or add songs to it,
+so that I can fix it without making a new link.
+
+Added 2026-11-19, at the founder's request. Only the sender edits: friends never sign in
+(ADR 0006), and an edit-by-anyone link could be wiped by whoever it's forwarded to.
+**Not built.** It changes the real Spotify playlist, so it waits for Phase 10's server function.
+
+**Acceptance criteria**
+
+- [ ] **Given** I open a link I made, **when** I remove a song and confirm, **then** it's gone
+  from the Spotify playlist and from my friend's page, and the link's code doesn't change.
+- [ ] **Given** I add a song by searching, **when** I pick it, **then** it's added at the end
+  of the Spotify playlist and the page.
+- [ ] **Negative — Given** Spotify fails during an edit, **when** I save, **then** I see
+  `Couldn't change the playlist. Nothing was changed.` and both the page and the playlist are
+  as they were.
+
+**Evidence.** **NONE.** Founder request. For W02/W03: "After you've sent someone a playlist,
+have you ever wanted to change it? What did you do?"
+
+---
+
+**S20.** As someone opening a Crossfade playlist, I want it to look like a playlist (cover,
+who made it, song covers and lengths), so that I trust it's the one my friend meant.
+
+Added 2026-11-19, at the founder's request, from a screenshot of another transfer app's
+playlist in Apple Music. **Built** (ADR 0025).
+
+**Acceptance criteria**
+
+- [x] **Given** a link built from an Apple playlist, **when** it opens, **then** I see the
+  playlist cover, its name, `Playlist transferred with Crossfade`, `Made by <name> on Apple
+  Music`, **Play in Spotify**, and every song with its cover and length.
+- [x] **Negative — Given** Apple gives no cover or owner, **when** it opens, **then** a blank
+  tile replaces the cover and the `Made by` line is left out. Nothing else changes.
+
+**Evidence.** **NONE.** Founder request. Note: the screenshot shows an existing app already
+transfers playlists into Apple Music. That's competition the concept brief should name.
+
+---
+
 ## 4. MoSCoW board
 
 | MUST | SHOULD | COULD | WON'T (+ why not) |
@@ -495,7 +537,7 @@ For W02/W03: "Have you ever sent someone your profile on a music app? What happe
 | ~~S6 — own-account connect~~ → out of v1 *(ADR 0006; returns if K3 fails)* | S10 — collaborative playlist | S5 — buy links | Controlling crossfade / transition timing |
 | Honest match report *(S7 AC 3 and 4)* | S4 — offline set list | S3 — DJ CSV export *(evidence withdrawn)* | BPM/key on export |
 | | | DJ request intake | Android / web parity |
-| | | | S12–S18 — Home history, Friends, Account, Discover, Search to build, Sent to me, Profiles *(holding pen, Evidence: NONE; shell only)* |
+| | | | S12–S20 — Home history, Friends, Account, Discover, Search to build, Sent to me, Profiles, Edit a sent playlist, Playlist page *(holding pen, Evidence: NONE; S19 not built)* |
 
 **MUST — "would you delay launch for this?"** Yes to all three. Without S7 there is no
 product. Without S8, the first person who opens a link and finds junk in their library

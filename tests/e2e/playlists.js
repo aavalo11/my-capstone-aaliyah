@@ -8,8 +8,10 @@ const URL1 = "https://music.apple.com/us/playlist/70-degrees-out/pl.u-LdbqEzvu2j
 const results = [];
 const check = (id, ok, detail) => { results.push(ok); console.log((ok ? "PASS " : "FAIL ") + id + " :: " + detail); };
 const txt = (s) => (s || "").replace(/\s+/g, " ").trim();
-// Misses in the recorded build that offer a near version (ADR 0026), counted from the file.
+// The recorded build Create plays back (ADR 0015). Since 2026-11-19 its matches are a real
+// Spotify run (ADR 0025), so the counts come from the file instead of being written in here.
 const SAMPLE = JSON.parse(require("node:fs").readFileSync(require("node:path").join(__dirname, "../../src/sample/build-sample.json"), "utf8")).report;
+const TOTAL = SAMPLE.tracks.length, MATCHED = SAMPLE.tracks.filter((t) => t.tier !== "unmatched").length;
 const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).length;
 
 (async () => {
@@ -27,7 +29,7 @@ const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).lengt
   await p.waitForSelector("#made-url");
   const headline = txt(await p.textContent("#build-report #match-headline"));
   const code = (await p.textContent("#made-url")).match(/code=(\w+)/)[1];
-  check("P1", progress.startsWith("Reading playlist") && disabled && headline === "Matched 48 of 52",
+  check("P1", progress.startsWith("Reading playlist") && disabled && headline === "Matched " + MATCHED + " of " + TOTAL,
     `first line="${progress}", Create disabled while building=${disabled}, headline="${headline}"`);
 
   // P2: the link's name on Playlists → Made by me opens its songs.
@@ -38,14 +40,15 @@ const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).lengt
   const hrefs = await p.$$eval("#tracks li a.song-link", (a) => a.map((x) => x.href)); // ADR 0022: the row is the link
   // ADR 0026: a miss has no song link, only its "Spotify has a different version" link, if any.
   const unmatchedLinks = await p.$$eval("#tracks li.unmatched a", (a) => a.map((x) => x.className));
-  check("P2", location(p).startsWith("#/links/" + code) && rows === 52 && hrefs.length === 48 &&
+  check("P2", location(p).startsWith("#/links/" + code) && rows === TOTAL && hrefs.length === MATCHED &&
     unmatchedLinks.length === NEAR && unmatchedLinks.every((c) => c.includes("near")),
-    `at ${location(p)}, songs=${rows}, Spotify links=${hrefs.length}, links on misses=${JSON.stringify(unmatchedLinks)}`);
+    `at ${location(p)}, songs=${rows}/${TOTAL}, Spotify links=${hrefs.length}/${MATCHED}, links on misses=${JSON.stringify(unmatchedLinks)}`);
 
-  // P3: matched songs open Spotify like Top songs do; sample ids never become fake track pages.
-  check("P3", hrefs.every((h) => h.startsWith("https://open.spotify.com/search/")) &&
-    decodeURIComponent(hrefs[0].split("/search/")[1]) === "Babydoll Dominic Fike",
-    `first="${hrefs[0]}", all are Spotify search=${hrefs.every((h) => h.startsWith("https://open.spotify.com/search/"))}`);
+  // P3: matched songs open their real Spotify track page (fake ids opening search is in C-checks
+  // and report-view.js's songUrl). The first song is Babydoll's real track.
+  const trackPage = (h) => /^https:\/\/open\.spotify\.com\/track\/[A-Za-z0-9]{22}$/.test(h);
+  check("P3", hrefs.every(trackPage) && hrefs[0].endsWith("/" + SAMPLE.tracks[0].spotify.id),
+    `first="${hrefs[0]}", all are track pages=${hrefs.every(trackPage)}`);
 
   // P4: Spotify's version shows only when its title is written differently (ADR 0016).
   await p.goto(BASE + "/p.html?code=sample"); await p.waitForSelector("#tracks");
@@ -119,7 +122,7 @@ const NEAR = SAMPLE.tracks.filter((t) => t.tier === "unmatched" && t.near).lengt
   const theirLinks = txt(await p.textContent("#my-links"));
   await p.goto(BASE + "/#/home"); await p.waitForSelector("#recent .card");
   const theirs = txt(await p.textContent("#recent")), theirStats = txt(await p.textContent("#stats"));
-  check("P9", mine.includes("70 degrees out") && myStats.includes("48") && theirs.startsWith("Nothing added yet") &&
+  check("P9", mine.includes("70 degrees out") && myStats.includes(String(MATCHED)) && theirs.startsWith("Nothing added yet") &&
     theirStats.startsWith("No numbers yet") && theirLinks.startsWith("No links yet"),
     `mine="${mine.slice(0, 30)}", stats="${myStats.slice(0, 20)}", other account sees "${theirs.slice(0, 20)}" / "${theirLinks.slice(0, 15)}"`);
 
